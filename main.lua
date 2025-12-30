@@ -1,19 +1,18 @@
 --[[
-    ███████╗██████╗  █████╗  ██████╗██╗  ██╗███████╗██████╗ 
+    ███████╗██████╗  █████╗  ██████╗██╗  ██╗███████╗██████╗
     ██╔════╝██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██╔════╝██╔══██╗
     ███████╗██████╔╝███████║██║     █████╔╝ █████╗  ██████╔╝
     ╚════██║██╔═══╝ ██╔══██║██║     ██╔═██╗ ██╔══╝  ██╔══██╗
     ███████║██║     ██║  ██║╚██████╗██║  ██╗███████╗██║  ██║
     ╚══════╝╚═╝     ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
     
-    REAL Auto Fling v2.0
-    Body attach method with continuous fling
+    REAL Auto Fling v3.0
+    Simple body attach fling with immediate start
 ]]
 
 -- Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 local StarterGui = game:GetService("StarterGui")
 local Debris = game:GetService("Debris")
@@ -23,14 +22,10 @@ local Character = Player.Character or Player.CharacterAdded:Wait()
 local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 local Humanoid = Character:WaitForChild("Humanoid")
 
--- Load Rayfield UI
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
 -- Fling Settings
 local FlingSettings = {
     Enabled = false,
     Target = nil,
-    AutoFling = false,
     SpinSpeed = 5000, -- Higher = faster spin
     FlingForce = 10000, -- Upward force
     AttachDistance = 0, -- How close to attach (0 = inside)
@@ -41,9 +36,7 @@ local FlingSettings = {
     RotationMethod = "CFrame", -- "CFrame" or "AngularVelocity"
     DeathCheck = true, -- Check if target died
     ReattachDelay = 0.5, -- Delay before reattaching
-    VisualEffects = true,
-    Notification = true,
-    DebugMode = false
+    Notification = true
 }
 
 -- Fling Variables
@@ -63,49 +56,9 @@ local function GetPlayerByName(name)
     return nil
 end
 
-local function GetNearestPlayer()
-    local nearest = nil
-    local distance = 500
-    
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= Player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local dist = (HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-            if dist < distance then
-                distance = dist
-                nearest = player
-            end
-        end
-    end
-    
-    return nearest
-end
-
-local function CreateAttachmentPart()
-    if AttachmentPart then
-        AttachmentPart:Destroy()
-    end
-    
-    AttachmentPart = Instance.new("Part")
-    AttachmentPart.Name = "FlingAttachment"
-    AttachmentPart.Size = Vector3.new(1, 1, 1)
-    AttachmentPart.Transparency = 1
-    AttachmentPart.Anchored = false
-    AttachmentPart.CanCollide = false
-    AttachmentPart.Massless = true
-    AttachmentPart.Parent = Character
-    
-    local weld = Instance.new("Weld")
-    weld.Part0 = HumanoidRootPart
-    weld.Part1 = AttachmentPart
-    weld.C0 = CFrame.new(0, 0, 0)
-    weld.Parent = AttachmentPart
-    
-    return AttachmentPart
-end
-
 local function Notify(title, message)
     if not FlingSettings.Notification then return end
-    
+
     StarterGui:SetCore("ChatMakeSystemMessage", {
         Text = "[REAL Fling] " .. title .. ": " .. message;
         Color = Color3.fromRGB(255, 0, 0);
@@ -114,22 +67,16 @@ local function Notify(title, message)
     })
 end
 
-local function Debug(message)
-    if FlingSettings.DebugMode then
-        print("[REAL Fling Debug]: " .. message)
-    end
-end
-
 local function SetupAntiGravity(target)
     if not FlingSettings.AntiGravity or not target or not target.Character then return end
-    
+
     local humanoid = target.Character:FindFirstChildOfClass("Humanoid")
     if humanoid then
         OriginalGravity = humanoid.JumpPower
         humanoid.JumpPower = 0
         humanoid.UseJumpPower = false
     end
-    
+
     -- Remove any existing BodyVelocity
     for _, obj in pairs(target.Character:GetDescendants()) do
         if obj:IsA("BodyVelocity") or obj:IsA("BodyForce") then
@@ -140,7 +87,7 @@ end
 
 local function RestoreGravity(target)
     if not target or not target.Character or not OriginalGravity then return end
-    
+
     local humanoid = target.Character:FindFirstChildOfClass("Humanoid")
     if humanoid then
         humanoid.JumpPower = OriginalGravity
@@ -148,28 +95,48 @@ local function RestoreGravity(target)
     end
 end
 
+local function CreateAttachmentPart()
+    if AttachmentPart then
+        AttachmentPart:Destroy()
+    end
+
+    AttachmentPart = Instance.new("Part")
+    AttachmentPart.Name = "FlingAttachment"
+    AttachmentPart.Size = Vector3.new(1, 1, 1)
+    AttachmentPart.Transparency = 1
+    AttachmentPart.Anchored = false
+    AttachmentPart.CanCollide = false
+    AttachmentPart.Massless = true
+    AttachmentPart.Parent = Character
+
+    local weld = Instance.new("Weld")
+    weld.Part0 = HumanoidRootPart
+    weld.Part1 = AttachmentPart
+    weld.C0 = CFrame.new(0, 0, 0)
+    weld.Parent = AttachmentPart
+
+    return AttachmentPart
+end
+
 local function StartFling(target)
     if Flinging or not target or not target.Character then return end
-    
+
     Flinging = true
     FlingSettings.Target = target
-    
-    Debug("Starting fling on: " .. target.Name)
-    
+
     -- Create attachment part
     CreateAttachmentPart()
-    
+
     -- Setup anti-gravity
     SetupAntiGravity(target)
-    
+
     -- Get target's HumanoidRootPart
     local targetHRP = target.Character:FindFirstChild("HumanoidRootPart")
     if not targetHRP then
-        Debug("Target has no HumanoidRootPart")
         StopFling()
         return
     end
-    
+
     -- NoClip
     if FlingSettings.NoClip then
         local noclip = Instance.new("BodyVelocity")
@@ -177,20 +144,19 @@ local function StartFling(target)
         noclip.Velocity = Vector3.new(0, 0, 0)
         noclip.Name = "NoClip"
         noclip.Parent = HumanoidRootPart
-        
+
         Debris:AddItem(noclip, 10)
     end
-    
+
     -- Start fling loop
     FlingConnection = RunService.Heartbeat:Connect(function()
         if not FlingSettings.Enabled or not target.Character or not targetHRP or not AttachmentPart then
             StopFling()
             return
         end
-        
+
         -- Check if target died
         if FlingSettings.DeathCheck and target.Character:FindFirstChildOfClass("Humanoid").Health <= 0 then
-            Debug("Target died, reattaching...")
             if FlingSettings.AutoReattach then
                 task.wait(FlingSettings.ReattachDelay)
                 target.CharacterAdded:Wait()
@@ -200,26 +166,26 @@ local function StartFling(target)
             end
             return
         end
-        
+
         -- Attach to target
         local targetCFrame = targetHRP.CFrame
         local attachCFrame = targetCFrame * CFrame.new(0, FlingSettings.AttachDistance, 0)
-        
+
         -- Move attachment part to target
         AttachmentPart.CFrame = attachCFrame
-        
+
         -- Apply spinning
         if FlingSettings.RotationMethod == "CFrame" then
             -- CFrame rotation method
             local spinAngle = tick() * FlingSettings.SpinSpeed
             local spinCFrame = CFrame.Angles(0, spinAngle, 0)
-            
+
             -- Apply to target
             targetHRP.CFrame = targetHRP.CFrame * spinCFrame
-            
+
             -- Apply upward force
             targetHRP.Velocity = targetHRP.Velocity + Vector3.new(0, FlingSettings.FlingForce * 0.01, 0)
-            
+
         elseif FlingSettings.RotationMethod == "AngularVelocity" then
             -- AngularVelocity method
             local existingAV = targetHRP:FindFirstChild("SpinAV")
@@ -231,50 +197,38 @@ local function StartFling(target)
                 av.Name = "SpinAV"
                 av.Parent = targetHRP
             end
-            
+
             -- Apply upward force
             targetHRP.Velocity = targetHRP.Velocity + Vector3.new(0, FlingSettings.FlingForce * 0.01, 0)
         end
-        
-        -- Visual effects
-        if FlingSettings.VisualEffects and math.random(1, 100) <= 5 then
-            local effect = Instance.new("Explosion")
-            effect.Position = targetHRP.Position
-            effect.BlastRadius = 5
-            effect.BlastPressure = 0
-            effect.Parent = Workspace
-            Debris:AddItem(effect, 0.5)
-        end
     end)
-    
+
     Notify("Fling Started", "Now flinging: " .. target.Name)
 end
 
 local function StopFling()
     if not Flinging then return end
-    
+
     Flinging = false
     FlingSettings.Target = nil
-    
-    Debug("Stopping fling")
-    
+
     -- Disconnect connections
     if FlingConnection then
         FlingConnection:Disconnect()
         FlingConnection = nil
     end
-    
+
     if TargetConnection then
         TargetConnection:Disconnect()
         TargetConnection = nil
     end
-    
+
     -- Clean up attachment
     if AttachmentPart then
         AttachmentPart:Destroy()
         AttachmentPart = nil
     end
-    
+
     -- Clean up target
     if FlingSettings.Target and FlingSettings.Target.Character then
         local targetHRP = FlingSettings.Target.Character:FindFirstChild("HumanoidRootPart")
@@ -285,17 +239,17 @@ local function StopFling()
                 spinAV:Destroy()
             end
         end
-        
+
         -- Restore gravity
         RestoreGravity(FlingSettings.Target)
     end
-    
+
     -- Clean up self
     local noclip = HumanoidRootPart:FindFirstChild("NoClip")
     if noclip then
         noclip:Destroy()
     end
-    
+
     Notify("Fling Stopped", "No longer flinging")
 end
 
@@ -305,7 +259,7 @@ local function SetupAutoRespawn()
         if FlingSettings.AutoRespawn and Flinging then
             task.wait(1)
             Player:LoadCharacter()
-            
+
             -- Restart fling after respawn
             if FlingSettings.AutoReattach and FlingSettings.Target then
                 task.wait(FlingSettings.ReattachDelay)
@@ -315,232 +269,66 @@ local function SetupAutoRespawn()
     end)
 end
 
--- Create Advanced GUI
-local Window = Rayfield:CreateWindow({
-    Name = "REAL Auto Fling v2.0",
-    LoadingTitle = "REAL Fling",
-    LoadingSubtitle = "Loading body attach fling...",
-    ConfigurationSaving = {
-        Enabled = false
-    },
-    CustomTheme = {
-        Background = Color3.fromRGB(20, 20, 20),
-        Titlebar = Color3.fromRGB(255, 0, 0),
-        Tab = Color3.fromRGB(139, 0, 0),
-        Accent = Color3.fromRGB(255, 0, 0),
-        TextColor = Color3.fromRGB(255, 255, 255)
-    }
-})
+-- Create Simple GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "REAL Auto Fling GUI"
+ScreenGui.Parent = game:GetService("CoreGui")
 
--- Main Tab
-local MainTab = Window:CreateTab("Main", 4483362458)
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 300, 0, 200)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
 
-MainTab:CreateSection("Target Selection")
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, 0, 0, 30)
+TitleLabel.Position = UDim2.new(0, 0, 0, 0)
+TitleLabel.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.Text = "REAL Auto Fling v3.0"
+TitleLabel.TextScaled = true
+TitleLabel.Parent = MainFrame
 
-MainTab:CreateInput({
-    Name = "Player Name",
-    PlaceholderText = "Enter player name...",
-    RemoveTextAfterFocusLost = false,
-    Callback = function(Text)
-        local target = GetPlayerByName(Text)
-        if target then
-            FlingSettings.Target = target
-            Notify("Target Selected", target.Name)
-        else
-            Notify("Error", "Player not found")
-        end
+local PlayerInput = Instance.new("TextBox")
+PlayerInput.Size = UDim2.new(1, 0, 0, 30)
+PlayerInput.Position = UDim2.new(0, 0, 0, 40)
+PlayerInput.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+PlayerInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+PlayerInput.PlaceholderText = "Enter player name..."
+PlayerInput.Parent = MainFrame
+
+local StartButton = Instance.new("TextButton")
+StartButton.Size = UDim2.new(1, 0, 0, 30)
+StartButton.Position = UDim2.new(0, 0, 0, 80)
+StartButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+StartButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+StartButton.Text = "Start Fling"
+StartButton.Parent = MainFrame
+
+local StopButton = Instance.new("TextButton")
+StopButton.Size = UDim2.new(1, 0, 0, 30)
+StopButton.Position = UDim2.new(0, 0, 0, 120)
+StopButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+StopButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+StopButton.Text = "Stop Fling"
+StopButton.Parent = MainFrame
+
+-- Button Callbacks
+StartButton.MouseButton1Click:Connect(function()
+    local targetName = PlayerInput.Text
+    local target = GetPlayerByName(targetName)
+    if target then
+        FlingSettings.Target = target
+        StartFling(target)
+    else
+        Notify("Error", "Player not found")
     end
-})
+end)
 
-MainTab:CreateButton({
-    Name = "Select Nearest Player",
-    Callback = function()
-        local target = GetNearestPlayer()
-        if target then
-            FlingSettings.Target = target
-            Notify("Target Selected", target.Name)
-        else
-            Notify("Error", "No players nearby")
-        end
-    end
-})
-
-MainTab:CreateSection("Fling Control")
-
-MainTab:CreateToggle({
-    Name = "Auto Fling",
-    CurrentValue = false,
-    Flag = "AutoFlingToggle",
-    Callback = function(Value)
-        FlingSettings.AutoFling = Value
-        if Value then
-            if FlingSettings.Target then
-                StartFling(FlingSettings.Target)
-            else
-                Notify("Error", "No target selected")
-                FlingSettings.AutoFling = false
-            end
-        else
-            StopFling()
-        end
-    end
-})
-
-MainTab:CreateButton({
-    Name = "Start Fling",
-    Callback = function()
-        if FlingSettings.Target then
-            StartFling(FlingSettings.Target)
-        else
-            Notify("Error", "No target selected")
-        end
-    end
-})
-
-MainTab:CreateButton({
-    Name = "Stop Fling",
-    Callback = function()
-        StopFling()
-    end
-})
-
--- Settings Tab
-local SettingsTab = Window:CreateTab("Settings", 4483362458)
-
-SettingsTab:CreateSection("Fling Settings")
-
-SettingsTab:CreateSlider({
-    Name = "Spin Speed",
-    Range = {1000, 10000},
-    Increment = 500,
-    CurrentValue = 5000,
-    Flag = "SpinSpeedSlider",
-    Callback = function(Value)
-        FlingSettings.SpinSpeed = Value
-    end
-})
-
-SettingsTab:CreateSlider({
-    Name = "Fling Force",
-    Range = {5000, 50000},
-    Increment = 1000,
-    CurrentValue = 10000,
-    Flag = "FlingForceSlider",
-    Callback = function(Value)
-        FlingSettings.FlingForce = Value
-    end
-})
-
-SettingsTab:CreateSlider({
-    Name = "Attach Distance",
-    Range = {-5, 5},
-    Increment = 0.5,
-    CurrentValue = 0,
-    Flag = "AttachDistanceSlider",
-    Callback = function(Value)
-        FlingSettings.AttachDistance = Value
-    end
-})
-
-SettingsTab:CreateDropdown({
-    Name = "Rotation Method",
-    Options = {"CFrame", "AngularVelocity"},
-    CurrentOption = "CFrame",
-    Flag = "RotationMethodDropdown",
-    Callback = function(Option)
-        FlingSettings.RotationMethod = Option
-    end
-})
-
-SettingsTab:CreateSection("Advanced Settings")
-
-SettingsTab:CreateToggle({
-    Name = "Auto Respawn",
-    CurrentValue = true,
-    Flag = "AutoRespawnToggle",
-    Callback = function(Value)
-        FlingSettings.AutoRespawn = Value
-    end
-})
-
-SettingsTab:CreateToggle({
-    Name = "Auto Reattach",
-    CurrentValue = true,
-    Flag = "AutoReattachToggle",
-    Callback = function(Value)
-        FlingSettings.AutoReattach = Value
-    end
-})
-
-SettingsTab:CreateToggle({
-    Name = "Anti Gravity",
-    CurrentValue = true,
-    Flag = "AntiGravityToggle",
-    Callback = function(Value)
-        FlingSettings.AntiGravity = Value
-    end
-})
-
-SettingsTab:CreateToggle({
-    Name = "NoClip",
-    CurrentValue = true,
-    Flag = "NoClipToggle",
-    Callback = function(Value)
-        FlingSettings.NoClip = Value
-    end
-})
-
-SettingsTab:CreateToggle({
-    Name = "Death Check",
-    CurrentValue = true,
-    Flag = "DeathCheckToggle",
-    Callback = function(Value)
-        FlingSettings.DeathCheck = Value
-    end
-})
-
-SettingsTab:CreateSlider({
-    Name = "Reattach Delay",
-    Range = {0.1, 2},
-    Increment = 0.1,
-    CurrentValue = 0.5,
-    Flag = "ReattachDelaySlider",
-    Callback = function(Value)
-        FlingSettings.ReattachDelay = Value
-    end
-})
-
--- Effects Tab
-local EffectsTab = Window:CreateTab("Effects", 4483362458)
-
-EffectsTab:CreateSection("Visual & Audio")
-
-EffectsTab:CreateToggle({
-    Name = "Visual Effects",
-    CurrentValue = true,
-    Flag = "VisualEffectsToggle",
-    Callback = function(Value)
-        FlingSettings.VisualEffects = Value
-    end
-})
-
-EffectsTab:CreateToggle({
-    Name = "Notifications",
-    CurrentValue = true,
-    Flag = "NotificationsToggle",
-    Callback = function(Value)
-        FlingSettings.Notification = Value
-    end
-})
-
-EffectsTab:CreateToggle({
-    Name = "Debug Mode",
-    CurrentValue = false,
-    Flag = "DebugModeToggle",
-    Callback = function(Value)
-        FlingSettings.DebugMode = Value
-    end
-})
+StopButton.MouseButton1Click:Connect(function()
+    StopFling()
+end)
 
 -- Setup auto respawn
 SetupAutoRespawn()
@@ -549,6 +337,6 @@ SetupAutoRespawn()
 Notify("System Ready", "REAL Auto Fling loaded successfully!")
 
 print("═══════════════════════════")
-print("REAL Auto Fling v2.0 Loaded")
+print("REAL Auto Fling v3.0 Loaded")
 print("This is the REAL body attach method!")
 print("═══════════════════════════")
