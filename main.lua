@@ -1,85 +1,97 @@
 --[[
-    Advanced Chat Bypasser v3.0
-    Stronger bypass methods for filtered words
+    ██╗░░██╗██████╗░██╗░░░░░
+    ██║░██╔╝██╔══██╗██║░░░░░
+    █████═╝░██████╦╝██║░░░░░
+    ██╔═██╗░██╔══██╗██║░░░░░
+    ██║░╚██╗██████╦╝███████╗
+    ╚═╝░░╚═╝╚═════╝░╚══════╝
+    
+    KBL Bypasser v4.0
+    Advanced Chat Bypass System
 ]]
-
--- Load Rayfield UI
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Services
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TextChatService = game:GetService("TextChatService")
+local StarterGui = game:GetService("StarterGui")
 
 local Player = Players.LocalPlayer
+
+-- Load Rayfield UI
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Settings
 local Settings = {
     Enabled = true,
     AutoBypass = true,
     Method = "Aggressive",
-    Strength = 80,
+    Strength = 85,
     UseLeetspeak = true,
     UseInvisibles = true,
     UseCombining = true,
     UsePhonetic = true,
-    SplitWords = true
+    SplitWords = true,
+    AutoResetFilter = false
 }
 
--- Extended Homoglyphs (more options = harder to detect)
+-- Extended Homoglyphs
 local Homoglyphs = {
-    ["a"] = {"а", "ạ", "ά", "ä", "ȃ", "ǎ", "ᵃ", "ᴀ", "α"},
-    ["b"] = {"ḅ", "ƅ", "ḃ", "ᵇ", "ɓ", "ʙ", "β"},
-    ["c"] = {"с", "ç", "ċ", "ć", "ᶜ", "ƈ", "ᴄ"},
-    ["d"] = {"ḍ", "đ", "ḋ", "ᵈ", "ɗ", "ᴅ"},
-    ["e"] = {"е", "ẹ", "ė", "ё", "ə", "ᵉ", "ɛ", "ᴇ", "ε"},
-    ["f"] = {"ḟ", "ƒ", "ᶠ", "ꜰ"},
-    ["g"] = {"ġ", "ğ", "ǵ", "ᵍ", "ɠ", "ɢ"},
-    ["h"] = {"һ", "ḥ", "ḣ", "ʰ", "ɦ", "ʜ"},
-    ["i"] = {"і", "ị", "ï", "ı", "ᵢ", "ɪ", "ι"},
-    ["j"] = {"ј", "ĵ", "ʲ", "ɉ", "ᴊ"},
-    ["k"] = {"κ", "ķ", "ḳ", "ᵏ", "ƙ", "ᴋ"},
-    ["l"] = {"ḷ", "ļ", "ł", "ˡ", "ɫ", "ʟ", "ι"},
-    ["m"] = {"ṃ", "ṁ", "ᵐ", "ɱ", "ᴍ"},
-    ["n"] = {"ṅ", "ñ", "ń", "ⁿ", "ɲ", "ɴ", "η"},
-    ["o"] = {"о", "ọ", "ö", "ȯ", "ᵒ", "ɵ", "ᴏ", "σ", "ο"},
-    ["p"] = {"р", "ṗ", "ᵖ", "ƥ", "ᴘ", "ρ"},
-    ["q"] = {"ԛ", "ɋ", "ᑫ"},
-    ["r"] = {"ṛ", "ŕ", "ṙ", "ʳ", "ɾ", "ʀ"},
-    ["s"] = {"ѕ", "ṡ", "ś", "ˢ", "ʂ", "ꜱ", "ς"},
-    ["t"] = {"ṭ", "ţ", "ṫ", "ᵗ", "ƭ", "ᴛ", "τ"},
-    ["u"] = {"ụ", "ü", "ů", "ᵘ", "ʉ", "ᴜ", "υ"},
-    ["v"] = {"ṿ", "ᵛ", "ⱱ", "ᴠ", "ν"},
-    ["w"] = {"ẃ", "ẅ", "ʷ", "ɯ", "ᴡ", "ω"},
-    ["x"] = {"х", "ẋ", "ˣ", "χ"},
-    ["y"] = {"у", "ý", "ÿ", "ʸ", "ɏ", "ʏ", "γ"},
-    ["z"] = {"ẓ", "ż", "ź", "ᶻ", "ƶ", "ᴢ"}
+    ["a"] = {"а", "ạ", "ά", "ä", "ȃ", "ǎ", "ᵃ", "ᴀ", "α", "ⓐ", "ａ"},
+    ["b"] = {"ḅ", "ƅ", "ḃ", "ᵇ", "ɓ", "ʙ", "β", "ⓑ", "ｂ"},
+    ["c"] = {"с", "ç", "ċ", "ć", "ᶜ", "ƈ", "ᴄ", "ⓒ", "ｃ"},
+    ["d"] = {"ḍ", "đ", "ḋ", "ᵈ", "ɗ", "ᴅ", "ⓓ", "ｄ"},
+    ["e"] = {"е", "ẹ", "ė", "ё", "ə", "ᵉ", "ɛ", "ᴇ", "ε", "ⓔ", "ｅ"},
+    ["f"] = {"ḟ", "ƒ", "ᶠ", "ꜰ", "ⓕ", "ｆ"},
+    ["g"] = {"ġ", "ğ", "ǵ", "ᵍ", "ɠ", "ɢ", "ⓖ", "ｇ"},
+    ["h"] = {"һ", "ḥ", "ḣ", "ʰ", "ɦ", "ʜ", "ⓗ", "ｈ"},
+    ["i"] = {"і", "ị", "ï", "ı", "ᵢ", "ɪ", "ι", "ⓘ", "ｉ"},
+    ["j"] = {"ј", "ĵ", "ʲ", "ɉ", "ᴊ", "ⓙ", "ｊ"},
+    ["k"] = {"κ", "ķ", "ḳ", "ᵏ", "ƙ", "ᴋ", "ⓚ", "ｋ"},
+    ["l"] = {"ḷ", "ļ", "ł", "ˡ", "ɫ", "ʟ", "ⓛ", "ｌ"},
+    ["m"] = {"ṃ", "ṁ", "ᵐ", "ɱ", "ᴍ", "ⓜ", "ｍ"},
+    ["n"] = {"ṅ", "ñ", "ń", "ⁿ", "ɲ", "ɴ", "η", "ⓝ", "ｎ"},
+    ["o"] = {"о", "ọ", "ö", "ȯ", "ᵒ", "ɵ", "ᴏ", "σ", "ο", "ⓞ", "ｏ"},
+    ["p"] = {"р", "ṗ", "ᵖ", "ƥ", "ᴘ", "ρ", "ⓟ", "ｐ"},
+    ["q"] = {"ԛ", "ɋ", "ᑫ", "ⓠ", "ｑ"},
+    ["r"] = {"ṛ", "ŕ", "ṙ", "ʳ", "ɾ", "ʀ", "ⓡ", "ｒ"},
+    ["s"] = {"ѕ", "ṡ", "ś", "ˢ", "ʂ", "ꜱ", "ς", "ⓢ", "ｓ"},
+    ["t"] = {"ṭ", "ţ", "ṫ", "ᵗ", "ƭ", "ᴛ", "τ", "ⓣ", "ｔ"},
+    ["u"] = {"ụ", "ü", "ů", "ᵘ", "ʉ", "ᴜ", "υ", "ⓤ", "ｕ"},
+    ["v"] = {"ṿ", "ᵛ", "ⱱ", "ᴠ", "ν", "ⓥ", "ｖ"},
+    ["w"] = {"ẃ", "ẅ", "ʷ", "ɯ", "ᴡ", "ω", "ⓦ", "ｗ"},
+    ["x"] = {"х", "ẋ", "ˣ", "χ", "ⓧ", "ｘ"},
+    ["y"] = {"у", "ý", "ÿ", "ʸ", "ɏ", "ʏ", "γ", "ⓨ", "ｙ"},
+    ["z"] = {"ẓ", "ż", "ź", "ᶻ", "ƶ", "ᴢ", "ⓩ", "ｚ"}
 }
 
 -- Leetspeak Map
 local Leetspeak = {
-    ["a"] = {"4", "@", "^^"},
-    ["e"] = {"3", "€"},
+    ["a"] = {"4", "@", "/-\\"},
+    ["e"] = {"3", "€", "£"},
     ["i"] = {"1", "!", "|"},
-    ["o"] = {"0", "()", "°"},
-    ["s"] = {"5", "$"},
-    ["t"] = {"7", "+"},
-    ["b"] = {"8", "ß"},
-    ["g"] = {"9", "6"},
-    ["l"] = {"1", "|"}
+    ["o"] = {"0", "()", "[]"},
+    ["s"] = {"5", "$", "z"},
+    ["t"] = {"7", "+", "†"},
+    ["b"] = {"8", "ß", "|3"},
+    ["g"] = {"9", "6", "&"},
+    ["l"] = {"1", "|", "£"}
 }
 
 -- Phonetic Replacements
 local Phonetics = {
-    ["ck"] = {"cc", "kk", "c"},
-    ["ph"] = {"f"},
-    ["f"] = {"ph"},
-    ["x"] = {"ks", "cks"},
-    ["qu"] = {"kw", "qw"},
-    ["oo"] = {"uu", "u"},
-    ["ee"] = {"ii", "i"},
-    ["ss"] = {"zz", "s"},
-    ["tt"] = {"dd", "t"}
+    ["ck"] = {"cc", "kk", "k", "c"},
+    ["ph"] = {"f", "ff"},
+    ["f"] = {"ph", "ff"},
+    ["x"] = {"ks", "cks", "cs"},
+    ["qu"] = {"kw", "qw", "kv"},
+    ["oo"] = {"uu", "u", "øø"},
+    ["ee"] = {"ii", "i", "ea"},
+    ["ss"] = {"zz", "s", "sz"},
+    ["tt"] = {"dd", "t", "dt"},
+    ["ck"] = {"k", "cc", "kc"},
+    ["th"] = {"d", "t", "z"},
+    ["wh"] = {"w", "hw"}
 }
 
 -- Invisible Characters
@@ -88,7 +100,8 @@ local Invisibles = {
     "\226\128\140",  -- Zero-width non-joiner
     "\226\128\141",  -- Zero-width joiner
     "\226\129\160",  -- Word joiner
-    "\194\173"       -- Soft hyphen
+    "\194\173",      -- Soft hyphen
+    "\239\187\191"   -- Zero-width no-break space
 }
 
 -- Combining Marks
@@ -97,11 +110,42 @@ local CombiningMarks = {
     "\204\128",  -- Grave
     "\204\132",  -- Macron
     "\204\135",  -- Dot above
-    "\204\163"   -- Dot below
+    "\204\163",  -- Dot below
+    "\204\134",  -- Breve
+    "\204\136"   -- Diaeresis
 }
 
--- Bypass Functions
+-- Filter Reset Function
+local function ResetFilter()
+    pcall(function()
+        -- Method 1: Spam empty messages to reset cache
+        for i = 1, 5 do
+            pcall(function()
+                local channel = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+                if channel then
+                    channel:SendAsync("\226\128\139")
+                end
+            end)
+            task.wait(0.1)
+        end
+    end)
+    
+    pcall(function()
+        -- Method 2: Reset through legacy chat
+        local chatEvents = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
+        if chatEvents then
+            local sayMessage = chatEvents:FindFirstChild("SayMessageRequest")
+            if sayMessage then
+                for i = 1, 3 do
+                    sayMessage:FireServer("\226\128\139", "All")
+                    task.wait(0.1)
+                end
+            end
+        end
+    end)
+end
 
+-- Bypass Helper Functions
 local function AddInvisible()
     return Invisibles[math.random(1, #Invisibles)]
 end
@@ -130,20 +174,19 @@ end
 
 -- Apply Phonetic Replacements
 local function ApplyPhonetics(text)
-    local result = text
+    local result = text:lower()
     for pattern, replacements in pairs(Phonetics) do
-        if string.find(result:lower(), pattern) then
+        if string.find(result, pattern) then
             if math.random(1, 100) <= Settings.Strength then
                 local replacement = replacements[math.random(1, #replacements)]
                 result = result:gsub(pattern, replacement)
-                result = result:gsub(pattern:upper(), replacement:upper())
             end
         end
     end
     return result
 end
 
--- Light Bypass (minimal changes)
+-- Light Bypass
 local function LightBypass(text)
     local result = ""
     for i = 1, #text do
@@ -186,9 +229,8 @@ local function MediumBypass(text)
     return result
 end
 
--- Aggressive Bypass (for bad words)
+-- Aggressive Bypass
 local function AggressiveBypass(text)
-    -- First apply phonetics
     if Settings.UsePhonetic then
         text = ApplyPhonetics(text)
     end
@@ -200,15 +242,13 @@ local function AggressiveBypass(text)
         if char == " " then
             result = result .. " "
         else
-            -- Always add invisible before
             if Settings.SplitWords then
                 result = result .. AddInvisible()
             end
             
-            -- Randomly choose: homoglyph OR leetspeak
             local roll = math.random(1, 100)
             if roll <= Settings.Strength then
-                if Settings.UseLeetspeak and math.random() > 0.5 then
+                if Settings.UseLeetspeak and math.random() > 0.6 then
                     char = GetLeet(char)
                 else
                     char = GetHomoglyph(char)
@@ -217,13 +257,11 @@ local function AggressiveBypass(text)
             
             result = result .. char
             
-            -- Add combining mark
-            if Settings.UseCombining and math.random(1, 100) <= 30 then
+            if Settings.UseCombining and math.random(1, 100) <= 35 then
                 result = result .. AddCombining()
             end
             
-            -- Add invisible after
-            if Settings.UseInvisibles and math.random(1, 100) <= 40 then
+            if Settings.UseInvisibles and math.random(1, 100) <= 45 then
                 result = result .. AddInvisible()
             end
         end
@@ -231,7 +269,7 @@ local function AggressiveBypass(text)
     return result
 end
 
--- Maximum Bypass (every technique)
+-- Maximum Bypass
 local function MaxBypass(text)
     if Settings.UsePhonetic then
         text = ApplyPhonetics(text)
@@ -244,25 +282,28 @@ local function MaxBypass(text)
         if char == " " then
             result = result .. AddInvisible() .. " " .. AddInvisible()
         else
-            -- Invisible before
+            -- Always invisible before
             result = result .. AddInvisible()
             
-            -- Apply homoglyph
+            -- Always homoglyph
             char = GetHomoglyph(char)
             
-            -- Maybe also leetspeak
-            if Settings.UseLeetspeak and math.random(1, 100) <= 30 then
-                char = GetLeet(char)
+            -- Sometimes also leetspeak
+            if Settings.UseLeetspeak and math.random(1, 100) <= 40 then
+                local lower = string.lower(char)
+                if Leetspeak[lower] then
+                    char = GetLeet(lower)
+                end
             end
             
             result = result .. char
             
             -- Combining mark
-            if math.random(1, 100) <= 40 then
+            if math.random(1, 100) <= 50 then
                 result = result .. AddCombining()
             end
             
-            -- Invisible after
+            -- Always invisible after
             result = result .. AddInvisible()
         end
     end
@@ -272,6 +313,12 @@ end
 -- Main Bypass Function
 local function BypassText(text)
     if not Settings.Enabled or text == "" then return text end
+    
+    -- Auto reset filter if enabled
+    if Settings.AutoResetFilter then
+        ResetFilter()
+        task.wait(0.2)
+    end
     
     if Settings.Method == "Light" then
         return LightBypass(text)
@@ -312,22 +359,29 @@ end
 
 -- Create UI
 local Window = Rayfield:CreateWindow({
-    Name = "Chat Bypasser v3.0",
-    LoadingTitle = "Loading...",
-    LoadingSubtitle = "Advanced Bypass",
+    Name = "KBL Bypasser v4.0",
+    LoadingTitle = "KBL Bypasser",
+    LoadingSubtitle = "Loading...",
     ConfigurationSaving = {
         Enabled = false
     }
 })
 
 -- Main Tab
-local MainTab = Window:CreateTab("Send", 4483362458)
+local MainTab = Window:CreateTab("Main", 4483362458)
 
-MainTab:CreateSection("Type & Send")
+MainTab:CreateSection("⚠️ Language Setup")
+
+MainTab:CreateParagraph({
+    Title = "IMPORTANT",
+    Content = "For best results, change your Roblox language to:\n• Қазақ тілі (Kazakh)\n• Shqipe (Albanian)\n\nGo to: Roblox Settings → Language"
+})
+
+MainTab:CreateSection("Send Message")
 
 MainTab:CreateInput({
-    Name = "Message",
-    PlaceholderText = "Type here and press enter...",
+    Name = "Type & Send",
+    PlaceholderText = "Type your message here...",
     RemoveTextAfterFocusLost = true,
     Callback = function(Text)
         if Text ~= "" then
@@ -371,24 +425,49 @@ MainTab:CreateDropdown({
     end
 })
 
+MainTab:CreateSection("Filter Reset")
+
+MainTab:CreateToggle({
+    Name = "Auto Reset Filter",
+    CurrentValue = false,
+    Flag = "AutoResetToggle",
+    Callback = function(Value)
+        Settings.AutoResetFilter = Value
+    end
+})
+
+MainTab:CreateButton({
+    Name = "Reset Filter Now",
+    Callback = function()
+        ResetFilter()
+        Rayfield:Notify({
+            Title = "Filter Reset",
+            Content = "Filter cache cleared",
+            Duration = 2
+        })
+    end
+})
+
 -- Settings Tab
 local SettingsTab = Window:CreateTab("Settings", 4483362458)
 
-SettingsTab:CreateSection("Bypass Methods")
+SettingsTab:CreateSection("Bypass Strength")
 
 SettingsTab:CreateSlider({
     Name = "Strength %",
     Range = {10, 100},
     Increment = 5,
-    CurrentValue = 80,
+    CurrentValue = 85,
     Flag = "StrengthSlider",
     Callback = function(Value)
         Settings.Strength = Value
     end
 })
 
+SettingsTab:CreateSection("Bypass Methods")
+
 SettingsTab:CreateToggle({
-    Name = "Use Leetspeak (a→4, e→3)",
+    Name = "Leetspeak (a→4, e→3)",
     CurrentValue = true,
     Flag = "LeetToggle",
     Callback = function(Value)
@@ -397,7 +476,7 @@ SettingsTab:CreateToggle({
 })
 
 SettingsTab:CreateToggle({
-    Name = "Use Invisible Characters",
+    Name = "Invisible Characters",
     CurrentValue = true,
     Flag = "InvisToggle",
     Callback = function(Value)
@@ -406,7 +485,7 @@ SettingsTab:CreateToggle({
 })
 
 SettingsTab:CreateToggle({
-    Name = "Use Combining Marks",
+    Name = "Combining Marks",
     CurrentValue = true,
     Flag = "CombineToggle",
     Callback = function(Value)
@@ -415,7 +494,7 @@ SettingsTab:CreateToggle({
 })
 
 SettingsTab:CreateToggle({
-    Name = "Use Phonetic Swaps",
+    Name = "Phonetic Swaps (f→ph)",
     CurrentValue = true,
     Flag = "PhoneticToggle",
     Callback = function(Value)
@@ -424,7 +503,7 @@ SettingsTab:CreateToggle({
 })
 
 SettingsTab:CreateToggle({
-    Name = "Split Words (Invisible Chars)",
+    Name = "Split Words",
     CurrentValue = true,
     Flag = "SplitToggle",
     Callback = function(Value)
@@ -441,17 +520,17 @@ local LastPreview = ""
 
 TestTab:CreateInput({
     Name = "Test Input",
-    PlaceholderText = "Type to see bypass preview...",
+    PlaceholderText = "Type to preview...",
     RemoveTextAfterFocusLost = false,
     Callback = function(Text)
         LastPreview = BypassText(Text)
-        print("══════════════════════")
+        print("═══════════════════════════")
         print("Original: " .. Text)
         print("Bypassed: " .. LastPreview)
-        print("══════════════════════")
+        print("═══════════════════════════")
         Rayfield:Notify({
             Title = "Preview Ready",
-            Content = "Check console (F9) to see result",
+            Content = "Check console (F9)",
             Duration = 3
         })
     end
@@ -464,7 +543,7 @@ TestTab:CreateButton({
             SendMessage(LastPreview)
             Rayfield:Notify({
                 Title = "Sent!",
-                Content = "Preview sent to chat",
+                Content = "Preview sent",
                 Duration = 2
             })
         end
@@ -478,7 +557,7 @@ TestTab:CreateButton({
             setclipboard(LastPreview)
             Rayfield:Notify({
                 Title = "Copied!",
-                Content = "Bypassed text copied",
+                Content = "Text copied to clipboard",
                 Duration = 2
             })
         end
@@ -486,24 +565,26 @@ TestTab:CreateButton({
 })
 
 -- Hook Chat for Auto-Bypass
-local oldNamecall
-oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-    local method = getnamecallmethod()
-    local args = {...}
-    
-    if Settings.Enabled and Settings.AutoBypass and method == "FireServer" then
-        local name = self.Name:lower()
-        if string.find(name, "say") or 
-           string.find(name, "chat") or 
-           string.find(name, "message") then
-            if type(args[1]) == "string" and args[1] ~= "" then
-                args[1] = BypassText(args[1])
-                return oldNamecall(self, unpack(args))
+pcall(function()
+    local oldNamecall
+    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
+        
+        if Settings.Enabled and Settings.AutoBypass and method == "FireServer" then
+            local name = self.Name:lower()
+            if string.find(name, "say") or 
+               string.find(name, "chat") or 
+               string.find(name, "message") then
+                if type(args[1]) == "string" and args[1] ~= "" then
+                    args[1] = BypassText(args[1])
+                    return oldNamecall(self, unpack(args))
+                end
             end
         end
-    end
-    
-    return oldNamecall(self, ...)
+        
+        return oldNamecall(self, ...)
+    end)
 end)
 
 -- Hook TextChatService
@@ -512,7 +593,7 @@ pcall(function()
     if channel then
         local oldSend = channel.SendAsync
         channel.SendAsync = function(self, message, ...)
-            if Settings.Enabled and Settings.AutoBypass then
+            if Settings.Enabled and Settings.AutoBypass and message ~= "\226\128\139" then
                 message = BypassText(message)
             end
             return oldSend(self, message, ...)
@@ -520,12 +601,14 @@ pcall(function()
     end
 end)
 
--- Loaded
+-- Startup Notification
 Rayfield:Notify({
-    Title = "Bypasser v3.0",
-    Content = "Loaded! Use Aggressive or Maximum for bad words.",
-    Duration = 5
+    Title = "KBL Bypasser v4.0",
+    Content = "Loaded! Set language to Kazakh or Albanian for best results.",
+    Duration = 6
 })
 
-print("Chat Bypasser v3.0 Loaded")
-print("Methods: Light, Medium, Aggressive, Maximum")
+print("═══════════════════════════")
+print("KBL Bypasser v4.0 Loaded")
+print("Tip: Use Kazakh or Albanian language")
+print("═══════════════════════════")
