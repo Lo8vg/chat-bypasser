@@ -83,8 +83,8 @@ hubButtonIcon.Parent = hubButton
 
 local hubFrame = Instance.new("Frame")
 hubFrame.Name = "HubFrame"
-hubFrame.Size = UDim2.new(0, 550, 0, 380)
-hubFrame.Position = UDim2.new(0.5, -275, 0.5, -190)
+hubFrame.Size = UDim2.new(0, 500, 0, 300)
+hubFrame.Position = UDim2.new(0.5, -250, 0.5, -150)
 hubFrame.BackgroundColor3 = COLORS.background
 hubFrame.BorderSizePixel = 0
 hubFrame.Visible = false
@@ -1375,8 +1375,8 @@ scaleSlider.FocusLost:Connect(function()
     scaleSlider.Text = tostring(val)
     guiScale = val
     
-    hubFrame.Size = UDim2.new(0, 550 * guiScale, 0, 380 * guiScale)
-    hubFrame.Position = UDim2.new(0.5, -275 * guiScale, 0.5, -190 * guiScale)
+    hubFrame.Size = UDim2.new(0, 500 * guiScale, 0, 300 * guiScale)
+    hubFrame.Position = UDim2.new(0.5, -250 * guiScale, 0.5, -150 * guiScale)
 end)
 
 -- ========== TOGGLE WITH KEY ==========
