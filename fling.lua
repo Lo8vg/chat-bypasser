@@ -1,5 +1,5 @@
--- Network Fling Script (Actually works on other players)
--- Uses collision physics which replicates
+-- Working Fling Script
+-- PlatformStand + AssemblyAngularVelocity = actual fling
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -11,7 +11,6 @@ local playerGui = player:WaitForChild("PlayerGui")
 -- Settings
 local flingEnabled = false
 local targetPlayer = nil
-local spinSpeed = 999999999
 local flingTime = 5
 local autoRefling = true
 local respawnWait = 3
@@ -109,7 +108,7 @@ titleLabel.Size = UDim2.new(1, -50, 1, 0)
 titleLabel.Position = UDim2.new(0, 15, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = COLORS.textDark
-titleLabel.Text = "🌀 Network Fling"
+titleLabel.Text = "🌀 Fling Script"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 14
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -340,7 +339,7 @@ infoLabel.Size = UDim2.new(1, 0, 0, 40)
 infoLabel.Position = UDim2.new(0, 0, 0, 110)
 infoLabel.BackgroundTransparency = 1
 infoLabel.TextColor3 = COLORS.textMuted
-infoLabel.Text = "Uses physics collision to fling.\nWorks on other players."
+infoLabel.Text = "Uses physics to fling target.\nPlatformStand method."
 infoLabel.Font = Enum.Font.Gotham
 infoLabel.TextSize = 9
 infoLabel.TextWrapped = true
@@ -493,6 +492,37 @@ local function getRoot(char)
     return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
 end
 
+local flingConnection = nil
+
+local function stopFling()
+    if flingConnection then
+        flingConnection:Disconnect()
+        flingConnection = nil
+    end
+    
+    local myChar = player.Character
+    if myChar then
+        local myRoot = getRoot(myChar)
+        local myHumanoid = myChar:FindFirstChild("Humanoid")
+        
+        if myRoot then
+            myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+            myRoot.Velocity = Vector3.new(0, 0, 0)
+        end
+        
+        if myHumanoid then
+            myHumanoid.PlatformStand = false
+        end
+        
+        for _, part in pairs(myChar:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                part.Velocity = Vector3.new(0, 0, 0)
+            end
+        end
+    end
+end
+
 local function flingTarget()
     local myChar = player.Character
     if not myChar then return false, "no char" end
@@ -500,7 +530,7 @@ local function flingTarget()
     local myRoot = getRoot(myChar)
     local myHumanoid = myChar:FindFirstChild("Humanoid")
     
-    if not myRoot or not myHumanoid then return false, "no root" end
+    if not myRoot then return false, "no root" end
     
     local targetChar = targetPlayer.Character
     if not targetChar then return false, "no target char" end
@@ -508,8 +538,8 @@ local function flingTarget()
     local targetRoot = getRoot(targetChar)
     local targetHumanoid = targetChar:FindFirstChild("Humanoid")
     
-    if not targetRoot or not targetHumanoid then return false, "no target root" end
-    if targetHumanoid.Health <= 0 then return false, "dead" end
+    if not targetRoot then return false, "no target root" end
+    if targetHumanoid and targetHumanoid.Health <= 0 then return false, "dead" end
     
     -- Check spawn protection
     local forceField = targetChar:FindFirstChild("ForceField")
@@ -517,14 +547,12 @@ local function flingTarget()
         return false, "protection"
     end
     
-    -- Store original state
-    local originalAnchored = myRoot.Anchored
+    -- Enable PlatformStand (KEY - this lets physics control your character)
+    if myHumanoid then
+        myHumanoid.PlatformStand = true
+    end
     
-    -- Step 1: Teleport to target
-    myRoot.CFrame = targetRoot.CFrame
-    
-    -- Step 2: Set extreme angular velocity (this is what causes the fling)
-    -- Using AssemblyAngularVelocity which is the modern way
+    -- Make sure all parts can collide
     for _, part in pairs(myChar:GetDescendants()) do
         if part:IsA("BasePart") then
             part.CanCollide = true
@@ -532,42 +560,28 @@ local function flingTarget()
         end
     end
     
-    -- Set our root part to have extreme angular velocity
+    -- Set INSANE angular velocity
     myRoot.AssemblyAngularVelocity = Vector3.new(math.huge, math.huge, math.huge)
     
-    -- Step 3: Keep teleporting to target while spinning
-    -- This ensures constant collision
+    -- Keep teleporting to target and spinning
     local flingStart = tick()
-    local connection
-    connection = RunService.Heartbeat:Connect(function()
+    flingConnection = RunService.Heartbeat:Connect(function()
         if tick() - flingStart > flingTime then
-            connection:Disconnect()
+            stopFling()
             return
         end
+        
         if targetRoot and myRoot then
-            -- Keep teleporting inside them
-            myRoot.CFrame = targetRoot.CFrame + Vector3.new(math.random(-1, 1), 0, math.random(-1, 1))
+            -- Teleport inside target
+            myRoot.CFrame = targetRoot.CFrame
+            -- Keep spinning
+            myRoot.AssemblyAngularVelocity = Vector3.new(math.huge, math.huge, math.huge)
         end
     end)
     
-    -- Wait for fling duration
+    -- Wait for fling to complete
     wait(flingTime)
-    
-    -- Step 4: Stop spinning and clean up
-    if connection then
-        connection:Disconnect()
-    end
-    
-    myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-    myRoot.Velocity = Vector3.new(0, 0, 0)
-    
-    -- Reset all body parts
-    for _, part in pairs(myChar:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-            part.Velocity = Vector3.new(0, 0, 0)
-        end
-    end
+    stopFling()
     
     return true
 end
@@ -592,8 +606,9 @@ toggleButton.MouseButton1Click:Connect(function()
             while flingEnabled do
                 if targetPlayer and targetPlayer.Character then
                     local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
+                    local targetRoot = getRoot(targetPlayer.Character)
                     
-                    if targetHumanoid and targetHumanoid.Health > 0 then
+                    if targetRoot and (not targetHumanoid or targetHumanoid.Health > 0) then
                         local success, reason = flingTarget()
                         
                         if success then
@@ -609,18 +624,22 @@ toggleButton.MouseButton1Click:Connect(function()
                     else
                         if autoRefling then
                             statusLabel.Text = "Waiting for respawn..."
+                            stopFling()
                             wait(respawnWait)
                         else
                             statusLabel.Text = "Target dead!"
+                            stopFling()
                             break
                         end
                     end
                 else
                     if autoRefling then
                         statusLabel.Text = "Waiting for target..."
+                        stopFling()
                         wait(1)
                     else
                         statusLabel.Text = "Target not found!"
+                        stopFling()
                         break
                     end
                 end
@@ -633,16 +652,7 @@ toggleButton.MouseButton1Click:Connect(function()
         toggleButton.Text = "FLING: OFF"
         toggleButton.BackgroundColor3 = COLORS.buttonDanger
         statusLabel.Text = targetPlayer and ("Target: " .. targetPlayer.Name) or "No target selected"
-        
-        -- Clean up
-        local myChar = player.Character
-        if myChar then
-            local myRoot = getRoot(myChar)
-            if myRoot then
-                myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-                myRoot.Velocity = Vector3.new(0, 0, 0)
-            end
-        end
+        stopFling()
     end
 end)
 
@@ -661,8 +671,9 @@ end)
 -- Cleanup on death
 player.CharacterRemoving:Connect(function()
     flingEnabled = false
+    stopFling()
     toggleButton.Text = "FLING: OFF"
     toggleButton.BackgroundColor3 = COLORS.buttonDanger
 end)
 
-print("✅ Network Fling Loaded")
+print("✅ Fling Script Loaded (PlatformStand Method)")
