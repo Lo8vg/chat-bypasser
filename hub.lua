@@ -1,9 +1,9 @@
--- Chat Hub (Collapsible with Multiple Sections)
+-- Chat Hub (White Theme, Wide Layout, Full Features)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -15,8 +15,35 @@ local spamDelay = 1
 local spamIndex = 1
 local antiAfkEnabled = false
 local autoReplyEnabled = false
-local autoReplyTargets = {}
+local autoReplyTargets = {} -- {["username"] = {messages = {"msg1", "msg2"}, index = 1}}
 local premadeMessages = {"Hello", "GG", "What's up", "Bye"}
+
+-- Prefix Settings
+local prefixMode = "OFF" -- OFF, FIXED, ROTATE
+local fixedPrefix = "★"
+local rotatingPrefixes = {"★", "🔥", "💎", "🎮"}
+local rotatingIndex = 1
+
+-- GUI Settings
+local guiTransparency = 0
+local guiScale = 1
+
+-- Colors (White Theme)
+local COLORS = {
+    background = Color3.fromRGB(245, 245, 245),
+    header = Color3.fromRGB(255, 255, 255),
+    buttonPrimary = Color3.fromRGB(0, 120, 215),
+    buttonDanger = Color3.fromRGB(220, 53, 69),
+    buttonSuccess = Color3.fromRGB(40, 167, 69),
+    buttonOff = Color3.fromRGB(108, 117, 125),
+    textDark = Color3.fromRGB(33, 37, 41),
+    textLight = Color3.fromRGB(255, 255, 255),
+    textMuted = Color3.fromRGB(134, 142, 150),
+    inputBg = Color3.fromRGB(255, 255, 255),
+    border = Color3.fromRGB(222, 226, 230),
+    cardBg = Color3.fromRGB(255, 255, 255),
+    hover = Color3.fromRGB(248, 249, 250)
+}
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -28,111 +55,119 @@ screenGui.Parent = playerGui
 
 local hubButton = Instance.new("Frame")
 hubButton.Name = "HubButton"
-hubButton.Size = UDim2.new(0, 50, 0, 50)
-hubButton.Position = UDim2.new(0, 20, 0.5, -25)
-hubButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-hubButton.BorderSizePixel = 2
-hubButton.BorderColor3 = Color3.fromRGB(60, 60, 60)
+hubButton.Size = UDim2.new(0, 55, 0, 55)
+hubButton.Position = UDim2.new(0, 20, 0.5, -27)
+hubButton.BackgroundColor3 = COLORS.cardBg
+hubButton.BorderSizePixel = 0
 hubButton.Visible = true
 hubButton.Parent = screenGui
 
 local hubButtonCorner = Instance.new("UICorner")
-hubButtonCorner.CornerRadius = UDim.new(0, 8)
+hubButtonCorner.CornerRadius = UDim.new(0, 12)
 hubButtonCorner.Parent = hubButton
+
+local hubButtonShadow = Instance.new("UIStroke")
+hubButtonShadow.Color = COLORS.border
+hubButtonShadow.Thickness = 1
+hubButtonShadow.Parent = hubButton
 
 local hubButtonIcon = Instance.new("TextLabel")
 hubButtonIcon.Size = UDim2.new(1, 0, 1, 0)
 hubButtonIcon.BackgroundTransparency = 1
-hubButtonIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+hubButtonIcon.TextColor3 = COLORS.textDark
 hubButtonIcon.Text = "💬"
 hubButtonIcon.Font = Enum.Font.GothamBold
-hubButtonIcon.TextSize = 24
+hubButtonIcon.TextSize = 26
 hubButtonIcon.Parent = hubButton
 
 -- ========== HUB FRAME (EXPANDED) ==========
 
 local hubFrame = Instance.new("Frame")
 hubFrame.Name = "HubFrame"
-hubFrame.Size = UDim2.new(0, 280, 0, 380)
-hubFrame.Position = UDim2.new(0.5, -140, 0.5, -190)
-hubFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-hubFrame.BorderSizePixel = 2
-hubFrame.BorderColor3 = Color3.fromRGB(60, 60, 60)
+hubFrame.Size = UDim2.new(0, 520, 0, 550)
+hubFrame.Position = UDim2.new(0.5, -260, 0.5, -275)
+hubFrame.BackgroundColor3 = COLORS.background
+hubFrame.BorderSizePixel = 0
 hubFrame.Visible = false
 hubFrame.Parent = screenGui
 
 local hubFrameCorner = Instance.new("UICorner")
-hubFrameCorner.CornerRadius = UDim.new(0, 10)
+hubFrameCorner.CornerRadius = UDim.new(0, 16)
 hubFrameCorner.Parent = hubFrame
+
+local hubFrameShadow = Instance.new("UIStroke")
+hubFrameShadow.Color = Color3.fromRGB(180, 180, 180)
+hubFrameShadow.Thickness = 1
+hubFrameShadow.Parent = hubFrame
 
 -- Title Bar
 local titleBar = Instance.new("Frame")
-titleBar.Size = UDim2.new(1, 0, 0, 35)
-titleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+titleBar.Size = UDim2.new(1, 0, 0, 50)
+titleBar.BackgroundColor3 = COLORS.header
 titleBar.BorderSizePixel = 0
 titleBar.Parent = hubFrame
 
 local titleBarCorner = Instance.new("UICorner")
-titleBarCorner.CornerRadius = UDim.new(0, 10)
+titleBarCorner.CornerRadius = UDim.new(0, 16)
 titleBarCorner.Parent = titleBar
 
 local titleBarFix = Instance.new("Frame")
-titleBarFix.Size = UDim2.new(1, 0, 0, 10)
-titleBarFix.Position = UDim2.new(0, 0, 1, -10)
-titleBarFix.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+titleBarFix.Size = UDim2.new(1, 0, 0, 16)
+titleBarFix.Position = UDim2.new(0, 0, 1, -16)
+titleBarFix.BackgroundColor3 = COLORS.header
 titleBarFix.BorderSizePixel = 0
 titleBarFix.Parent = titleBar
 
 local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, -40, 1, 0)
-titleLabel.Position = UDim2.new(0, 10, 0, 0)
+titleLabel.Size = UDim2.new(1, -60, 1, 0)
+titleLabel.Position = UDim2.new(0, 20, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextColor3 = COLORS.textDark
 titleLabel.Text = "💬 Chat Hub"
 titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextSize = 14
+titleLabel.TextSize = 18
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = titleBar
 
 local collapseButton = Instance.new("TextButton")
-collapseButton.Size = UDim2.new(0, 30, 0, 25)
-collapseButton.Position = UDim2.new(1, -35, 0, 5)
-collapseButton.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-collapseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-collapseButton.Text = "─"
+collapseButton.Size = UDim2.new(0, 35, 0, 30)
+collapseButton.Position = UDim2.new(1, -45, 0.5, -15)
+collapseButton.BackgroundColor3 = COLORS.buttonDanger
+collapseButton.TextColor3 = COLORS.textLight
+collapseButton.Text = "✕"
 collapseButton.Font = Enum.Font.GothamBold
 collapseButton.TextSize = 14
 collapseButton.Parent = titleBar
 
 local collapseCorner = Instance.new("UICorner")
-collapseCorner.CornerRadius = UDim.new(0, 6)
+collapseCorner.CornerRadius = UDim.new(0, 8)
 collapseCorner.Parent = collapseButton
 
 -- Tab Buttons Frame
 local tabFrame = Instance.new("Frame")
-tabFrame.Size = UDim2.new(1, -10, 0, 30)
-tabFrame.Position = UDim2.new(0, 5, 0, 40)
+tabFrame.Size = UDim2.new(1, -30, 0, 40)
+tabFrame.Position = UDim2.new(0, 15, 0, 55)
 tabFrame.BackgroundTransparency = 1
 tabFrame.Parent = hubFrame
 
 -- Tab Buttons
-local tabs = {"Chat", "Spam", "AutoReply", "AFK"}
+local tabs = {"Chat", "Spam", "AutoReply", "AFK", "Settings"}
 local tabButtons = {}
 local currentTab = "Chat"
 
 for i, tabName in ipairs(tabs) do
     local tabBtn = Instance.new("TextButton")
-    tabBtn.Size = UDim2.new(0.25, -2, 1, 0)
-    tabBtn.Position = UDim2.new((i - 1) * 0.25, 0, 0, 0)
-    tabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    tabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    tabBtn.Size = UDim2.new(1/#tabs, -4, 1, 0)
+    tabBtn.Position = UDim2.new((i-1)/#tabs, 0, 0, 0)
+    tabBtn.BackgroundColor3 = i == 1 and COLORS.buttonPrimary or Color3.fromRGB(230, 230, 230)
+    tabBtn.TextColor3 = i == 1 and COLORS.textLight or COLORS.textDark
     tabBtn.Text = tabName
     tabBtn.Font = Enum.Font.GothamBold
-    tabBtn.TextSize = 10
+    tabBtn.TextSize = 11
     tabBtn.Parent = tabFrame
     
     local tabCorner = Instance.new("UICorner")
-    tabCorner.CornerRadius = UDim.new(0, 4)
+    tabCorner.CornerRadius = UDim.new(0, 8)
     tabCorner.Parent = tabBtn
     
     tabButtons[tabName] = tabBtn
@@ -140,8 +175,8 @@ end
 
 -- Content Frame
 local contentFrame = Instance.new("Frame")
-contentFrame.Size = UDim2.new(1, -10, 1, -80)
-contentFrame.Position = UDim2.new(0, 5, 0, 75)
+contentFrame.Size = UDim2.new(1, -30, 1, -110)
+contentFrame.Position = UDim2.new(0, 15, 0, 100)
 contentFrame.BackgroundTransparency = 1
 contentFrame.Parent = hubFrame
 
@@ -155,15 +190,15 @@ chatSection.Parent = contentFrame
 
 -- Chat Textbox
 local chatTextbox = Instance.new("TextBox")
-chatTextbox.Size = UDim2.new(1, 0, 0, 80)
+chatTextbox.Size = UDim2.new(1, 0, 0, 100)
 chatTextbox.Position = UDim2.new(0, 0, 0, 0)
-chatTextbox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-chatTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+chatTextbox.BackgroundColor3 = COLORS.inputBg
+chatTextbox.TextColor3 = COLORS.textDark
 chatTextbox.Text = ""
-chatTextbox.PlaceholderText = "Type message..."
-chatTextbox.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
+chatTextbox.PlaceholderText = "Type your message here..."
+chatTextbox.PlaceholderColor3 = COLORS.textMuted
 chatTextbox.Font = Enum.Font.Gotham
-chatTextbox.TextSize = 14
+chatTextbox.TextSize = 15
 chatTextbox.TextXAlignment = Enum.TextXAlignment.Left
 chatTextbox.TextYAlignment = Enum.TextYAlignment.Top
 chatTextbox.MultiLine = true
@@ -172,71 +207,93 @@ chatTextbox.ClearTextOnFocus = false
 chatTextbox.Parent = chatSection
 
 local chatTextboxCorner = Instance.new("UICorner")
-chatTextboxCorner.CornerRadius = UDim.new(0, 6)
+chatTextboxCorner.CornerRadius = UDim.new(0, 10)
 chatTextboxCorner.Parent = chatTextbox
+
+local chatTextboxStroke = Instance.new("UIStroke")
+chatTextboxStroke.Color = COLORS.border
+chatTextboxStroke.Thickness = 1
+chatTextboxStroke.Parent = chatTextbox
 
 -- Char Counter
 local chatCharCounter = Instance.new("TextLabel")
-chatCharCounter.Size = UDim2.new(0, 50, 0, 18)
-chatCharCounter.Position = UDim2.new(1, -52, 0, 60)
+chatCharCounter.Size = UDim2.new(0, 60, 0, 20)
+chatCharCounter.Position = UDim2.new(1, -65, 0, 75)
 chatCharCounter.BackgroundTransparency = 1
-chatCharCounter.TextColor3 = Color3.fromRGB(150, 150, 150)
+chatCharCounter.TextColor3 = COLORS.textMuted
 chatCharCounter.Text = "0/200"
 chatCharCounter.Font = Enum.Font.Gotham
-chatCharCounter.TextSize = 10
+chatCharCounter.TextSize = 11
 chatCharCounter.Parent = chatSection
+
+-- Prefix Status
+local prefixStatus = Instance.new("TextLabel")
+prefixStatus.Size = UDim2.new(1, 0, 0, 25)
+prefixStatus.Position = UDim2.new(0, 0, 0, 110)
+prefixStatus.BackgroundTransparency = 1
+prefixStatus.TextColor3 = COLORS.textMuted
+prefixStatus.Text = "Prefix: OFF"
+prefixStatus.Font = Enum.Font.Gotham
+prefixStatus.TextSize = 12
+prefixStatus.TextXAlignment = Enum.TextXAlignment.Left
+prefixStatus.Parent = chatSection
 
 -- Chat Button Row
 local chatButtonRow = Instance.new("Frame")
-chatButtonRow.Size = UDim2.new(1, 0, 0, 35)
-chatButtonRow.Position = UDim2.new(0, 0, 0, 85)
+chatButtonRow.Size = UDim2.new(1, 0, 0, 45)
+chatButtonRow.Position = UDim2.new(0, 0, 0, 145)
 chatButtonRow.BackgroundTransparency = 1
 chatButtonRow.Parent = chatSection
 
 -- Send Button
 local sendButton = Instance.new("TextButton")
-sendButton.Size = UDim2.new(0.5, -2, 1, 0)
+sendButton.Size = UDim2.new(0.55, 0, 1, 0)
 sendButton.Position = UDim2.new(0, 0, 0, 0)
-sendButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-sendButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-sendButton.Text = "Send"
+sendButton.BackgroundColor3 = COLORS.buttonPrimary
+sendButton.TextColor3 = COLORS.textLight
+sendButton.Text = "Send Message"
 sendButton.Font = Enum.Font.GothamBold
-sendButton.TextSize = 12
+sendButton.TextSize = 14
 sendButton.Parent = chatButtonRow
 
 local sendCorner = Instance.new("UICorner")
-sendCorner.CornerRadius = UDim.new(0, 6)
+sendCorner.CornerRadius = UDim.new(0, 10)
 sendCorner.Parent = sendButton
 
 -- Delay Input
 local delayInput = Instance.new("TextBox")
-delayInput.Size = UDim2.new(0.5, -2, 1, 0)
-delayInput.Position = UDim2.new(0.5, 2, 0, 0)
-delayInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-delayInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+delayInput.Size = UDim2.new(0.25, -10, 1, 0)
+delayInput.Position = UDim2.new(0.55, 5, 0, 0)
+delayInput.BackgroundColor3 = COLORS.inputBg
+delayInput.TextColor3 = COLORS.textDark
 delayInput.Text = "1"
 delayInput.PlaceholderText = "Delay"
-delayInput.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
+delayInput.PlaceholderColor3 = COLORS.textMuted
 delayInput.Font = Enum.Font.Gotham
-delayInput.TextSize = 12
+delayInput.TextSize = 13
 delayInput.ClearTextOnFocus = false
 delayInput.Parent = chatButtonRow
 
 local delayCorner = Instance.new("UICorner")
-delayCorner.CornerRadius = UDim.new(0, 6)
+delayCorner.CornerRadius = UDim.new(0, 10)
 delayCorner.Parent = delayInput
+
+local delayStroke = Instance.new("UIStroke")
+delayStroke.Color = COLORS.border
+delayStroke.Thickness = 1
+delayStroke.Parent = delayInput
 
 -- Delay Label
 local delayLabel = Instance.new("TextLabel")
-delayLabel.Size = UDim2.new(0, 30, 0, 18)
-delayLabel.Position = UDim2.new(1, -30, 0, 8)
+delayLabel.Size = UDim2.new(0.2, 0, 1, 0)
+delayLabel.Position = UDim2.new(0.8, 0, 0, 0)
 delayLabel.BackgroundTransparency = 1
-delayLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-delayLabel.Text = "sec"
+delayLabel.TextColor3 = COLORS.textMuted
+delayLabel.Text = "sec delay"
 delayLabel.Font = Enum.Font.Gotham
-delayLabel.TextSize = 10
+delayLabel.TextSize = 12
+delayLabel.TextXAlignment = Enum.TextXAlignment.Left
 delayLabel.Parent = chatButtonRow
-
 -- ========== SPAM SECTION ==========
 
 local spamSection = Instance.new("Frame")
@@ -247,101 +304,115 @@ spamSection.Parent = contentFrame
 
 -- Spam Toggle
 local spamToggle = Instance.new("TextButton")
-spamToggle.Size = UDim2.new(1, 0, 0, 35)
+spamToggle.Size = UDim2.new(1, 0, 0, 50)
 spamToggle.Position = UDim2.new(0, 0, 0, 0)
-spamToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-spamToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+spamToggle.BackgroundColor3 = COLORS.buttonDanger
+spamToggle.TextColor3 = COLORS.textLight
 spamToggle.Text = "SPAM: OFF"
 spamToggle.Font = Enum.Font.GothamBold
-spamToggle.TextSize = 14
+spamToggle.TextSize = 18
 spamToggle.Parent = spamSection
 
 local spamToggleCorner = Instance.new("UICorner")
-spamToggleCorner.CornerRadius = UDim.new(0, 6)
+spamToggleCorner.CornerRadius = UDim.new(0, 10)
 spamToggleCorner.Parent = spamToggle
 
--- Spam Delay Label
-local spamDelayLabel = Instance.new("TextLabel")
-spamDelayLabel.Size = UDim2.new(0, 50, 0, 20)
-spamDelayLabel.Position = UDim2.new(0, 0, 0, 45)
-spamDelayLabel.BackgroundTransparency = 1
-spamDelayLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-spamDelayLabel.Text = "Delay:"
-spamDelayLabel.Font = Enum.Font.Gotham
-spamDelayLabel.TextSize = 12
-spamDelayLabel.TextXAlignment = Enum.TextXAlignment.Left
-spamDelayLabel.Parent = spamSection
+-- Spam Delay Row
+local spamDelayRow = Instance.new("Frame")
+spamDelayRow.Size = UDim2.new(1, 0, 0, 35)
+spamDelayRow.Position = UDim2.new(0, 0, 0, 60)
+spamDelayRow.BackgroundTransparency = 1
+spamDelayRow.Parent = spamSection
 
--- Spam Delay Input
+local spamDelayLabel = Instance.new("TextLabel")
+spamDelayLabel.Size = UDim2.new(0, 80, 1, 0)
+spamDelayLabel.BackgroundTransparency = 1
+spamDelayLabel.TextColor3 = COLORS.textDark
+spamDelayLabel.Text = "Delay (sec):"
+spamDelayLabel.Font = Enum.Font.Gotham
+spamDelayLabel.TextSize = 14
+spamDelayLabel.TextXAlignment = Enum.TextXAlignment.Left
+spamDelayLabel.Parent = spamDelayRow
+
 local spamDelayInput = Instance.new("TextBox")
-spamDelayInput.Size = UDim2.new(0, 60, 0, 25)
-spamDelayInput.Position = UDim2.new(0, 55, 0, 42)
-spamDelayInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-spamDelayInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+spamDelayInput.Size = UDim2.new(0, 80, 1, 0)
+spamDelayInput.Position = UDim2.new(0, 85, 0, 0)
+spamDelayInput.BackgroundColor3 = COLORS.inputBg
+spamDelayInput.TextColor3 = COLORS.textDark
 spamDelayInput.Text = "1"
 spamDelayInput.Font = Enum.Font.Gotham
-spamDelayInput.TextSize = 12
+spamDelayInput.TextSize = 14
 spamDelayInput.ClearTextOnFocus = false
-spamDelayInput.Parent = spamSection
+spamDelayInput.Parent = spamDelayRow
 
 local spamDelayCorner = Instance.new("UICorner")
-spamDelayCorner.CornerRadius = UDim.new(0, 4)
+spamDelayCorner.CornerRadius = UDim.new(0, 8)
 spamDelayCorner.Parent = spamDelayInput
+
+local spamDelayStroke = Instance.new("UIStroke")
+spamDelayStroke.Color = COLORS.border
+spamDelayStroke.Thickness = 1
+spamDelayStroke.Parent = spamDelayInput
 
 -- Premade Messages Toggle
 local premadeToggle = Instance.new("TextButton")
-premadeToggle.Size = UDim2.new(1, 0, 0, 25)
-premadeToggle.Position = UDim2.new(0, 0, 0, 75)
-premadeToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-premadeToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+premadeToggle.Size = UDim2.new(1, 0, 0, 35)
+premadeToggle.Position = UDim2.new(0, 0, 0, 105)
+premadeToggle.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+premadeToggle.TextColor3 = COLORS.textDark
 premadeToggle.Text = "▼ Premade Messages"
 premadeToggle.Font = Enum.Font.GothamBold
-premadeToggle.TextSize = 11
+premadeToggle.TextSize = 13
 premadeToggle.Parent = spamSection
 
-local premadeCorner = Instance.new("UICorner")
-premadeCorner.CornerRadius = UDim.new(0, 4)
-premadeCorner.Parent = premadeToggle
+local premadeToggleCorner = Instance.new("UICorner")
+premadeToggleCorner.CornerRadius = UDim.new(0, 8)
+premadeToggleCorner.Parent = premadeToggle
 
 -- Premade Messages Panel
 local premadePanel = Instance.new("Frame")
-premadePanel.Size = UDim2.new(1, 0, 0, 180)
-premadePanel.Position = UDim2.new(0, 0, 0, 105)
-premadePanel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+premadePanel.Size = UDim2.new(1, 0, 0, 280)
+premadePanel.Position = UDim2.new(0, 0, 0, 150)
+premadePanel.BackgroundColor3 = COLORS.cardBg
 premadePanel.Visible = false
 premadePanel.Parent = spamSection
 
 local premadePanelCorner = Instance.new("UICorner")
-premadePanelCorner.CornerRadius = UDim.new(0, 6)
+premadePanelCorner.CornerRadius = UDim.new(0, 10)
 premadePanelCorner.Parent = premadePanel
 
+local premadePanelStroke = Instance.new("UIStroke")
+premadePanelStroke.Color = COLORS.border
+premadePanelStroke.Thickness = 1
+premadePanelStroke.Parent = premadePanel
+
 local premadeScroll = Instance.new("ScrollingFrame")
-premadeScroll.Size = UDim2.new(1, -10, 1, -35)
-premadeScroll.Position = UDim2.new(0, 5, 0, 5)
-premadeScroll.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+premadeScroll.Size = UDim2.new(1, -20, 1, -50)
+premadeScroll.Position = UDim2.new(0, 10, 0, 10)
+premadeScroll.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
 premadeScroll.ScrollBarThickness = 4
 premadeScroll.Parent = premadePanel
 
 local premadeScrollCorner = Instance.new("UICorner")
-premadeScrollCorner.CornerRadius = UDim.new(0, 4)
+premadeScrollCorner.CornerRadius = UDim.new(0, 6)
 premadeScrollCorner.Parent = premadeScroll
 
 local premadeLayout = Instance.new("UIListLayout")
-premadeLayout.Padding = UDim.new(0, 4)
+premadeLayout.Padding = UDim.new(0, 6)
 premadeLayout.Parent = premadeScroll
 
 local addPremadeBtn = Instance.new("TextButton")
-addPremadeBtn.Size = UDim2.new(1, -10, 0, 25)
-addPremadeBtn.Position = UDim2.new(0, 5, 1, -30)
-addPremadeBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-addPremadeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+addPremadeBtn.Size = UDim2.new(1, -20, 0, 35)
+addPremadeBtn.Position = UDim2.new(0, 10, 1, -42)
+addPremadeBtn.BackgroundColor3 = COLORS.buttonPrimary
+addPremadeBtn.TextColor3 = COLORS.textLight
 addPremadeBtn.Text = "+ Add Current Message"
 addPremadeBtn.Font = Enum.Font.GothamBold
-addPremadeBtn.TextSize = 11
+addPremadeBtn.TextSize = 13
 addPremadeBtn.Parent = premadePanel
 
 local addPremadeCorner = Instance.new("UICorner")
-addPremadeCorner.CornerRadius = UDim.new(0, 4)
+addPremadeCorner.CornerRadius = UDim.new(0, 8)
 addPremadeCorner.Parent = addPremadeBtn
 
 -- ========== AUTO-REPLY SECTION ==========
@@ -354,70 +425,80 @@ autoReplySection.Parent = contentFrame
 
 -- Auto-Reply Toggle
 local autoReplyToggle = Instance.new("TextButton")
-autoReplyToggle.Size = UDim2.new(1, 0, 0, 35)
+autoReplyToggle.Size = UDim2.new(1, 0, 0, 50)
 autoReplyToggle.Position = UDim2.new(0, 0, 0, 0)
-autoReplyToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-autoReplyToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+autoReplyToggle.BackgroundColor3 = COLORS.buttonDanger
+autoReplyToggle.TextColor3 = COLORS.textLight
 autoReplyToggle.Text = "AUTO-REPLY: OFF"
 autoReplyToggle.Font = Enum.Font.GothamBold
-autoReplyToggle.TextSize = 14
+autoReplyToggle.TextSize = 18
 autoReplyToggle.Parent = autoReplySection
 
-local autoReplyCorner = Instance.new("UICorner")
-autoReplyCorner.CornerRadius = UDim.new(0, 6)
-autoReplyCorner.Parent = autoReplyToggle
+local autoReplyToggleCorner = Instance.new("UICorner")
+autoReplyToggleCorner.CornerRadius = UDim.new(0, 10)
+autoReplyToggleCorner.Parent = autoReplyToggle
 
--- Target Input
+-- Target Input Row
+local targetRow = Instance.new("Frame")
+targetRow.Size = UDim2.new(1, 0, 0, 35)
+targetRow.Position = UDim2.new(0, 0, 0, 60)
+targetRow.BackgroundTransparency = 1
+targetRow.Parent = autoReplySection
+
 local targetLabel = Instance.new("TextLabel")
-targetLabel.Size = UDim2.new(1, 0, 0, 20)
-targetLabel.Position = UDim2.new(0, 0, 0, 45)
+targetLabel.Size = UDim2.new(0, 80, 1, 0)
 targetLabel.BackgroundTransparency = 1
-targetLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-targetLabel.Text = "Target Username:"
+targetLabel.TextColor3 = COLORS.textDark
+targetLabel.Text = "Username:"
 targetLabel.Font = Enum.Font.Gotham
-targetLabel.TextSize = 11
+targetLabel.TextSize = 13
 targetLabel.TextXAlignment = Enum.TextXAlignment.Left
-targetLabel.Parent = autoReplySection
+targetLabel.Parent = targetRow
 
 local targetInput = Instance.new("TextBox")
-targetInput.Size = UDim2.new(1, 0, 0, 30)
-targetInput.Position = UDim2.new(0, 0, 0, 68)
-targetInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-targetInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+targetInput.Size = UDim2.new(1, -85, 1, 0)
+targetInput.Position = UDim2.new(0, 85, 0, 0)
+targetInput.BackgroundColor3 = COLORS.inputBg
+targetInput.TextColor3 = COLORS.textDark
 targetInput.Text = ""
 targetInput.PlaceholderText = "Enter username..."
-targetInput.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
+targetInput.PlaceholderColor3 = COLORS.textMuted
 targetInput.Font = Enum.Font.Gotham
-targetInput.TextSize = 12
+targetInput.TextSize = 13
 targetInput.ClearTextOnFocus = false
-targetInput.Parent = autoReplySection
+targetInput.Parent = targetRow
 
 local targetInputCorner = Instance.new("UICorner")
-targetInputCorner.CornerRadius = UDim.new(0, 6)
+targetInputCorner.CornerRadius = UDim.new(0, 8)
 targetInputCorner.Parent = targetInput
 
--- Reply Input
+local targetInputStroke = Instance.new("UIStroke")
+targetInputStroke.Color = COLORS.border
+targetInputStroke.Thickness = 1
+targetInputStroke.Parent = targetInput
+
+-- Reply Messages Input
 local replyLabel = Instance.new("TextLabel")
 replyLabel.Size = UDim2.new(1, 0, 0, 20)
 replyLabel.Position = UDim2.new(0, 0, 0, 105)
 replyLabel.BackgroundTransparency = 1
-replyLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-replyLabel.Text = "Reply Message:"
+replyLabel.TextColor3 = COLORS.textDark
+replyLabel.Text = "Reply Messages (one per line, cycles through):"
 replyLabel.Font = Enum.Font.Gotham
-replyLabel.TextSize = 11
+replyLabel.TextSize = 13
 replyLabel.TextXAlignment = Enum.TextXAlignment.Left
 replyLabel.Parent = autoReplySection
 
 local replyInput = Instance.new("TextBox")
-replyInput.Size = UDim2.new(1, 0, 0, 50)
-replyInput.Position = UDim2.new(0, 0, 0, 128)
-replyInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-replyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+replyInput.Size = UDim2.new(1, 0, 0, 80)
+replyInput.Position = UDim2.new(0, 0, 0, 130)
+replyInput.BackgroundColor3 = COLORS.inputBg
+replyInput.TextColor3 = COLORS.textDark
 replyInput.Text = ""
-replyInput.PlaceholderText = "Reply message..."
-replyInput.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
+replyInput.PlaceholderText = "Hey!\nWhat's up?\nBe right back"
+replyInput.PlaceholderColor3 = COLORS.textMuted
 replyInput.Font = Enum.Font.Gotham
-replyInput.TextSize = 12
+replyInput.TextSize = 13
 replyInput.TextXAlignment = Enum.TextXAlignment.Left
 replyInput.TextYAlignment = Enum.TextYAlignment.Top
 replyInput.MultiLine = true
@@ -426,51 +507,44 @@ replyInput.ClearTextOnFocus = false
 replyInput.Parent = autoReplySection
 
 local replyInputCorner = Instance.new("UICorner")
-replyInputCorner.CornerRadius = UDim.new(0, 6)
+replyInputCorner.CornerRadius = UDim.new(0, 8)
 replyInputCorner.Parent = replyInput
 
--- Char Counter for Reply
-local replyCharCounter = Instance.new("TextLabel")
-replyCharCounter.Size = UDim2.new(0, 50, 0, 18)
-replyCharCounter.Position = UDim2.new(1, -52, 0, 158)
-replyCharCounter.BackgroundTransparency = 1
-replyCharCounter.TextColor3 = Color3.fromRGB(150, 150, 150)
-replyCharCounter.Text = "0/200"
-replyCharCounter.Font = Enum.Font.Gotham
-replyCharCounter.TextSize = 10
-replyCharCounter.Parent = autoReplySection
+local replyInputStroke = Instance.new("UIStroke")
+replyInputStroke.Color = COLORS.border
+replyInputStroke.Thickness = 1
+replyInputStroke.Parent = replyInput
 
 -- Add Target Button
 local addTargetBtn = Instance.new("TextButton")
-addTargetBtn.Size = UDim2.new(1, 0, 0, 30)
-addTargetBtn.Position = UDim2.new(0, 0, 0, 185)
-addTargetBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-addTargetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+addTargetBtn.Size = UDim2.new(1, 0, 0, 40)
+addTargetBtn.Position = UDim2.new(0, 0, 0, 220)
+addTargetBtn.BackgroundColor3 = COLORS.buttonPrimary
+addTargetBtn.TextColor3 = COLORS.textLight
 addTargetBtn.Text = "+ Add Target"
 addTargetBtn.Font = Enum.Font.GothamBold
-addTargetBtn.TextSize = 12
+addTargetBtn.TextSize = 14
 addTargetBtn.Parent = autoReplySection
 
 local addTargetCorner = Instance.new("UICorner")
-addTargetCorner.CornerRadius = UDim.new(0, 6)
+addTargetCorner.CornerRadius = UDim.new(0, 10)
 addTargetCorner.Parent = addTargetBtn
 
 -- Targets List
 local targetsScroll = Instance.new("ScrollingFrame")
-targetsScroll.Size = UDim2.new(1, 0, 0, 80)
-targetsScroll.Position = UDim2.new(0, 0, 0, 220)
-targetsScroll.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+targetsScroll.Size = UDim2.new(1, 0, 0, 170)
+targetsScroll.Position = UDim2.new(0, 0, 0, 270)
+targetsScroll.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
 targetsScroll.ScrollBarThickness = 4
 targetsScroll.Parent = autoReplySection
 
 local targetsScrollCorner = Instance.new("UICorner")
-targetsScrollCorner.CornerRadius = UDim.new(0, 6)
+targetsScrollCorner.CornerRadius = UDim.new(0, 8)
 targetsScrollCorner.Parent = targetsScroll
 
 local targetsLayout = Instance.new("UIListLayout")
-targetsLayout.Padding = UDim.new(0, 4)
+targetsLayout.Padding = UDim.new(0, 6)
 targetsLayout.Parent = targetsScroll
-
 -- ========== ANTI-AFK SECTION ==========
 
 local afkSection = Instance.new("Frame")
@@ -481,31 +555,248 @@ afkSection.Parent = contentFrame
 
 -- AFK Toggle
 local afkToggle = Instance.new("TextButton")
-afkToggle.Size = UDim2.new(1, 0, 0, 50)
+afkToggle.Size = UDim2.new(1, 0, 0, 60)
 afkToggle.Position = UDim2.new(0, 0, 0, 0)
-afkToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-afkToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+afkToggle.BackgroundColor3 = COLORS.buttonDanger
+afkToggle.TextColor3 = COLORS.textLight
 afkToggle.Text = "ANTI-AFK: OFF"
 afkToggle.Font = Enum.Font.GothamBold
-afkToggle.TextSize = 16
+afkToggle.TextSize = 20
 afkToggle.Parent = afkSection
 
-local afkCorner = Instance.new("UICorner")
-afkCorner.CornerRadius = UDim.new(0, 8)
-afkCorner.Parent = afkToggle
+local afkToggleCorner = Instance.new("UICorner")
+afkToggleCorner.CornerRadius = UDim.new(0, 12)
+afkToggleCorner.Parent = afkToggle
 
 -- AFK Info
 local afkInfo = Instance.new("TextLabel")
-afkInfo.Size = UDim2.new(1, 0, 0, 60)
-afkInfo.Position = UDim2.new(0, 0, 0, 60)
+afkInfo.Size = UDim2.new(1, 0, 0, 80)
+afkInfo.Position = UDim2.new(0, 0, 0, 75)
 afkInfo.BackgroundTransparency = 1
-afkInfo.TextColor3 = Color3.fromRGB(180, 180, 180)
-afkInfo.Text = "Anti-AFK prevents you from\ngetting kicked for inactivity.\n\nWorks in any game."
+afkInfo.TextColor3 = COLORS.textMuted
+afkInfo.Text = "Prevents getting kicked for inactivity.\n\nWorks in any game.\nSimulates activity every 60 seconds."
 afkInfo.Font = Enum.Font.Gotham
-afkInfo.TextSize = 12
+afkInfo.TextSize = 14
 afkInfo.TextWrapped = true
 afkInfo.Parent = afkSection
 
+-- ========== SETTINGS SECTION ==========
+
+local settingsSection = Instance.new("Frame")
+settingsSection.Size = UDim2.new(1, 0, 1, 0)
+settingsSection.BackgroundTransparency = 1
+settingsSection.Visible = false
+settingsSection.Parent = contentFrame
+
+-- Prefix Mode Label
+local prefixModeLabel = Instance.new("TextLabel")
+prefixModeLabel.Size = UDim2.new(1, 0, 0, 25)
+prefixModeLabel.Position = UDim2.new(0, 0, 0, 0)
+prefixModeLabel.BackgroundTransparency = 1
+prefixModeLabel.TextColor3 = COLORS.textDark
+prefixModeLabel.Text = "Message Prefix Mode"
+prefixModeLabel.Font = Enum.Font.GothamBold
+prefixModeLabel.TextSize = 15
+prefixModeLabel.TextXAlignment = Enum.TextXAlignment.Left
+prefixModeLabel.Parent = settingsSection
+
+-- Prefix Mode Buttons
+local prefixModeFrame = Instance.new("Frame")
+prefixModeFrame.Size = UDim2.new(1, 0, 0, 40)
+prefixModeFrame.Position = UDim2.new(0, 0, 0, 30)
+prefixModeFrame.BackgroundTransparency = 1
+prefixModeFrame.Parent = settingsSection
+
+local prefixModes = {"OFF", "FIXED", "ROTATE"}
+local prefixModeButtons = {}
+
+for i, mode in ipairs(prefixModes) do
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1/3, -4, 1, 0)
+    btn.Position = UDim2.new((i-1)/3, 0, 0, 0)
+    btn.BackgroundColor3 = mode == "OFF" and COLORS.buttonPrimary or Color3.fromRGB(230, 230, 230)
+    btn.TextColor3 = mode == "OFF" and COLORS.textLight or COLORS.textDark
+    btn.Text = mode
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 13
+    btn.Parent = prefixModeFrame
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = btn
+    
+    prefixModeButtons[mode] = btn
+end
+
+-- Fixed Prefix Input
+local fixedPrefixLabel = Instance.new("TextLabel")
+fixedPrefixLabel.Size = UDim2.new(0, 100, 0, 25)
+fixedPrefixLabel.Position = UDim2.new(0, 0, 0, 80)
+fixedPrefixLabel.BackgroundTransparency = 1
+fixedPrefixLabel.TextColor3 = COLORS.textDark
+fixedPrefixLabel.Text = "Fixed Prefix:"
+fixedPrefixLabel.Font = Enum.Font.Gotham
+fixedPrefixLabel.TextSize = 13
+fixedPrefixLabel.TextXAlignment = Enum.TextXAlignment.Left
+fixedPrefixLabel.Parent = settingsSection
+
+local fixedPrefixInput = Instance.new("TextBox")
+fixedPrefixInput.Size = UDim2.new(1, -110, 0, 35)
+fixedPrefixInput.Position = UDim2.new(0, 100, 0, 75)
+fixedPrefixInput.BackgroundColor3 = COLORS.inputBg
+fixedPrefixInput.TextColor3 = COLORS.textDark
+fixedPrefixInput.Text = "★"
+fixedPrefixInput.Font = Enum.Font.Gotham
+fixedPrefixInput.TextSize = 16
+fixedPrefixInput.ClearTextOnFocus = false
+fixedPrefixInput.Parent = settingsSection
+
+local fixedPrefixCorner = Instance.new("UICorner")
+fixedPrefixCorner.CornerRadius = UDim.new(0, 8)
+fixedPrefixCorner.Parent = fixedPrefixInput
+
+local fixedPrefixStroke = Instance.new("UIStroke")
+fixedPrefixStroke.Color = COLORS.border
+fixedPrefixStroke.Thickness = 1
+fixedPrefixStroke.Parent = fixedPrefixInput
+
+-- Rotating Prefixes Input
+local rotatingPrefixLabel = Instance.new("TextLabel")
+rotatingPrefixLabel.Size = UDim2.new(1, 0, 0, 25)
+rotatingPrefixLabel.Position = UDim2.new(0, 0, 0, 120)
+rotatingPrefixLabel.BackgroundTransparency = 1
+rotatingPrefixLabel.TextColor3 = COLORS.textDark
+rotatingPrefixLabel.Text = "Rotating Prefixes (separated by space):"
+rotatingPrefixLabel.Font = Enum.Font.Gotham
+rotatingPrefixLabel.TextSize = 13
+rotatingPrefixLabel.TextXAlignment = Enum.TextXAlignment.Left
+rotatingPrefixLabel.Parent = settingsSection
+
+local rotatingPrefixInput = Instance.new("TextBox")
+rotatingPrefixInput.Size = UDim2.new(1, 0, 0, 35)
+rotatingPrefixInput.Position = UDim2.new(0, 0, 0, 150)
+rotatingPrefixInput.BackgroundColor3 = COLORS.inputBg
+rotatingPrefixInput.TextColor3 = COLORS.textDark
+rotatingPrefixInput.Text = "★ 🔥 💎 🎮"
+rotatingPrefixInput.Font = Enum.Font.Gotham
+rotatingPrefixInput.TextSize = 16
+rotatingPrefixInput.ClearTextOnFocus = false
+rotatingPrefixInput.Parent = settingsSection
+
+local rotatingPrefixCorner = Instance.new("UICorner")
+rotatingPrefixCorner.CornerRadius = UDim.new(0, 8)
+rotatingPrefixCorner.Parent = rotatingPrefixInput
+
+local rotatingPrefixStroke = Instance.new("UIStroke")
+rotatingPrefixStroke.Color = COLORS.border
+rotatingPrefixStroke.Thickness = 1
+rotatingPrefixStroke.Parent = rotatingPrefixInput
+
+-- Divider
+local divider = Instance.new("Frame")
+divider.Size = UDim2.new(1, 0, 0, 1)
+divider.Position = UDim2.new(0, 0, 0, 200)
+divider.BackgroundColor3 = COLORS.border
+divider.BorderSizePixel = 0
+divider.Parent = settingsSection
+
+-- GUI Settings Label
+local guiSettingsLabel = Instance.new("TextLabel")
+guiSettingsLabel.Size = UDim2.new(1, 0, 0, 25)
+guiSettingsLabel.Position = UDim2.new(0, 0, 0, 215)
+guiSettingsLabel.BackgroundTransparency = 1
+guiSettingsLabel.TextColor3 = COLORS.textDark
+guiSettingsLabel.Text = "GUI Settings"
+guiSettingsLabel.Font = Enum.Font.GothamBold
+guiSettingsLabel.TextSize = 15
+guiSettingsLabel.TextXAlignment = Enum.TextXAlignment.Left
+guiSettingsLabel.Parent = settingsSection
+
+-- Transparency Slider
+local transparencyLabel = Instance.new("TextLabel")
+transparencyLabel.Size = UDim2.new(0, 120, 0, 25)
+transparencyLabel.Position = UDim2.new(0, 0, 0, 250)
+transparencyLabel.BackgroundTransparency = 1
+transparencyLabel.TextColor3 = COLORS.textDark
+transparencyLabel.Text = "Transparency:"
+transparencyLabel.Font = Enum.Font.Gotham
+transparencyLabel.TextSize = 13
+transparencyLabel.TextXAlignment = Enum.TextXAlignment.Left
+transparencyLabel.Parent = settingsSection
+
+local transparencySlider = Instance.new("TextBox")
+transparencySlider.Size = UDim2.new(0, 80, 0, 30)
+transparencySlider.Position = UDim2.new(0, 125, 0, 247)
+transparencySlider.BackgroundColor3 = COLORS.inputBg
+transparencySlider.TextColor3 = COLORS.textDark
+transparencySlider.Text = "0"
+transparencySlider.Font = Enum.Font.Gotham
+transparencySlider.TextSize = 13
+transparencySlider.ClearTextOnFocus = false
+transparencySlider.Parent = settingsSection
+
+local transparencySliderCorner = Instance.new("UICorner")
+transparencySliderCorner.CornerRadius = UDim.new(0, 8)
+transparencySliderCorner.Parent = transparencySlider
+
+local transparencySliderStroke = Instance.new("UIStroke")
+transparencySliderStroke.Color = COLORS.border
+transparencySliderStroke.Thickness = 1
+transparencySliderStroke.Parent = transparencySlider
+
+local transparencyHint = Instance.new("TextLabel")
+transparencyHint.Size = UDim2.new(0, 100, 0, 25)
+transparencyHint.Position = UDim2.new(0, 210, 0, 250)
+transparencyHint.BackgroundTransparency = 1
+transparencyHint.TextColor3 = COLORS.textMuted
+transparencyHint.Text = "(0-100%)"
+transparencyHint.Font = Enum.Font.Gotham
+transparencyHint.TextSize = 12
+transparencyHint.TextXAlignment = Enum.TextXAlignment.Left
+transparencyHint.Parent = settingsSection
+
+-- Scale Slider
+local scaleLabel = Instance.new("TextLabel")
+scaleLabel.Size = UDim2.new(0, 120, 0, 25)
+scaleLabel.Position = UDim2.new(0, 0, 0, 295)
+scaleLabel.BackgroundTransparency = 1
+scaleLabel.TextColor3 = COLORS.textDark
+scaleLabel.Text = "GUI Scale:"
+scaleLabel.Font = Enum.Font.Gotham
+scaleLabel.TextSize = 13
+scaleLabel.TextXAlignment = Enum.TextXAlignment.Left
+scaleLabel.Parent = settingsSection
+
+local scaleSlider = Instance.new("TextBox")
+scaleSlider.Size = UDim2.new(0, 80, 0, 30)
+scaleSlider.Position = UDim2.new(0, 125, 0, 292)
+scaleSlider.BackgroundColor3 = COLORS.inputBg
+scaleSlider.TextColor3 = COLORS.textDark
+scaleSlider.Text = "1"
+scaleSlider.Font = Enum.Font.Gotham
+scaleSlider.TextSize = 13
+scaleSlider.ClearTextOnFocus = false
+scaleSlider.Parent = settingsSection
+
+local scaleSliderCorner = Instance.new("UICorner")
+scaleSliderCorner.CornerRadius = UDim.new(0, 8)
+scaleSliderCorner.Parent = scaleSlider
+
+local scaleSliderStroke = Instance.new("UIStroke")
+scaleSliderStroke.Color = COLORS.border
+scaleSliderStroke.Thickness = 1
+scaleSliderStroke.Parent = scaleSlider
+
+local scaleHint = Instance.new("TextLabel")
+scaleHint.Size = UDim2.new(0, 100, 0, 25)
+scaleHint.Position = UDim2.new(0, 210, 0, 295)
+scaleHint.BackgroundTransparency = 1
+scaleHint.TextColor3 = COLORS.textMuted
+scaleHint.Text = "(0.5-2.0)"
+scaleHint.Font = Enum.Font.Gotham
+scaleHint.TextSize = 12
+scaleHint.TextXAlignment = Enum.TextXAlignment.Left
+scaleHint.Parent = settingsSection
 -- ========== DRAGGING (HUB BUTTON) ==========
 
 local dragging = false
@@ -595,12 +886,15 @@ local function switchTab(tabName)
     spamSection.Visible = tabName == "Spam"
     autoReplySection.Visible = tabName == "AutoReply"
     afkSection.Visible = tabName == "AFK"
+    settingsSection.Visible = tabName == "Settings"
     
     for name, btn in pairs(tabButtons) do
         if name == tabName then
-            btn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+            btn.BackgroundColor3 = COLORS.buttonPrimary
+            btn.TextColor3 = COLORS.textLight
         else
-            btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            btn.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+            btn.TextColor3 = COLORS.textDark
         end
     end
 end
@@ -620,36 +914,64 @@ chatTextbox:GetPropertyChangedSignal("Text"):Connect(function()
         chatTextbox.Text = chatTextbox.Text:sub(1, MAX_CHARS)
     end
     chatCharCounter.Text = #chatTextbox.Text.."/"..MAX_CHARS
-    chatCharCounter.TextColor3 = #chatTextbox.Text >= MAX_CHARS and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(150, 150, 150)
+    chatCharCounter.TextColor3 = #chatTextbox.Text >= MAX_CHARS and COLORS.buttonDanger or COLORS.textMuted
 end)
 
 replyInput:GetPropertyChangedSignal("Text"):Connect(function()
-    if #replyInput.Text > MAX_CHARS then
-        replyInput.Text = replyInput.Text:sub(1, MAX_CHARS)
+    if #replyInput.Text > 500 then
+        replyInput.Text = replyInput.Text:sub(1, 500)
     end
-    replyCharCounter.Text = #replyInput.Text.."/"..MAX_CHARS
-    replyCharCounter.TextColor3 = #replyInput.Text >= MAX_CHARS and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(150, 150, 150)
 end)
 
--- ========== FOCUSED CLEAR ==========
+-- ========== GET PREFIX ==========
 
-chatTextbox.Focused:Connect(function()
-    chatTextbox.Text = ""
-end)
+local function getPrefix()
+    if prefixMode == "OFF" then
+        return ""
+    elseif prefixMode == "FIXED" then
+        return fixedPrefixInput.Text .. " "
+    elseif prefixMode == "ROTATE" then
+        local prefixes = rotatingPrefixInput.Text:split(" ")
+        if #prefixes > 0 then
+            local prefix = prefixes[rotatingIndex]
+            rotatingIndex = rotatingIndex + 1
+            if rotatingIndex > #prefixes then
+                rotatingIndex = 1
+            end
+            return prefix .. " "
+        end
+    end
+    return ""
+end
+
+-- ========== UPDATE PREFIX STATUS ==========
+
+local function updatePrefixStatus()
+    if prefixMode == "OFF" then
+        prefixStatus.Text = "Prefix: OFF"
+    elseif prefixMode == "FIXED" then
+        prefixStatus.Text = "Prefix: " .. fixedPrefixInput.Text .. " (Fixed)"
+    elseif prefixMode == "ROTATE" then
+        prefixStatus.Text = "Prefix: Rotating"
+    end
+end
 
 -- ========== SEND MESSAGE FUNCTION ==========
 
 local function sendMessage(msg)
     local message = msg or chatTextbox.Text
-    message = message:gsub("^%s+", ""):gsub("%s+\$", ""):gsub("\n", " ")
+    message = message:gsub("^%s+", ""):gsub("%s+$", ""):gsub("\n", " ")
     
     if message == "" or #message > MAX_CHARS then return false end
+    
+    local prefix = getPrefix()
+    local finalMessage = prefix .. message
     
     local chatRemote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
     if chatRemote then
         local sayMessage = chatRemote:FindFirstChild("SayMessageRequest")
         if sayMessage then
-            sayMessage:FireServer(message, "All")
+            sayMessage:FireServer(finalMessage, "All")
             return true
         end
     end
@@ -660,7 +982,7 @@ local function sendMessage(msg)
         if channel then
             local rbxGeneral = channel:FindFirstChild("RBXGeneral")
             if rbxGeneral then
-                rbxGeneral:SendAsync(message)
+                rbxGeneral:SendAsync(finalMessage)
                 return true
             end
         end
@@ -702,38 +1024,38 @@ local function updatePremadeUI()
     
     for i, msg in ipairs(premadeMessages) do
         local msgFrame = Instance.new("Frame")
-        msgFrame.Size = UDim2.new(1, 0, 0, 28)
-        msgFrame.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+        msgFrame.Size = UDim2.new(1, 0, 0, 32)
+        msgFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
         msgFrame.Parent = premadeScroll
         
         local msgCorner = Instance.new("UICorner")
-        msgCorner.CornerRadius = UDim.new(0, 4)
+        msgCorner.CornerRadius = UDim.new(0, 6)
         msgCorner.Parent = msgFrame
         
         local msgLabel = Instance.new("TextLabel")
-        msgLabel.Size = UDim2.new(1, -30, 1, 0)
-        msgLabel.Position = UDim2.new(0, 5, 0, 0)
+        msgLabel.Size = UDim2.new(1, -40, 1, 0)
+        msgLabel.Position = UDim2.new(0, 10, 0, 0)
         msgLabel.BackgroundTransparency = 1
-        msgLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        msgLabel.TextColor3 = COLORS.textDark
         msgLabel.Text = msg
         msgLabel.Font = Enum.Font.Gotham
-        msgLabel.TextSize = 11
+        msgLabel.TextSize = 12
         msgLabel.TextXAlignment = Enum.TextXAlignment.Left
         msgLabel.TextTruncate = Enum.TextTruncate.AtEnd
         msgLabel.Parent = msgFrame
         
         local deleteBtn = Instance.new("TextButton")
-        deleteBtn.Size = UDim2.new(0, 22, 0, 22)
-        deleteBtn.Position = UDim2.new(1, -25, 0.5, -11)
-        deleteBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-        deleteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        deleteBtn.Text = "X"
+        deleteBtn.Size = UDim2.new(0, 28, 0, 24)
+        deleteBtn.Position = UDim2.new(1, -32, 0.5, -12)
+        deleteBtn.BackgroundColor3 = COLORS.buttonDanger
+        deleteBtn.TextColor3 = COLORS.textLight
+        deleteBtn.Text = "✕"
         deleteBtn.Font = Enum.Font.GothamBold
-        deleteBtn.TextSize = 10
+        deleteBtn.TextSize = 11
         deleteBtn.Parent = msgFrame
         
         local deleteCorner = Instance.new("UICorner")
-        deleteCorner.CornerRadius = UDim.new(0, 4)
+        deleteCorner.CornerRadius = UDim.new(0, 6)
         deleteCorner.Parent = deleteBtn
         
         deleteBtn.MouseButton1Click:Connect(function()
@@ -742,7 +1064,7 @@ local function updatePremadeUI()
         end)
     end
     
-    premadeScroll.CanvasSize = UDim2.new(0, 0, 0, #premadeMessages * 32)
+    premadeScroll.CanvasSize = UDim2.new(0, 0, 0, #premadeMessages * 38)
 end
 
 premadeToggle.MouseButton1Click:Connect(function()
@@ -753,14 +1075,13 @@ premadeToggle.MouseButton1Click:Connect(function()
 end)
 
 addPremadeBtn.MouseButton1Click:Connect(function()
-    local msg = chatTextbox.Text:gsub("^%s+", ""):gsub("%s+\$", "")
+    local msg = chatTextbox.Text:gsub("^%s+", ""):gsub("%s+$", "")
     if msg ~= "" then
         table.insert(premadeMessages, msg)
         chatTextbox.Text = ""
         updatePremadeUI()
     end
 end)
-
 -- ========== SPAM TOGGLE ==========
 
 spamToggle.MouseButton1Click:Connect(function()
@@ -770,7 +1091,7 @@ spamToggle.MouseButton1Click:Connect(function()
     
     if spamEnabled then
         spamToggle.Text = "SPAM: ON"
-        spamToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
+        spamToggle.BackgroundColor3 = COLORS.buttonSuccess
         
         spawn(function()
             while spamEnabled do
@@ -786,7 +1107,7 @@ spamToggle.MouseButton1Click:Connect(function()
         end)
     else
         spamToggle.Text = "SPAM: OFF"
-        spamToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+        spamToggle.BackgroundColor3 = COLORS.buttonDanger
     end
 end)
 
@@ -798,50 +1119,51 @@ local function updateTargetsUI()
     end
     
     local i = 0
-    for username, reply in pairs(autoReplyTargets) do
+    for username, data in pairs(autoReplyTargets) do
         i = i + 1
         local targetFrame = Instance.new("Frame")
-        targetFrame.Size = UDim2.new(1, 0, 0, 35)
-        targetFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        targetFrame.Size = UDim2.new(1, 0, 0, 50)
+        targetFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
         targetFrame.Parent = targetsScroll
         
         local targetCorner = Instance.new("UICorner")
-        targetCorner.CornerRadius = UDim.new(0, 4)
+        targetCorner.CornerRadius = UDim.new(0, 6)
         targetCorner.Parent = targetFrame
         
         local targetLabel = Instance.new("TextLabel")
-        targetLabel.Size = UDim2.new(1, -30, 0, 15)
-        targetLabel.Position = UDim2.new(0, 5, 0, 2)
+        targetLabel.Size = UDim2.new(1, -40, 0, 20)
+        targetLabel.Position = UDim2.new(0, 10, 0, 5)
         targetLabel.BackgroundTransparency = 1
-        targetLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        targetLabel.Text = "@"..username
+        targetLabel.TextColor3 = COLORS.textDark
+        targetLabel.Text = "@" .. username
         targetLabel.Font = Enum.Font.GothamBold
-        targetLabel.TextSize = 11
+        targetLabel.TextSize = 13
         targetLabel.TextXAlignment = Enum.TextXAlignment.Left
         targetLabel.Parent = targetFrame
         
         local replyLabel = Instance.new("TextLabel")
-        replyLabel.Size = UDim2.new(1, -30, 0, 15)
-        replyLabel.Position = UDim2.new(0, 5, 0, 17)
+        replyLabel.Size = UDim2.new(1, -40, 0, 18)
+        replyLabel.Position = UDim2.new(0, 10, 0, 26)
         replyLabel.BackgroundTransparency = 1
-        replyLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-        replyLabel.Text = reply:sub(1, 25)..(#reply > 25 and "..." or "")
+        replyLabel.TextColor3 = COLORS.textMuted
+        replyLabel.Text = table.concat(data.messages, " → "):sub(1, 40) .. "..."
         replyLabel.Font = Enum.Font.Gotham
-        replyLabel.TextSize = 10
+        replyLabel.TextSize = 11
         replyLabel.TextXAlignment = Enum.TextXAlignment.Left
         replyLabel.Parent = targetFrame
         
         local deleteBtn = Instance.new("TextButton")
-        deleteBtn.Size = UDim2.new(0, 22, 0, 22)
-        deleteBtn.Position = UDim2.new(1, -25, 0.5, -11)
-        deleteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        deleteBtn.Text = "X"
+        deleteBtn.Size = UDim2.new(0, 28, 0, 28)
+        deleteBtn.Position = UDim2.new(1, -34, 0.5, -14)
+        deleteBtn.BackgroundColor3 = COLORS.buttonDanger
+        deleteBtn.TextColor3 = COLORS.textLight
+        deleteBtn.Text = "✕"
         deleteBtn.Font = Enum.Font.GothamBold
-        deleteBtn.TextSize = 10
+        deleteBtn.TextSize = 12
         deleteBtn.Parent = targetFrame
         
         local deleteCorner = Instance.new("UICorner")
-        deleteCorner.CornerRadius = UDim.new(0, 4)
+        deleteCorner.CornerRadius = UDim.new(0, 6)
         deleteCorner.Parent = deleteBtn
         
         deleteBtn.MouseButton1Click:Connect(function()
@@ -850,15 +1172,25 @@ local function updateTargetsUI()
         end)
     end
     
-    targetsScroll.CanvasSize = UDim2.new(0, 0, 0, i * 39)
+    targetsScroll.CanvasSize = UDim2.new(0, 0, 0, i * 56)
 end
 
 addTargetBtn.MouseButton1Click:Connect(function()
-    local username = targetInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
-    local reply = replyInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
+    local username = targetInput.Text:gsub("^%s+", ""):gsub("%s+$", ""):lower()
+    local replies = {}
     
-    if username ~= "" and reply ~= "" then
-        autoReplyTargets[username:lower()] = reply
+    for line in replyInput.Text:gmatch("[^\r\n]+") do
+        local trimmed = line:gsub("^%s+", ""):gsub("%s+$", "")
+        if trimmed ~= "" then
+            table.insert(replies, trimmed)
+        end
+    end
+    
+    if username ~= "" and #replies > 0 then
+        autoReplyTargets[username] = {
+            messages = replies,
+            index = 1
+        }
         targetInput.Text = ""
         replyInput.Text = ""
         updateTargetsUI()
@@ -870,10 +1202,10 @@ autoReplyToggle.MouseButton1Click:Connect(function()
     
     if autoReplyEnabled then
         autoReplyToggle.Text = "AUTO-REPLY: ON"
-        autoReplyToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
+        autoReplyToggle.BackgroundColor3 = COLORS.buttonSuccess
     else
         autoReplyToggle.Text = "AUTO-REPLY: OFF"
-        autoReplyToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+        autoReplyToggle.BackgroundColor3 = COLORS.buttonDanger
     end
 end)
 
@@ -908,11 +1240,16 @@ local function sendReply(msg)
     return false
 end
 
--- Detect messages from other players
 Players.PlayerAdded:Connect(function(plr)
     plr.Chatted:Connect(function(msg)
         if autoReplyEnabled and autoReplyTargets[plr.Name:lower()] then
-            sendReply(autoReplyTargets[plr.Name:lower()])
+            local data = autoReplyTargets[plr.Name:lower()]
+            local reply = data.messages[data.index]
+            data.index = data.index + 1
+            if data.index > #data.messages then
+                data.index = 1
+            end
+            sendReply(reply)
         end
     end)
 end)
@@ -921,7 +1258,13 @@ for _, plr in pairs(Players:GetPlayers()) do
     if plr ~= player then
         plr.Chatted:Connect(function(msg)
             if autoReplyEnabled and autoReplyTargets[plr.Name:lower()] then
-                sendReply(autoReplyTargets[plr.Name:lower()])
+                local data = autoReplyTargets[plr.Name:lower()]
+                local reply = data.messages[data.index]
+                data.index = data.index + 1
+                if data.index > #data.messages then
+                    data.index = 1
+                end
+                sendReply(reply)
             end
         end)
     end
@@ -934,14 +1277,13 @@ afkToggle.MouseButton1Click:Connect(function()
     
     if antiAfkEnabled then
         afkToggle.Text = "ANTI-AFK: ON"
-        afkToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
+        afkToggle.BackgroundColor3 = COLORS.buttonSuccess
     else
         afkToggle.Text = "ANTI-AFK: OFF"
-        afkToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+        afkToggle.BackgroundColor3 = COLORS.buttonDanger
     end
 end)
 
--- Anti-AFK Loop
 spawn(function()
     while true do
         wait(60)
@@ -954,9 +1296,59 @@ spawn(function()
     end
 end)
 
--- ========== TOGGLE WITH KEY ==========
+-- ========== SETTINGS: PREFIX MODE ==========
 
-local guiVisible = true
+for mode, btn in pairs(prefixModeButtons) do
+    btn.MouseButton1Click:Connect(function()
+        prefixMode = mode
+        updatePrefixStatus()
+        
+        for m, b in pairs(prefixModeButtons) do
+            if m == mode then
+                b.BackgroundColor3 = COLORS.buttonPrimary
+                b.TextColor3 = COLORS.textLight
+            else
+                b.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+                b.TextColor3 = COLORS.textDark
+            end
+        end
+    end)
+end
+
+fixedPrefixInput:GetPropertyChangedSignal("Text"):Connect(function()
+    updatePrefixStatus()
+end)
+
+rotatingPrefixInput:GetPropertyChangedSignal("Text"):Connect(function()
+    updatePrefixStatus()
+end)
+
+-- ========== SETTINGS: TRANSPARENCY ==========
+
+transparencySlider.FocusLost:Connect(function()
+    local val = tonumber(transparencySlider.Text) or 0
+    val = math.clamp(val, 0, 100)
+    transparencySlider.Text = tostring(val)
+    guiTransparency = val / 100
+    
+    hubFrame.BackgroundTransparency = guiTransparency
+    titleBar.BackgroundTransparency = guiTransparency
+    titleBarFix.BackgroundTransparency = guiTransparency
+end)
+
+-- ========== SETTINGS: SCALE ==========
+
+scaleSlider.FocusLost:Connect(function()
+    local val = tonumber(scaleSlider.Text) or 1
+    val = math.clamp(val, 0.5, 2.0)
+    scaleSlider.Text = tostring(val)
+    guiScale = val
+    
+    hubFrame.Size = UDim2.new(0, 520 * guiScale, 0, 550 * guiScale)
+    hubFrame.Position = UDim2.new(0.5, -260 * guiScale, 0.5, -275 * guiScale)
+end)
+
+-- ========== TOGGLE WITH KEY ==========
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.RightControl then
@@ -969,8 +1361,10 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Initialize
+-- ========== INITIALIZE ==========
+
 updatePremadeUI()
 updateTargetsUI()
+updatePrefixStatus()
 
-print("✅ Chat Hub Loaded")
+print("✅ Chat Hub Loaded (White Theme)")
