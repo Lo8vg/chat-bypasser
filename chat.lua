@@ -1,4 +1,4 @@
--- Custom Chat GUI (Wide Compact Layout - Like Image)
+-- Custom Chat GUI (Compact Rectangle)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -19,11 +19,11 @@ screenGui.Name = "CustomChatGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Main Frame (wide, compact)
+-- Main Frame (compact rectangle)
 local frame = Instance.new("Frame")
 frame.Name = "ChatFrame"
-frame.Size = UDim2.new(0, 450, 0, 50)
-frame.Position = UDim2.new(0.5, -225, 0.5, -25)
+frame.Size = UDim2.new(0, 220, 0, 130)
+frame.Position = UDim2.new(0.5, -110, 0.5, -65)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.BorderSizePixel = 2
 frame.BorderColor3 = Color3.fromRGB(60, 60, 60)
@@ -33,11 +33,52 @@ local frameCorner = Instance.new("UICorner")
 frameCorner.CornerRadius = UDim.new(0, 8)
 frameCorner.Parent = frame
 
--- Textbox (big, takes most of space)
+-- Title Bar
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Size = UDim2.new(1, 0, 0, 28)
+titleBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = frame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = titleBar
+
+local titleFix = Instance.new("Frame")
+titleFix.Size = UDim2.new(1, 0, 0, 10)
+titleFix.Position = UDim2.new(0, 0, 1, -10)
+titleFix.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+titleFix.BorderSizePixel = 0
+titleFix.Parent = titleBar
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -10, 1, 0)
+titleLabel.Position = UDim2.new(0, 10, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Text = "💬 Chat"
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 13
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Parent = titleBar
+
+-- Char Counter (in title bar)
+local charCounter = Instance.new("TextLabel")
+charCounter.Size = UDim2.new(0, 40, 1, 0)
+charCounter.Position = UDim2.new(1, -45, 0, 0)
+charCounter.BackgroundTransparency = 1
+charCounter.TextColor3 = Color3.fromRGB(150, 150, 150)
+charCounter.Text = "0/200"
+charCounter.Font = Enum.Font.Gotham
+charCounter.TextSize = 10
+charCounter.Parent = titleBar
+
+-- Textbox
 local textbox = Instance.new("TextBox")
 textbox.Name = "ChatInput"
-textbox.Size = UDim2.new(0.5, -5, 0, 30)
-textbox.Position = UDim2.new(0, 5, 0, 10)
+textbox.Size = UDim2.new(1, -20, 0, 32)
+textbox.Position = UDim2.new(0, 10, 0, 35)
 textbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textbox.Text = ""
@@ -55,36 +96,32 @@ local textboxCorner = Instance.new("UICorner")
 textboxCorner.CornerRadius = UDim.new(0, 6)
 textboxCorner.Parent = textbox
 
+-- Bottom Row Frame
+local bottomRow = Instance.new("Frame")
+bottomRow.Size = UDim2.new(1, -20, 0, 28)
+bottomRow.Position = UDim2.new(0, 10, 0, 72)
+bottomRow.BackgroundTransparency = 1
+bottomRow.Parent = frame
+
 -- Send Button
 local sendButton = Instance.new("TextButton")
-sendButton.Size = UDim2.new(0, 60, 0, 30)
-sendButton.Position = UDim2.new(0.5, 0, 0, 10)
+sendButton.Size = UDim2.new(0, 55, 0, 28)
+sendButton.Position = UDim2.new(0, 0, 0, 0)
 sendButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 sendButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 sendButton.Text = "Send"
 sendButton.Font = Enum.Font.GothamBold
 sendButton.TextSize = 12
-sendButton.Parent = frame
+sendButton.Parent = bottomRow
 
 local sendCorner = Instance.new("UICorner")
 sendCorner.CornerRadius = UDim.new(0, 6)
 sendCorner.Parent = sendButton
 
--- Delay Label
-local delayLabel = Instance.new("TextLabel")
-delayLabel.Size = UDim2.new(0, 40, 0, 30)
-delayLabel.Position = UDim2.new(0.65, 0, 0, 10)
-delayLabel.BackgroundTransparency = 1
-delayLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-delayLabel.Text = "Delay:"
-delayLabel.Font = Enum.Font.Gotham
-delayLabel.TextSize = 11
-delayLabel.Parent = frame
-
 -- Delay Textbox
 local delayTextbox = Instance.new("TextBox")
-delayTextbox.Size = UDim2.new(0, 35, 0, 30)
-delayTextbox.Position = UDim2.new(0.74, 0, 0, 10)
+delayTextbox.Size = UDim2.new(0, 30, 0, 28)
+delayTextbox.Position = UDim2.new(0, 60, 0, 0)
 delayTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 delayTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
 delayTextbox.Text = "1"
@@ -93,7 +130,7 @@ delayTextbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 delayTextbox.Font = Enum.Font.Gotham
 delayTextbox.TextSize = 12
 delayTextbox.ClearTextOnFocus = false
-delayTextbox.Parent = frame
+delayTextbox.Parent = bottomRow
 
 local delayCorner = Instance.new("UICorner")
 delayCorner.CornerRadius = UDim.new(0, 6)
@@ -101,29 +138,18 @@ delayCorner.Parent = delayTextbox
 
 -- Spam Button
 local spamButton = Instance.new("TextButton")
-spamButton.Size = UDim2.new(0, 80, 0, 30)
-spamButton.Position = UDim2.new(0.82, 0, 0, 10)
+spamButton.Size = UDim2.new(0, 70, 0, 28)
+spamButton.Position = UDim2.new(1, -70, 0, 0)
 spamButton.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 spamButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 spamButton.Text = "SPAM: OFF"
 spamButton.Font = Enum.Font.GothamBold
-spamButton.TextSize = 11
-spamButton.Parent = frame
+spamButton.TextSize = 10
+spamButton.Parent = bottomRow
 
 local spamCorner = Instance.new("UICorner")
 spamCorner.CornerRadius = UDim.new(0, 6)
 spamCorner.Parent = spamButton
-
--- Char Counter
-local charCounter = Instance.new("TextLabel")
-charCounter.Size = UDim2.new(0, 45, 0, 30)
-charCounter.Position = UDim2.new(0.92, 0, 0, 10)
-charCounter.BackgroundTransparency = 1
-charCounter.TextColor3 = Color3.fromRGB(150, 150, 150)
-charCounter.Text = "0/200"
-charCounter.Font = Enum.Font.Gotham
-charCounter.TextSize = 10
-charCounter.Parent = frame
 
 -- Dragging
 local dragging = false
@@ -131,7 +157,7 @@ local dragInput
 local dragStart
 local startPos
 
-frame.InputBegan:Connect(function(input)
+titleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
@@ -145,7 +171,7 @@ frame.InputBegan:Connect(function(input)
     end
 end)
 
-frame.InputChanged:Connect(function(input)
+titleBar.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         dragInput = input
     end
@@ -277,4 +303,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Custom Chat GUI Loaded (Wide Compact Layout)")
+print("✅ Custom Chat GUI Loaded (Compact Rectangle)")
