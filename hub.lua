@@ -15,7 +15,7 @@ local spamDelay = 1
 local spamIndex = 1
 local antiAfkEnabled = false
 local autoReplyEnabled = false
-local autoReplyTargets = {} -- {["username"] = "reply message"}
+local autoReplyTargets = {}
 local premadeMessages = {"Hello", "GG", "What's up", "Bye"}
 
 -- Create ScreenGui
@@ -802,7 +802,8 @@ local function updateTargetsUI()
         i = i + 1
         local targetFrame = Instance.new("Frame")
         targetFrame.Size = UDim2.new(1, 0, 0, 35)
-        targetFrame.BackgroundColor3 = Color3.fromRGB(50, 50 targetFrame.Parent = targetsScroll
+        targetFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        targetFrame.Parent = targetsScroll
         
         local targetCorner = Instance.new("UICorner")
         targetCorner.CornerRadius = UDim.new(0, 4)
@@ -833,7 +834,6 @@ local function updateTargetsUI()
         local deleteBtn = Instance.new("TextButton")
         deleteBtn.Size = UDim2.new(0, 22, 0, 22)
         deleteBtn.Position = UDim2.new(1, -25, 0.5, -11)
-        deleteBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
         deleteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         deleteBtn.Text = "X"
         deleteBtn.Font = Enum.Font.GothamBold
