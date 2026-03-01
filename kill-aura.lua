@@ -1,4 +1,4 @@
--- Hybrid Script with Tabs (Fixed)
+-- Hybrid Script with Tabs (Fixed Aura Loop)
 -- Fling + Kill Aura (Separate Modes, No Smart Mode)
 
 local Players = game:GetService("Players")
@@ -20,10 +20,9 @@ local flingLoop = nil
 
 -- Aura settings
 local teleportDistance = 2
+local teleportDelay = 0.1
+local swingDelay = 0.01
 local attackAngle = 0
-local auraLoop = nil
-local swingLoop = nil
-local reequipLoop = nil
 
 -- Stats
 local flingCount = 0
@@ -290,22 +289,10 @@ local flingPlayerLayout = Instance.new("UIListLayout")
 flingPlayerLayout.Padding = UDim.new(0, 2)
 flingPlayerLayout.Parent = flingPlayerScroll
 
--- Fling Settings
-local flingSettingsLabel = Instance.new("TextLabel")
-flingSettingsLabel.Size = UDim2.new(1, 0, 0, 16)
-flingSettingsLabel.Position = UDim2.new(0, 0, 0, 182)
-flingSettingsLabel.BackgroundTransparency = 1
-flingSettingsLabel.TextColor3 = COLORS.textDark
-flingSettingsLabel.Text = "Settings:"
-flingSettingsLabel.Font = Enum.Font.GothamBold
-flingSettingsLabel.TextSize = 10
-flingSettingsLabel.TextXAlignment = Enum.TextXAlignment.Left
-flingSettingsLabel.Parent = flingPage
-
 -- Spin Power
 local spinRow = Instance.new("Frame")
 spinRow.Size = UDim2.new(1, 0, 0, 22)
-spinRow.Position = UDim2.new(0, 0, 0, 200)
+spinRow.Position = UDim2.new(0, 0, 0, 182)
 spinRow.BackgroundTransparency = 1
 spinRow.Parent = flingPage
 
@@ -342,7 +329,7 @@ spinStroke.Parent = spinInput
 -- Launch Power
 local launchRow = Instance.new("Frame")
 launchRow.Size = UDim2.new(1, 0, 0, 22)
-launchRow.Position = UDim2.new(0, 0, 0, 226)
+launchRow.Position = UDim2.new(0, 0, 0, 206)
 launchRow.BackgroundTransparency = 1
 launchRow.Parent = flingPage
 
@@ -792,91 +779,85 @@ end
 
 -- ========== AURA FUNCTIONS ==========
 
-local function stopAura()
-    if auraLoop then
-        auraLoop:Disconnect()
-        auraLoop = nil
-    end
+local function teleportToTarget()
+    if not targetPlayer or not targetPlayer.Character then return end
     
-    if swingLoop then
-        swingLoop:Disconnect()
-        swingLoop = nil
-    end
+    local myChar = player.Character
+    local myHum = myChar and getRoot(myChar)
     
-    if reequipLoop then
-        reequipLoop:Disconnect()
-        reequipLoop = nil
+    local targetChar = targetPlayer.Character
+    local targetHum = targetChar and getRoot(targetChar)
+    local targetHumanoid = targetChar and targetChar:FindFirstChild("Humanoid")
+    
+    if not myHum or not targetHum or not targetHumanoid then return end
+    if targetHumanoid.Health <= 0 then return end
+    
+    attackAngle = attackAngle + 60
+    if attackAngle >= 360 then attackAngle = 0 end
+    
+    local angleRad = math.rad(attackAngle)
+    local offsetX = math.cos(angleRad) * teleportDistance
+    local offsetZ = math.sin(angleRad) * teleportDistance
+    
+    myHum.CFrame = targetHum.CFrame * CFrame.new(offsetX, 0, offsetZ)
+    
+    if myChar.HumanoidRootPart then
+        myChar.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
     end
 end
 
 local function startAura()
-    stopAura()
+    -- Read settings
+    teleportDistance = tonumber(distInput.Text) or 2
+    teleportDelay = 0.1
+    swingDelay = tonumber(swingInput.Text) or 0.01
     
+    -- Equip sword
     equipSword()
     
-    local dist = tonumber(distInput.Text) or 2
-    local swing = tonumber(swingInput.Text) or 0.01
-    
-    -- Swing loop (runs on Heartbeat for constant swinging)
-    swingLoop = RunService.Heartbeat:Connect(function()
-        if not auraEnabled then return end
-        
-        if targetPlayer and targetPlayer.Character then
-            local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
-            if targetHumanoid and targetHumanoid.Health > 0 then
-                swingSword()
+    -- Continuous swing loop (THIS IS THE FIX - using spawn with while loop)
+    spawn(function()
+        while auraEnabled do
+            if targetPlayer and targetPlayer.Character then
+                local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
+                if targetHumanoid and targetHumanoid.Health > 0 then
+                    swingSword()
+                end
             end
+            wait(swingDelay)
         end
     end)
     
     -- Teleport loop
-    auraLoop = RunService.Heartbeat:Connect(function()
-        if not auraEnabled then return end
-        if not targetPlayer or not targetPlayer.Character then return end
-        
-        local myChar = player.Character
-        local myRoot = myChar and getRoot(myChar)
-        
-        local targetChar = targetPlayer.Character
-        local targetRoot = getRoot(targetChar)
-        local targetHumanoid = targetChar and targetChar:FindFirstChild("Humanoid")
-        
-        if not myRoot or not targetRoot or not targetHumanoid then return end
-        if targetHumanoid.Health <= 0 then return end
-        
-        -- Rotate around target
-        attackAngle = attackAngle + 60
-        if attackAngle >= 360 then attackAngle = 0 end
-        
-        local angleRad = math.rad(attackAngle)
-        local offsetX = math.cos(angleRad) * dist
-        local offsetZ = math.sin(angleRad) * dist
-        
-        myRoot.CFrame = targetRoot.CFrame * CFrame.new(offsetX, 0, offsetZ)
-        
-        if myChar.HumanoidRootPart then
-            myChar.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+    spawn(function()
+        while auraEnabled do
+            if targetPlayer and targetPlayer.Character then
+                local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
+                if targetHumanoid then
+                    if targetHumanoid.Health > 0 then
+                        teleportToTarget()
+                    end
+                end
+            end
+            wait(teleportDelay)
         end
     end)
     
     -- Re-equip sword loop
-    reequipLoop = spawn(function()
+    spawn(function()
         while auraEnabled do
-            wait(0.5)
-            if not auraEnabled then return end
             local sword = getSword()
             if not sword then
                 equipSword()
             end
-        end
-    end)
+            wait(0.5)
+        end)
     
-    -- Kill detection
+    -- Kill detection loop
     spawn(function()
         local lastHealth = 100
         while auraEnabled do
             wait(0.1)
-            if not auraEnabled then return end
             if targetPlayer and targetPlayer.Character then
                 local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
                 if targetHumanoid then
@@ -889,6 +870,10 @@ local function startAura()
             end
         end
     end)
+end
+
+local function stopAura()
+    auraEnabled = false
 end
 
 -- ========== FLING TOGGLE ==========
@@ -965,7 +950,6 @@ end)
 
 player.CharacterRemoving:Connect(function()
     stopFling()
-    stopAura()
 end)
 
 -- ========== KEYBIND ==========
@@ -981,7 +965,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Hybrid Script Loaded (No Smart Mode)")
-print("   FLING tab - for stationary targets")
-print("   AURA tab - for moving targets")
-print("   Toggle one ON, the other turns OFF")
+print("✅ Hybrid Script Loaded")
+print("   FLING tab - Fling targets")
+print("   AURA tab - Teleport + sword kill")
+print("   Toggle one ON, other turns OFF automatically")
