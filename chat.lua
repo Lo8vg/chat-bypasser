@@ -1,4 +1,4 @@
--- Custom Chat GUI (TALL + Full Draggable + Simple Clear on Focus)
+-- Custom Chat GUI (TALL + Spam Cycle Messages)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -11,6 +11,16 @@ local playerGui = player:WaitForChild("PlayerGui")
 local MAX_CHARS = 200
 local spamEnabled = false
 local spamDelay = 1
+local messagesExpanded = false
+local spamIndex = 1
+
+-- Premade messages list
+local premadeMessages = {
+    "Hello",
+    "GG",
+    "What's up",
+    "Bye"
+}
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -18,7 +28,7 @@ screenGui.Name = "CustomChatGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Main Frame (TALL)
+-- Main Frame
 local frame = Instance.new("Frame")
 frame.Name = "ChatFrame"
 frame.Size = UDim2.new(0, 200, 0, 180)
@@ -62,7 +72,7 @@ titleLabel.TextSize = 13
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = titleBar
 
--- Char Counter (in title bar)
+-- Char Counter
 local charCounter = Instance.new("TextLabel")
 charCounter.Size = UDim2.new(0, 40, 1, 0)
 charCounter.Position = UDim2.new(1, -45, 0, 0)
@@ -73,7 +83,7 @@ charCounter.Font = Enum.Font.Gotham
 charCounter.TextSize = 10
 charCounter.Parent = titleBar
 
--- Textbox (BIG for easy tapping + TEXT WRAPPING)
+-- Textbox
 local textbox = Instance.new("TextBox")
 textbox.Name = "ChatInput"
 textbox.Size = UDim2.new(1, -20, 0, 70)
@@ -97,7 +107,7 @@ local textboxCorner = Instance.new("UICorner")
 textboxCorner.CornerRadius = UDim.new(0, 6)
 textboxCorner.Parent = textbox
 
--- Bottom Row (HORIZONTAL - side by side)
+-- Bottom Row
 local bottomRow = Instance.new("Frame")
 bottomRow.Size = UDim2.new(1, -20, 0, 32)
 bottomRow.Position = UDim2.new(0, 10, 0, 115)
@@ -163,7 +173,65 @@ local spamCorner = Instance.new("UICorner")
 spamCorner.CornerRadius = UDim.new(0, 6)
 spamCorner.Parent = spamButton
 
--- Dragging (ENTIRE FRAME)
+-- Messages Toggle Button
+local messagesToggle = Instance.new("TextButton")
+messagesToggle.Size = UDim2.new(1, -20, 0, 24)
+messagesToggle.Position = UDim2.new(0, 10, 0, 152)
+messagesToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+messagesToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+messagesToggle.Text = "▼ Messages"
+messagesToggle.Font = Enum.Font.GothamBold
+messagesToggle.TextSize = 11
+messagesToggle.Parent = frame
+
+local messagesToggleCorner = Instance.new("UICorner")
+messagesToggleCorner.CornerRadius = UDim.new(0, 6)
+messagesToggleCorner.Parent = messagesToggle
+
+-- Messages Panel (hidden by default)
+local messagesPanel = Instance.new("Frame")
+messagesPanel.Size = UDim2.new(1, -20, 0, 120)
+messagesPanel.Position = UDim2.new(0, 10, 0, 180)
+messagesPanel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+messagesPanel.Visible = false
+messagesPanel.Parent = frame
+
+local messagesPanelCorner = Instance.new("UICorner")
+messagesPanelCorner.CornerRadius = UDim.new(0, 6)
+messagesPanelCorner.Parent = messagesPanel
+
+-- Messages ScrollingFrame
+local messagesScroll = Instance.new("ScrollingFrame")
+messagesScroll.Size = UDim2.new(1, -10, 1, -35)
+messagesScroll.Position = UDim2.new(0, 5, 0, 5)
+messagesScroll.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+messagesScroll.ScrollBarThickness = 4
+messagesScroll.Parent = messagesPanel
+
+local messagesScrollCorner = Instance.new("UICorner")
+messagesScrollCorner.CornerRadius = UDim.new(0, 4)
+messagesScrollCorner.Parent = messagesScroll
+
+local messagesLayout = Instance.new("UIListLayout")
+messagesLayout.Padding = UDim.new(0, 4)
+messagesLayout.Parent = messagesScroll
+
+-- Add Message Button
+local addMsgButton = Instance.new("TextButton")
+addMsgButton.Size = UDim2.new(1, -10, 0, 24)
+addMsgButton.Position = UDim2.new(0, 5, 1, -29)
+addMsgButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+addMsgButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+addMsgButton.Text = "+ Add Current Message"
+addMsgButton.Font = Enum.Font.GothamBold
+addMsgButton.TextSize = 11
+addMsgButton.Parent = messagesPanel
+
+local addMsgCorner = Instance.new("UICorner")
+addMsgCorner.CornerRadius = UDim.new(0, 6)
+addMsgCorner.Parent = addMsgButton
+
+-- Dragging
 local dragging = false
 local dragInput
 local dragStart
@@ -252,21 +320,103 @@ local function sendMessage(msg)
     return false
 end
 
--- Send button click (text STAYS)
+-- Update messages list UI
+local function updateMessagesUI()
+    -- Clear existing
+    for _, child in pairs(messagesScroll:GetChildren()) do
+        if child:IsA("Frame") then
+            child:Destroy()
+        end
+    end
+    
+    -- Add messages
+    for i, msg in ipairs(premadeMessages) do
+        local msgFrame = Instance.new("Frame")
+        msgFrame.Size = UDim2.new(1, 0, 0, 28)
+        msgFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        msgFrame.Parent = messagesScroll
+        
+        local msgCorner = Instance.new("UICorner")
+        msgCorner.CornerRadius = UDim.new(0, 4)
+        msgCorner.Parent = msgFrame
+        
+        local msgLabel = Instance.new("TextLabel")
+        msgLabel.Size = UDim2.new(1, -35, 1, 0)
+        msgLabel.Position = UDim2.new(0, 5, 0, 0)
+        msgLabel.BackgroundTransparency = 1
+        msgLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        msgLabel.Text = msg
+        msgLabel.Font = Enum.Font.Gotham
+        msgLabel.TextSize = 12
+        msgLabel.TextXAlignment = Enum.TextXAlignment.Left
+        msgLabel.TextTruncate = Enum.TextTruncate.AtEnd
+        msgLabel.Parent = msgFrame
+        
+        local deleteBtn = Instance.new("TextButton")
+        deleteBtn.Size = UDim2.new(0, 24, 0, 24)
+        deleteBtn.Position = UDim2.new(1, -26, 0.5, -12)
+        deleteBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+        deleteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        deleteBtn.Text = "X"
+        deleteBtn.Font = Enum.Font.GothamBold
+        deleteBtn.TextSize = 12
+        deleteBtn.Parent = msgFrame
+        
+        local deleteCorner = Instance.new("UICorner")
+        deleteCorner.CornerRadius = UDim.new(0, 4)
+        deleteCorner.Parent = deleteBtn
+        
+        deleteBtn.MouseButton1Click:Connect(function()
+            table.remove(premadeMessages, i)
+            updateMessagesUI()
+        end)
+    end
+    
+    -- Update canvas size
+    messagesScroll.CanvasSize = UDim2.new(0, 0, 0, #premadeMessages * 32)
+end
+
+-- Toggle messages panel
+messagesToggle.MouseButton1Click:Connect(function()
+    messagesExpanded = not messagesExpanded
+    messagesPanel.Visible = messagesExpanded
+    
+    if messagesExpanded then
+        messagesToggle.Text = "▲ Messages"
+        frame.Size = UDim2.new(0, 200, 0, 310)
+    else
+        messagesToggle.Text = "▼ Messages"
+        frame.Size = UDim2.new(0, 200, 0, 180)
+    end
+    
+    updateMessagesUI()
+end)
+
+-- Add current message to list
+addMsgButton.MouseButton1Click:Connect(function()
+    local msg = textbox.Text:gsub("^%s+", ""):gsub("%s+$", "")
+    if msg ~= "" then
+        table.insert(premadeMessages, msg)
+        updateMessagesUI()
+        textbox.Text = ""
+    end
+end)
+
+-- Send button
 sendButton.MouseButton1Click:Connect(function()
     if textbox.Text ~= "" then
         sendMessage()
     end
 end)
 
--- FocusLost - mobile keyboard send (text STAYS)
+-- FocusLost
 textbox.FocusLost:Connect(function(enterPressed)
     if textbox.Text ~= "" and enterPressed then
         sendMessage()
     end
 end)
 
--- Enter key sends message for PC (text STAYS)
+-- Enter key
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.Enter and textbox:IsFocused() then
         if textbox.Text ~= "" then
@@ -275,7 +425,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Focused - clear text when regaining focus (ANY state)
+-- Focused - clear
 textbox.Focused:Connect(function()
     textbox.Text = ""
 end)
@@ -293,15 +443,34 @@ local function toggleSpam()
         spamButton.Text = "SPAM: ON"
         spamButton.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
         
-        spawn(function()
-            while spamEnabled do
-                local msg = textbox.Text
-                if msg ~= "" then
-                    sendMessage(msg)
+        -- Check if we have premade messages
+        if #premadeMessages > 0 then
+            spamIndex = 1
+            spawn(function()
+                while spamEnabled do
+                    local msg = premadeMessages[spamIndex]
+                    if msg then
+                        sendMessage(msg)
+                    end
+                    spamIndex = spamIndex + 1
+                    if spamIndex > #premadeMessages then
+                        spamIndex = 1
+                    end
+                    wait(spamDelay)
                 end
-                wait(spamDelay)
-            end
-        end)
+            end)
+        else
+            -- Use textbox message if no premade messages
+            spawn(function()
+                while spamEnabled do
+                    local msg = textbox.Text
+                    if msg ~= "" then
+                        sendMessage(msg)
+                    end
+                    wait(spamDelay)
+                end
+            end)
+        end
     else
         spamButton.Text = "SPAM: OFF"
         spamButton.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
@@ -320,4 +489,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Custom Chat GUI Loaded")
+-- Initialize messages UI
+updateMessagesUI()
+
+print("✅ Custom Chat GUI Loaded (with Spam Cycle Messages)")
