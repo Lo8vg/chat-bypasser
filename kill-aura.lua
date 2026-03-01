@@ -1,5 +1,5 @@
--- Teleport Kill Script
--- Teleports to target and attacks with sword
+-- Kill Aura Script (Auto-Equip + Aggressive Loop)
+-- Auto equips sword, teleports, and swings
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -11,7 +11,8 @@ local playerGui = player:WaitForChild("PlayerGui")
 -- Settings
 local killEnabled = false
 local targetPlayer = nil
-local attackDelay = 0.1
+local attackDelay = 0.05
+local swingsPerAttack = 3
 
 -- Colors (White Theme)
 local COLORS = {
@@ -67,8 +68,8 @@ hubButtonIcon.Parent = hubButton
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 280, 0, 350)
-mainFrame.Position = UDim2.new(0.5, -140, 0.5, -175)
+mainFrame.Size = UDim2.new(0, 280, 0, 380)
+mainFrame.Position = UDim2.new(0.5, -140, 0.5, -190)
 mainFrame.BackgroundColor3 = COLORS.background
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -211,7 +212,7 @@ delayInput.Size = UDim2.new(0, 60, 1, 0)
 delayInput.Position = UDim2.new(0, 95, 0, 0)
 delayInput.BackgroundColor3 = COLORS.inputBg
 delayInput.TextColor3 = COLORS.textDark
-delayInput.Text = "0.1"
+delayInput.Text = "0.05"
 delayInput.Font = Enum.Font.Gotham
 delayInput.TextSize = 12
 delayInput.ClearTextOnFocus = false
@@ -236,6 +237,43 @@ delayHint.Font = Enum.Font.Gotham
 delayHint.TextSize = 10
 delayHint.TextXAlignment = Enum.TextXAlignment.Left
 delayHint.Parent = delayRow
+
+-- Swings Input
+local swingsRow = Instance.new("Frame")
+swingsRow.Size = UDim2.new(1, 0, 0, 30)
+swingsRow.Position = UDim2.new(0, 0, 0, 305)
+swingsRow.BackgroundTransparency = 1
+swingsRow.Parent = contentFrame
+
+local swingsLabel = Instance.new("TextLabel")
+swingsLabel.Size = UDim2.new(0, 90, 1, 0)
+swingsLabel.BackgroundTransparency = 1
+swingsLabel.TextColor3 = COLORS.textDark
+swingsLabel.Text = "Swings/Hit:"
+swingsLabel.Font = Enum.Font.Gotham
+swingsLabel.TextSize = 11
+swingsLabel.TextXAlignment = Enum.TextXAlignment.Left
+swingsLabel.Parent = swingsRow
+
+local swingsInput = Instance.new("TextBox")
+swingsInput.Size = UDim2.new(0, 60, 1, 0)
+swingsInput.Position = UDim2.new(0, 95, 0, 0)
+swingsInput.BackgroundColor3 = COLORS.inputBg
+swingsInput.TextColor3 = COLORS.textDark
+swingsInput.Text = "3"
+swingsInput.Font = Enum.Font.Gotham
+swingsInput.TextSize = 12
+swingsInput.ClearTextOnFocus = false
+swingsInput.Parent = swingsRow
+
+local swingsInputCorner = Instance.new("UICorner")
+swingsInputCorner.CornerRadius = UDim.new(0, 6)
+swingsInputCorner.Parent = swingsInput
+
+local swingsInputStroke = Instance.new("UIStroke")
+swingsInputStroke.Color = COLORS.border
+swingsInputStroke.Thickness = 1
+swingsInputStroke.Parent = swingsInput
 
 -- ========== DRAGGING ==========
 
@@ -362,12 +400,13 @@ end)
 
 updatePlayerList()
 
--- ========== KILL AURA ==========
+-- ========== AUTO EQUIP SWORD ==========
 
 local function getSword()
     local character = player.Character
     if not character then return nil end
     
+    -- Check if already holding a tool
     for _, item in pairs(character:GetChildren()) do
         if item:IsA("Tool") then
             return item
@@ -375,6 +414,30 @@ local function getSword()
     end
     return nil
 end
+
+local function equipSword()
+    local character = player.Character
+    local backpack = player:FindFirstChild("Backpack")
+    
+    if not character or not backpack then return nil end
+    
+    -- Check if already holding something
+    local currentTool = getSword()
+    if currentTool then return currentTool end
+    
+    -- Find a tool in backpack and equip it
+    for _, item in pairs(backpack:GetChildren()) do
+        if item:IsA("Tool") then
+            character.Humanoid:EquipTool(item)
+            wait(0.1)
+            return item
+        end
+    end
+    
+    return nil
+end
+
+-- ========== KILL AURA ==========
 
 local function attackTarget()
     if not targetPlayer then return end
@@ -387,29 +450,48 @@ local function attackTarget()
     local targetHum = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
     local targetHumanoid = targetChar and targetChar:FindFirstChild("Humanoid")
     
-    if not myHum or not targetHum or not targetHumanoid or targetHumanoid.Health <= 0 then
+    if not myHum or not myHumanoid or not targetHum or not targetHumanoid then
         return
     end
     
-    -- Teleport to target
+    if targetHumanoid.Health <= 0 then
+        return
+    end
+    
+    -- Equip sword if not holding one
+    local sword = getSword()
+    if not sword then
+        sword = equipSword()
+    end
+    
+    -- Teleport to target (slightly in front of them)
     myHum.CFrame = targetHum.CFrame * CFrame.new(0, 0, 2)
     
-    -- Attack with sword
-    local sword = getSword()
+    -- Attack with sword multiple times
     if sword then
-        sword:Activate()
+        for i = 1, swingsPerAttack do
+            sword:Activate()
+            wait(0.01)
+        end
     end
 end
 
 toggleButton.MouseButton1Click:Connect(function()
     killEnabled = not killEnabled
-    attackDelay = tonumber(delayInput.Text) or 0.1
-    if attackDelay < 0.05 then attackDelay = 0.05 end
+    attackDelay = tonumber(delayInput.Text) or 0.05
+    if attackDelay < 0.01 then attackDelay = 0.01 end
+    
+    swingsPerAttack = tonumber(swingsInput.Text) or 3
+    if swingsPerAttack < 1 then swingsPerAttack = 1 end
+    if swingsPerAttack > 10 then swingsPerAttack = 10 end
     
     if killEnabled then
         toggleButton.Text = "KILL AURA: ON"
         toggleButton.BackgroundColor3 = COLORS.buttonSuccess
         statusLabel.Text = targetPlayer and ("Hunting: " .. targetPlayer.Name) or "No target selected"
+        
+        -- Auto equip sword on start
+        equipSword()
         
         spawn(function()
             while killEnabled do
@@ -418,9 +500,10 @@ toggleButton.MouseButton1Click:Connect(function()
                     if targetHumanoid and targetHumanoid.Health > 0 then
                         attackTarget()
                     else
-                        -- Target dead, wait for respawn
                         statusLabel.Text = "Waiting for target respawn..."
                     end
+                else
+                    statusLabel.Text = "Target left or respawning..."
                 end
                 wait(attackDelay)
             end
@@ -429,6 +512,15 @@ toggleButton.MouseButton1Click:Connect(function()
         toggleButton.Text = "KILL AURA: OFF"
         toggleButton.BackgroundColor3 = COLORS.buttonDanger
         statusLabel.Text = targetPlayer and ("Target: " .. targetPlayer.Name) or "No target selected"
+    end
+end)
+
+-- ========== RESPAWN HANDLER (RE-EQUIP ON DEATH) ==========
+
+player.CharacterAdded:Connect(function()
+    wait(1)
+    if killEnabled then
+        equipSword()
     end
 end)
 
@@ -445,4 +537,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Kill Aura Loaded")
+print("✅ Kill Aura Loaded (Auto-Equip)")
