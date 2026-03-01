@@ -1,5 +1,5 @@
--- Hybrid Script with Tabs
--- Fling + Kill Aura (Separate Modes)
+-- Hybrid Script with Tabs (Fixed)
+-- Fling + Kill Aura (Separate Modes, No Smart Mode)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -14,21 +14,16 @@ local auraEnabled = false
 local targetPlayer = nil
 
 -- Fling settings
-local flingSpinPower = 999999
-local flingLaunchPower = 999999
 local bodyAngularVel = nil
 local bodyVel = nil
 local flingLoop = nil
 
 -- Aura settings
 local teleportDistance = 2
-local teleportDelay = 0.1
-local swingDelay = 0.01
-local smartMode = true
-local spawnWaitTime = 5
 local attackAngle = 0
 local auraLoop = nil
 local swingLoop = nil
+local reequipLoop = nil
 
 -- Stats
 local flingCount = 0
@@ -41,7 +36,6 @@ local COLORS = {
     buttonPrimary = Color3.fromRGB(0, 120, 215),
     buttonDanger = Color3.fromRGB(220, 53, 69),
     buttonSuccess = Color3.fromRGB(40, 167, 69),
-    buttonWarning = Color3.fromRGB(255, 193, 7),
     buttonPurple = Color3.fromRGB(111, 66, 193),
     textDark = Color3.fromRGB(33, 37, 41),
     textLight = Color3.fromRGB(255, 255, 255),
@@ -58,6 +52,51 @@ local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "HybridGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
+
+-- ========== HELPER FUNCTIONS (DEFINED FIRST) ==========
+
+local function getRoot(char)
+    return char and char:FindFirstChild("HumanoidRootPart") or char and char:FindFirstChild("Torso") or char and char:FindFirstChild("UpperTorso")
+end
+
+local function getSword()
+    local character = player.Character
+    if not character then return nil end
+    
+    for _, item in pairs(character:GetChildren()) do
+        if item:IsA("Tool") then
+            return item
+        end
+    end
+    return nil
+end
+
+local function equipSword()
+    local character = player.Character
+    local backpack = player:FindFirstChild("Backpack")
+    
+    if not character or not backpack then return nil end
+    
+    local currentTool = getSword()
+    if currentTool then return currentTool end
+    
+    for _, item in pairs(backpack:GetChildren()) do
+        if item:IsA("Tool") then
+            character.Humanoid:EquipTool(item)
+            wait(0.1)
+            return item
+        end
+    end
+    
+    return nil
+end
+
+local function swingSword()
+    local sword = getSword()
+    if sword then
+        sword:Activate()
+    end
+end
 
 -- ========== HUB BUTTON ==========
 
@@ -92,8 +131,8 @@ hubButtonIcon.Parent = hubButton
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 450, 0, 320)
-mainFrame.Position = UDim2.new(0.5, -225, 0.5, -160)
+mainFrame.Size = UDim2.new(0, 450, 0, 300)
+mainFrame.Position = UDim2.new(0.5, -225, 0.5, -150)
 mainFrame.BackgroundColor3 = COLORS.background
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -387,7 +426,7 @@ auraTargetLabel.Parent = auraPage
 
 -- Aura Player List
 local auraPlayerScroll = Instance.new("ScrollingFrame")
-auraPlayerScroll.Size = UDim2.new(1, 0, 0, 80)
+auraPlayerScroll.Size = UDim2.new(1, 0, 0, 100)
 auraPlayerScroll.Position = UDim2.new(0, 0, 0, 78)
 auraPlayerScroll.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
 auraPlayerScroll.ScrollBarThickness = 4
@@ -401,25 +440,10 @@ local auraPlayerLayout = Instance.new("UIListLayout")
 auraPlayerLayout.Padding = UDim.new(0, 2)
 auraPlayerLayout.Parent = auraPlayerScroll
 
--- Smart Mode Toggle
-local smartToggle = Instance.new("TextButton")
-smartToggle.Size = UDim2.new(1, 0, 0, 24)
-smartToggle.Position = UDim2.new(0, 0, 0, 162)
-smartToggle.BackgroundColor3 = COLORS.buttonSuccess
-smartToggle.TextColor3 = COLORS.textLight
-smartToggle.Text = "SMART MODE: ON"
-smartToggle.Font = Enum.Font.GothamBold
-smartToggle.TextSize = 10
-smartToggle.Parent = auraPage
-
-local smartCorner = Instance.new("UICorner")
-smartCorner.CornerRadius = UDim.new(0, 5)
-smartCorner.Parent = smartToggle
-
 -- Distance
 local distRow = Instance.new("Frame")
 distRow.Size = UDim2.new(1, 0, 0, 22)
-distRow.Position = UDim2.new(0, 0, 0, 190)
+distRow.Position = UDim2.new(0, 0, 0, 182)
 distRow.BackgroundTransparency = 1
 distRow.Parent = auraPage
 
@@ -456,7 +480,7 @@ distStroke.Parent = distInput
 -- Swing Speed
 local swingRow = Instance.new("Frame")
 swingRow.Size = UDim2.new(1, 0, 0, 22)
-swingRow.Position = UDim2.new(0, 0, 0, 216)
+swingRow.Position = UDim2.new(0, 0, 0, 206)
 swingRow.BackgroundTransparency = 1
 swingRow.Parent = auraPage
 
@@ -595,7 +619,6 @@ local flingPlayerButtons = {}
 local auraPlayerButtons = {}
 
 local function updatePlayerLists()
-    -- Clear both lists
     for _, btn in pairs(flingPlayerButtons) do btn:Destroy() end
     for _, btn in pairs(auraPlayerButtons) do btn:Destroy() end
     flingPlayerButtons = {}
@@ -658,50 +681,6 @@ Players.PlayerRemoving:Connect(function()
 end)
 
 updatePlayerLists()
-
--- ========== HELPER FUNCTIONS ==========
-
-local function getRoot(char)
-    return char and char:FindFirstChild("HumanoidRootPart") or char and char:FindFirstChild("Torso") or char and char:FindFirstChild("UpperTorso")
-end
-
-local function getSword()
-    local character = player.Character
-    if not character then return nil end
-    
-    for _, item in pairs(character:GetChildren()) do
-        if item:IsA("Tool") then
-            return item
-        end
-    end
-    return nil
-end
-
-local function equipSword()
-    local character = player.Character
-    local backpack = player:FindFirstChild("Backpack")
-    
-    if not character or not backpack then return nil end
-    
-    local currentTool = getSword()
-    if currentTool then return currentTool end
-    
-    for _, item in pairs(backpack:GetChildren()) do
-        if item:IsA("Tool") then
-            character.Humanoid:EquipTool(item)
-            wait(0.1)
-            return item
-        end
-    end
-    
-    return nil
-end
-
-local function hasSpawnProtection(targetPlr)
-    if not targetPlr or not targetPlr.Character then return false end
-    local forceField = targetPlr.Character:FindFirstChild("ForceField")
-    return forceField ~= nil
-end
 
 -- ========== FLING FUNCTIONS ==========
 
@@ -823,6 +802,11 @@ local function stopAura()
         swingLoop:Disconnect()
         swingLoop = nil
     end
+    
+    if reequipLoop then
+        reequipLoop:Disconnect()
+        reequipLoop = nil
+    end
 end
 
 local function startAura()
@@ -833,18 +817,14 @@ local function startAura()
     local dist = tonumber(distInput.Text) or 2
     local swing = tonumber(swingInput.Text) or 0.01
     
-    -- Swing loop
+    -- Swing loop (runs on Heartbeat for constant swinging)
     swingLoop = RunService.Heartbeat:Connect(function()
         if not auraEnabled then return end
         
         if targetPlayer and targetPlayer.Character then
             local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
             if targetHumanoid and targetHumanoid.Health > 0 then
-                if smartMode and hasSpawnProtection(targetPlayer) then
-                    -- Don't swing during spawn protection
-                else
-                    swingSword()
-                end
+                swingSword()
             end
         end
     end)
@@ -864,11 +844,6 @@ local function startAura()
         if not myRoot or not targetRoot or not targetHumanoid then return end
         if targetHumanoid.Health <= 0 then return end
         
-        -- Smart mode check
-        if smartMode and hasSpawnProtection(targetPlayer) then
-            return
-        end
-        
         -- Rotate around target
         attackAngle = attackAngle + 60
         if attackAngle >= 360 then attackAngle = 0 end
@@ -884,21 +859,24 @@ local function startAura()
         end
     end)
     
-    -- Re-equip loop
-    spawn(function()
+    -- Re-equip sword loop
+    reequipLoop = spawn(function()
         while auraEnabled do
+            wait(0.5)
+            if not auraEnabled then return end
             local sword = getSword()
             if not sword then
                 equipSword()
             end
-            wait(0.5)
         end
     end)
     
     -- Kill detection
-    local lastHealth = 100
     spawn(function()
+        local lastHealth = 100
         while auraEnabled do
+            wait(0.1)
+            if not auraEnabled then return end
             if targetPlayer and targetPlayer.Character then
                 local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
                 if targetHumanoid then
@@ -909,16 +887,8 @@ local function startAura()
                     lastHealth = targetHumanoid.Health
                 end
             end
-            wait(0.1)
         end
     end)
-end
-
-local function swingSword()
-    local sword = getSword()
-    if sword then
-        sword:Activate()
-    end
 end
 
 -- ========== FLING TOGGLE ==========
@@ -977,20 +947,6 @@ auraToggle.MouseButton1Click:Connect(function()
     end
 end)
 
--- ========== SMART MODE TOGGLE ==========
-
-smartToggle.MouseButton1Click:Connect(function()
-    smartMode = not smartMode
-    
-    if smartMode then
-        smartToggle.Text = "SMART MODE: ON"
-        smartToggle.BackgroundColor3 = COLORS.buttonSuccess
-    else
-        smartToggle.Text = "SMART MODE: OFF"
-        smartToggle.BackgroundColor3 = COLORS.buttonDanger
-    end
-end)
-
 -- ========== RESPAWN HANDLER ==========
 
 player.CharacterAdded:Connect(function(char)
@@ -1025,6 +981,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Hybrid Script Loaded")
-print("   Two tabs: FLING and AURA")
-print("   Select target, then toggle one mode")
+print("✅ Hybrid Script Loaded (No Smart Mode)")
+print("   FLING tab - for stationary targets")
+print("   AURA tab - for moving targets")
+print("   Toggle one ON, the other turns OFF")
