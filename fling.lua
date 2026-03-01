@@ -1,5 +1,5 @@
--- Aggressive Netless-Style Fling
--- Constantly re-applies velocity every frame
+-- Real Physics Fling Script
+-- Uses finite values + proper timing + network ownership
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -12,6 +12,10 @@ local playerGui = player:WaitForChild("PlayerGui")
 local flingEnabled = false
 local targetPlayer = nil
 local flingLoop = nil
+
+-- FINITE VALUES (not math.huge)
+local ANGULAR_VEL = 20000  -- Spin speed
+local LINEAR_VEL = 500     -- Launch force
 
 -- Colors
 local COLORS = {
@@ -67,8 +71,8 @@ hubButtonIcon.Parent = hubButton
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 400, 0, 220)
-mainFrame.Position = UDim2.new(0.5, -200, 0.5, -110)
+mainFrame.Size = UDim2.new(0, 400, 0, 250)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -125)
 mainFrame.BackgroundColor3 = COLORS.background
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -106,7 +110,7 @@ titleLabel.Size = UDim2.new(1, -50, 1, 0)
 titleLabel.Position = UDim2.new(0, 15, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = COLORS.textDark
-titleLabel.Text = "🌀 Aggressive Fling"
+titleLabel.Text = "🌀 Real Physics Fling"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 14
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -208,15 +212,89 @@ rightFrame.Position = UDim2.new(0.5, 5, 0, 40)
 rightFrame.BackgroundTransparency = 1
 rightFrame.Parent = mainFrame
 
+-- Angular Velocity
+local angularRow = Instance.new("Frame")
+angularRow.Size = UDim2.new(1, 0, 0, 22)
+angularRow.Position = UDim2.new(0, 0, 0, 0)
+angularRow.BackgroundTransparency = 1
+angularRow.Parent = rightFrame
+
+local angularLabel = Instance.new("TextLabel")
+angularLabel.Size = UDim2.new(0, 100, 1, 0)
+angularLabel.BackgroundTransparency = 1
+angularLabel.TextColor3 = COLORS.textDark
+angularLabel.Text = "Spin Speed:"
+angularLabel.Font = Enum.Font.Gotham
+angularLabel.TextSize = 10
+angularLabel.TextXAlignment = Enum.TextXAlignment.Left
+angularLabel.Parent = angularRow
+
+local angularInput = Instance.new("TextBox")
+angularInput.Size = UDim2.new(0, 70, 1, 0)
+angularInput.Position = UDim2.new(0, 105, 0, 0)
+angularInput.BackgroundColor3 = COLORS.inputBg
+angularInput.TextColor3 = COLORS.textDark
+angularInput.Text = "20000"
+angularInput.Font = Enum.Font.Gotham
+angularInput.TextSize = 10
+angularInput.ClearTextOnFocus = false
+angularInput.Parent = angularRow
+
+local angularCorner = Instance.new("UICorner")
+angularCorner.CornerRadius = UDim.new(0, 5)
+angularCorner.Parent = angularInput
+
+local angularStroke = Instance.new("UIStroke")
+angularStroke.Color = COLORS.border
+angularStroke.Thickness = 1
+angularStroke.Parent = angularInput
+
+-- Linear Velocity
+local linearRow = Instance.new("Frame")
+linearRow.Size = UDim2.new(1, 0, 0, 22)
+linearRow.Position = UDim2.new(0, 0, 0, 26)
+linearRow.BackgroundTransparency = 1
+linearRow.Parent = rightFrame
+
+local linearLabel = Instance.new("TextLabel")
+linearLabel.Size = UDim2.new(0, 100, 1, 0)
+linearLabel.BackgroundTransparency = 1
+linearLabel.TextColor3 = COLORS.textDark
+linearLabel.Text = "Launch Force:"
+linearLabel.Font = Enum.Font.Gotham
+linearLabel.TextSize = 10
+linearLabel.TextXAlignment = Enum.TextXAlignment.Left
+linearLabel.Parent = linearRow
+
+local linearInput = Instance.new("TextBox")
+linearInput.Size = UDim2.new(0, 70, 1, 0)
+linearInput.Position = UDim2.new(0, 105, 0, 0)
+linearInput.BackgroundColor3 = COLORS.inputBg
+linearInput.TextColor3 = COLORS.textDark
+linearInput.Text = "500"
+linearInput.Font = Enum.Font.Gotham
+linearInput.TextSize = 10
+linearInput.ClearTextOnFocus = false
+linearInput.Parent = linearRow
+
+local linearCorner = Instance.new("UICorner")
+linearCorner.CornerRadius = UDim.new(0, 5)
+linearCorner.Parent = linearInput
+
+local linearStroke = Instance.new("UIStroke")
+linearStroke.Color = COLORS.border
+linearStroke.Thickness = 1
+linearStroke.Parent = linearInput
+
 -- Info
 local infoLabel = Instance.new("TextLabel")
-infoLabel.Size = UDim2.new(1, 0, 0, 120)
-infoLabel.Position = UDim2.new(0, 0, 0, 10)
+infoLabel.Size = UDim2.new(1, 0, 0, 70)
+infoLabel.Position = UDim2.new(0, 0, 0, 55)
 infoLabel.BackgroundTransparency = 1
-infoLabel.TextColor3 = COLORS.textDark
-infoLabel.Text = "HOW IT WORKS:\n\n1. Select target\n2. Toggle FLING ON\n3. Script teleports inside\n   them constantly\n4. Applies spin every frame\n5. Physics flings them\n6. Anti-cheat kills you\n7. Auto-respawn & repeat"
+infoLabel.TextColor3 = COLORS.textMuted
+infoLabel.Text = "Uses finite velocity values.\nTeleport delay allows physics.\nOnly root part gets velocity."
 infoLabel.Font = Enum.Font.Gotham
-infoLabel.TextSize = 10
+infoLabel.TextSize = 9
 infoLabel.TextWrapped = true
 infoLabel.TextXAlignment = Enum.TextXAlignment.Left
 infoLabel.Parent = rightFrame
@@ -353,6 +431,9 @@ local function getRoot(char)
     return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
 end
 
+local lastTeleport = 0
+local TELEPORT_DELAY = 0.05 -- Wait between teleports to let physics resolve
+
 local function stopFling()
     if flingLoop then
         flingLoop:Disconnect()
@@ -372,13 +453,6 @@ local function stopFling()
         if myHumanoid then
             myHumanoid.PlatformStand = false
         end
-        
-        for _, part in pairs(myChar:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-                part.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-            end
-        end
     end
 end
 
@@ -386,6 +460,18 @@ local function startFling()
     if flingLoop then
         flingLoop:Disconnect()
     end
+    
+    -- Read values from UI
+    local angularVel = tonumber(angularInput.Text) or 20000
+    local linearVel = tonumber(linearInput.Text) or 500
+    
+    -- Clamp to reasonable values
+    if angularVel > 50000 then angularVel = 50000 end
+    if angularVel < 1000 then angularVel = 1000 end
+    if linearVel > 2000 then linearVel = 2000 end
+    if linearVel < 100 then linearVel = 100 end
+    
+    lastTeleport = tick()
     
     flingLoop = RunService.Heartbeat:Connect(function()
         if not flingEnabled then return end
@@ -405,25 +491,29 @@ local function startFling()
         local targetRoot = getRoot(targetPlayer.Character)
         if not targetRoot then return end
         
-        -- Enable PlatformStand
-        if myHumanoid then
-            myHumanoid.PlatformStand = true
+        -- Set network ownership (key for replication)
+        pcall(function()
+            myRoot:SetNetworkOwner(player)
+        end)
+        
+        -- Teleport to target (with delay to let physics resolve)
+        local now = tick()
+        if now - lastTeleport >= TELEPORT_DELAY then
+            myRoot.CFrame = targetRoot.CFrame
+            lastTeleport = now
         end
         
-        -- Teleport inside target EVERY FRAME
-        myRoot.CFrame = targetRoot.CFrame
+        -- Apply FINITE velocity to ROOT PART ONLY
+        -- This creates unbalanced rotation = impulse transfer
+        myRoot.AssemblyAngularVelocity = Vector3.new(angularVel, angularVel, angularVel)
+        myRoot.AssemblyLinearVelocity = Vector3.new(
+            math.random(-linearVel, linearVel),
+            linearVel * 2,
+            math.random(-linearVel, linearVel)
+        )
         
-        -- Apply INSANE velocity EVERY FRAME
-        myRoot.AssemblyAngularVelocity = Vector3.new(math.huge, math.huge, math.huge)
-        myRoot.AssemblyLinearVelocity = Vector3.new(math.huge, math.huge, math.huge)
-        
-        -- Also apply to all body parts
-        for _, part in pairs(myChar:GetDescendants()) do
-            if part:IsA("BasePart") and part ~= myRoot then
-                part.AssemblyAngularVelocity = Vector3.new(math.huge, math.huge, math.huge)
-                part.AssemblyLinearVelocity = Vector3.new(math.huge, math.huge, math.huge)
-            end
-        end
+        -- DO NOT set PlatformStand - it breaks force chain
+        -- DO NOT apply velocity to all parts - it balances the rig
     end)
 end
 
@@ -463,7 +553,7 @@ end)
 -- Auto-restart on respawn
 player.CharacterAdded:Connect(function(char)
     if flingEnabled then
-        wait(0.5) -- Wait for character to load
+        wait(0.3) -- Short wait for character load
         startFling()
         flingCount = flingCount + 1
         flingCounter.Text = "Flings: " .. flingCount
@@ -475,4 +565,5 @@ player.CharacterRemoving:Connect(function()
     stopFling()
 end)
 
-print("✅ Aggressive Fling Loaded")
+print("✅ Real Physics Fling Loaded")
+print("   Spin: " .. ANGULAR_VEL .. " | Launch: " .. LINEAR_VEL)
