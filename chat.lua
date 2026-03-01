@@ -1,4 +1,4 @@
--- Custom Chat GUI (TALL + Big Textbox + Text Wrapping)
+-- Custom Chat GUI (TALL + Full Draggable + Always Clear on Focus)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -11,7 +11,6 @@ local playerGui = player:WaitForChild("PlayerGui")
 local MAX_CHARS = 200
 local spamEnabled = false
 local spamDelay = 1
-local justSent = false
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -164,13 +163,13 @@ local spamCorner = Instance.new("UICorner")
 spamCorner.CornerRadius = UDim.new(0, 6)
 spamCorner.Parent = spamButton
 
--- Dragging
+-- Dragging (ENTIRE FRAME - including empty areas)
 local dragging = false
 local dragInput
 local dragStart
 local startPos
 
-titleBar.InputBegan:Connect(function(input)
+frame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
@@ -184,7 +183,7 @@ titleBar.InputBegan:Connect(function(input)
     end
 end)
 
-titleBar.InputChanged:Connect(function(input)
+frame.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         dragInput = input
     end
@@ -218,8 +217,6 @@ end)
 local function sendMessage(msg)
     local message = msg or textbox.Text
     message = message:gsub("^%s+", ""):gsub("%s+$", "")
-    
-    -- Remove newlines for sending (optional - keeps it as one message)
     message = message:gsub("\n", " ")
     
     if message == "" then
@@ -259,7 +256,7 @@ end
 sendButton.MouseButton1Click:Connect(function()
     if textbox.Text ~= "" then
         sendMessage()
-        justSent = true
+        textbox.Text = ""
     end
 end)
 
@@ -267,7 +264,7 @@ end)
 textbox.FocusLost:Connect(function(enterPressed)
     if textbox.Text ~= "" and enterPressed then
         sendMessage()
-        justSent = true
+        textbox.Text = ""
     end
 end)
 
@@ -276,16 +273,14 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.Enter and textbox:IsFocused() then
         if textbox.Text ~= "" then
             sendMessage()
-            justSent = true
-            textbox.Text = "" -- Clear after sending
+            textbox.Text = ""
         end
     end
 end)
 
--- Focused - clear text when clicking to type again
+-- Focused - ALWAYS clear text when clicking into textbox
 textbox.Focused:Connect(function()
-    if justSent then
-        justSent = false
+    if textbox.Text ~= "" then
         textbox.Text = ""
     end
 end)
@@ -330,4 +325,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Custom Chat GUI Loaded (Text Wrapping Enabled)")
+print("✅ Custom Chat GUI Loaded")
