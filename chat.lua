@@ -1,4 +1,4 @@
--- Custom Chat GUI (Compact Rectangle)
+-- Custom Chat GUI (TALL - Vertical Stack)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -19,11 +19,11 @@ screenGui.Name = "CustomChatGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Main Frame (compact rectangle)
+-- Main Frame (TALL - not wide)
 local frame = Instance.new("Frame")
 frame.Name = "ChatFrame"
-frame.Size = UDim2.new(0, 220, 0, 130)
-frame.Position = UDim2.new(0.5, -110, 0.5, -65)
+frame.Size = UDim2.new(0, 180, 0, 240)
+frame.Position = UDim2.new(0.5, -90, 0.5, -120)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.BorderSizePixel = 2
 frame.BorderColor3 = Color3.fromRGB(60, 60, 60)
@@ -74,11 +74,11 @@ charCounter.Font = Enum.Font.Gotham
 charCounter.TextSize = 10
 charCounter.Parent = titleBar
 
--- Textbox
+-- Textbox (VERTICAL - stacked)
 local textbox = Instance.new("TextBox")
 textbox.Name = "ChatInput"
-textbox.Size = UDim2.new(1, -20, 0, 32)
-textbox.Position = UDim2.new(0, 10, 0, 35)
+textbox.Size = UDim2.new(1, -20, 0, 40)
+textbox.Position = UDim2.new(0, 10, 0, 38)
 textbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textbox.Text = ""
@@ -96,32 +96,37 @@ local textboxCorner = Instance.new("UICorner")
 textboxCorner.CornerRadius = UDim.new(0, 6)
 textboxCorner.Parent = textbox
 
--- Bottom Row Frame
-local bottomRow = Instance.new("Frame")
-bottomRow.Size = UDim2.new(1, -20, 0, 28)
-bottomRow.Position = UDim2.new(0, 10, 0, 72)
-bottomRow.BackgroundTransparency = 1
-bottomRow.Parent = frame
-
--- Send Button
+-- Send Button (VERTICAL - below textbox)
 local sendButton = Instance.new("TextButton")
-sendButton.Size = UDim2.new(0, 55, 0, 28)
-sendButton.Position = UDim2.new(0, 0, 0, 0)
+sendButton.Size = UDim2.new(1, -20, 0, 32)
+sendButton.Position = UDim2.new(0, 10, 0, 86)
 sendButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 sendButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 sendButton.Text = "Send"
 sendButton.Font = Enum.Font.GothamBold
-sendButton.TextSize = 12
-sendButton.Parent = bottomRow
+sendButton.TextSize = 13
+sendButton.Parent = frame
 
 local sendCorner = Instance.new("UICorner")
 sendCorner.CornerRadius = UDim.new(0, 6)
 sendCorner.Parent = sendButton
 
--- Delay Textbox
+-- Delay Label (VERTICAL - below send)
+local delayLabel = Instance.new("TextLabel")
+delayLabel.Size = UDim2.new(1, -20, 0, 20)
+delayLabel.Position = UDim2.new(0, 10, 0, 124)
+delayLabel.BackgroundTransparency = 1
+delayLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+delayLabel.Text = "Delay:"
+delayLabel.Font = Enum.Font.Gotham
+delayLabel.TextSize = 11
+delayLabel.TextXAlignment = Enum.TextXAlignment.Left
+delayLabel.Parent = frame
+
+-- Delay Textbox (VERTICAL - below label)
 local delayTextbox = Instance.new("TextBox")
-delayTextbox.Size = UDim2.new(0, 30, 0, 28)
-delayTextbox.Position = UDim2.new(0, 60, 0, 0)
+delayTextbox.Size = UDim2.new(1, -20, 0, 28)
+delayTextbox.Position = UDim2.new(0, 10, 0, 144)
 delayTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 delayTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
 delayTextbox.Text = "1"
@@ -130,22 +135,22 @@ delayTextbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 delayTextbox.Font = Enum.Font.Gotham
 delayTextbox.TextSize = 12
 delayTextbox.ClearTextOnFocus = false
-delayTextbox.Parent = bottomRow
+delayTextbox.Parent = frame
 
 local delayCorner = Instance.new("UICorner")
 delayCorner.CornerRadius = UDim.new(0, 6)
 delayCorner.Parent = delayTextbox
 
--- Spam Button
+-- Spam Button (VERTICAL - at bottom)
 local spamButton = Instance.new("TextButton")
-spamButton.Size = UDim2.new(0, 70, 0, 28)
-spamButton.Position = UDim2.new(1, -70, 0, 0)
+spamButton.Size = UDim2.new(1, -20, 0, 32)
+spamButton.Position = UDim2.new(0, 10, 0, 180)
 spamButton.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 spamButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 spamButton.Text = "SPAM: OFF"
 spamButton.Font = Enum.Font.GothamBold
-spamButton.TextSize = 10
-spamButton.Parent = bottomRow
+spamButton.TextSize = 12
+spamButton.Parent = frame
 
 local spamCorner = Instance.new("UICorner")
 spamCorner.CornerRadius = UDim.new(0, 6)
@@ -303,4 +308,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Custom Chat GUI Loaded (Compact Rectangle)")
+print("✅ Custom Chat GUI Loaded (TALL Layout)")
