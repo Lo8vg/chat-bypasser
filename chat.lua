@@ -1,4 +1,4 @@
--- Custom Chat GUI (Compact + Auto-clear on Focus + Mobile Send Fix)
+-- Custom Chat GUI (Mobile Send Fix - Method 1: FocusLost)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -62,7 +62,7 @@ titleLabel.TextSize = 12
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = titleBar
 
--- Char counter (small, inline)
+-- Char counter
 local charCounter = Instance.new("TextLabel")
 charCounter.Size = UDim2.new(0, 45, 1, 0)
 charCounter.Position = UDim2.new(1, -50, 0, 0)
@@ -88,6 +88,7 @@ textbox.TextSize = 14
 textbox.TextXAlignment = Enum.TextXAlignment.Left
 textbox.ClearTextOnFocus = false
 textbox.ReturnKeyType = Enum.ReturnKeyType.Send
+textbox.MultiLine = false
 textbox.Parent = frame
 
 local textboxCorner = Instance.new("UICorner")
@@ -109,7 +110,7 @@ local sendCorner = Instance.new("UICorner")
 sendCorner.CornerRadius = UDim.new(0, 6)
 sendCorner.Parent = sendButton
 
--- Bottom row (delay + spam button)
+-- Bottom row
 local delayLabel = Instance.new("TextLabel")
 delayLabel.Size = UDim2.new(0, 35, 0, 24)
 delayLabel.Position = UDim2.new(0, 8, 0, 65)
@@ -252,23 +253,11 @@ sendButton.MouseButton1Click:Connect(function()
     sendMessage()
 end)
 
--- Enter key to send (PC)
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if input.KeyCode == Enum.KeyCode.Enter then
-        if textbox:IsFocused() and textbox.Text ~= "" then
-            sendMessage()
-        end
-    end
-end)
-
--- Mobile keyboard send button
-textbox.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Keyboard then
-        if input.KeyCode == Enum.KeyCode.Enter then
-            if textbox.Text ~= "" then
-                sendMessage()
-            end
-        end
+-- ===== METHOD 1: FocusLost =====
+textbox.FocusLost:Connect(function(enterPressed)
+    print("FocusLost triggered, enterPressed:", enterPressed)
+    if enterPressed and textbox.Text ~= "" then
+        sendMessage()
     end
 end)
 
@@ -312,7 +301,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Custom Chat GUI Loaded")
-print("✅ Drag title bar to move")
-print("✅ Text clears when you click to type again")
-print("✅ Mobile keyboard send button works")
+print("✅ Custom Chat GUI Loaded - Method 1: FocusLost")
