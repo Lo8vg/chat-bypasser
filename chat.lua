@@ -1,4 +1,4 @@
--- Custom Chat GUI (Compact + Auto-clear on Focus)
+-- Custom Chat GUI (Compact + Auto-clear on Focus + Mobile Send Fix)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -87,6 +87,7 @@ textbox.Font = Enum.Font.Gotham
 textbox.TextSize = 14
 textbox.TextXAlignment = Enum.TextXAlignment.Left
 textbox.ClearTextOnFocus = false
+textbox.ReturnKeyType = Enum.ReturnKeyType.Send
 textbox.Parent = frame
 
 local textboxCorner = Instance.new("UICorner")
@@ -251,11 +252,22 @@ sendButton.MouseButton1Click:Connect(function()
     sendMessage()
 end)
 
--- Enter key to send
+-- Enter key to send (PC)
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.Enter then
         if textbox:IsFocused() and textbox.Text ~= "" then
             sendMessage()
+        end
+    end
+end)
+
+-- Mobile keyboard send button
+textbox.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        if input.KeyCode == Enum.KeyCode.Enter then
+            if textbox.Text ~= "" then
+                sendMessage()
+            end
         end
     end
 end)
@@ -303,3 +315,4 @@ end)
 print("✅ Custom Chat GUI Loaded")
 print("✅ Drag title bar to move")
 print("✅ Text clears when you click to type again")
+print("✅ Mobile keyboard send button works")
