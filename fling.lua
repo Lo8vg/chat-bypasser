@@ -1,5 +1,5 @@
--- Spin Fling Script
--- Uses angular velocity + collision to fling target
+-- Network Fling Script (Actually works on other players)
+-- Uses collision physics which replicates
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -11,8 +11,8 @@ local playerGui = player:WaitForChild("PlayerGui")
 -- Settings
 local flingEnabled = false
 local targetPlayer = nil
-local spinPower = 999999
-local flingTime = 3
+local spinSpeed = 999999999
+local flingTime = 5
 local autoRefling = true
 local respawnWait = 3
 
@@ -23,7 +23,6 @@ local COLORS = {
     buttonPrimary = Color3.fromRGB(0, 120, 215),
     buttonDanger = Color3.fromRGB(220, 53, 69),
     buttonSuccess = Color3.fromRGB(40, 167, 69),
-    buttonWarning = Color3.fromRGB(255, 193, 7),
     textDark = Color3.fromRGB(33, 37, 41),
     textLight = Color3.fromRGB(255, 255, 255),
     textMuted = Color3.fromRGB(134, 142, 150),
@@ -110,7 +109,7 @@ titleLabel.Size = UDim2.new(1, -50, 1, 0)
 titleLabel.Position = UDim2.new(0, 15, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = COLORS.textDark
-titleLabel.Text = "🌀 Spin Fling"
+titleLabel.Text = "🌀 Network Fling"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 14
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -224,47 +223,10 @@ settingsHeader.TextSize = 11
 settingsHeader.TextXAlignment = Enum.TextXAlignment.Left
 settingsHeader.Parent = rightFrame
 
--- Spin Power
-local powerRow = Instance.new("Frame")
-powerRow.Size = UDim2.new(1, 0, 0, 22)
-powerRow.Position = UDim2.new(0, 0, 0, 20)
-powerRow.BackgroundTransparency = 1
-powerRow.Parent = rightFrame
-
-local powerLabel = Instance.new("TextLabel")
-powerLabel.Size = UDim2.new(0, 110, 1, 0)
-powerLabel.BackgroundTransparency = 1
-powerLabel.TextColor3 = COLORS.textDark
-powerLabel.Text = "Spin Power:"
-powerLabel.Font = Enum.Font.Gotham
-powerLabel.TextSize = 10
-powerLabel.TextXAlignment = Enum.TextXAlignment.Left
-powerLabel.Parent = powerRow
-
-local powerInput = Instance.new("TextBox")
-powerInput.Size = UDim2.new(0, 70, 1, 0)
-powerInput.Position = UDim2.new(0, 115, 0, 0)
-powerInput.BackgroundColor3 = COLORS.inputBg
-powerInput.TextColor3 = COLORS.textDark
-powerInput.Text = "999999"
-powerInput.Font = Enum.Font.Gotham
-powerInput.TextSize = 10
-powerInput.ClearTextOnFocus = false
-powerInput.Parent = powerRow
-
-local powerCorner = Instance.new("UICorner")
-powerCorner.CornerRadius = UDim.new(0, 5)
-powerCorner.Parent = powerInput
-
-local powerStroke = Instance.new("UIStroke")
-powerStroke.Color = COLORS.border
-powerStroke.Thickness = 1
-powerStroke.Parent = powerInput
-
 -- Fling Duration
 local timeRow = Instance.new("Frame")
 timeRow.Size = UDim2.new(1, 0, 0, 22)
-timeRow.Position = UDim2.new(0, 0, 0, 46)
+timeRow.Position = UDim2.new(0, 0, 0, 20)
 timeRow.BackgroundTransparency = 1
 timeRow.Parent = rightFrame
 
@@ -283,7 +245,7 @@ timeInput.Size = UDim2.new(0, 60, 1, 0)
 timeInput.Position = UDim2.new(0, 115, 0, 0)
 timeInput.BackgroundColor3 = COLORS.inputBg
 timeInput.TextColor3 = COLORS.textDark
-timeInput.Text = "3"
+timeInput.Text = "5"
 timeInput.Font = Enum.Font.Gotham
 timeInput.TextSize = 10
 timeInput.ClearTextOnFocus = false
@@ -312,7 +274,7 @@ timeHint.Parent = timeRow
 -- Respawn Wait
 local respawnRow = Instance.new("Frame")
 respawnRow.Size = UDim2.new(1, 0, 0, 22)
-respawnRow.Position = UDim2.new(0, 0, 0, 72)
+respawnRow.Position = UDim2.new(0, 0, 0, 46)
 respawnRow.BackgroundTransparency = 1
 respawnRow.Parent = rightFrame
 
@@ -360,7 +322,7 @@ respawnHint.Parent = respawnRow
 -- Auto Re-Fling Toggle
 local autoToggle = Instance.new("TextButton")
 autoToggle.Size = UDim2.new(1, 0, 0, 28)
-autoToggle.Position = UDim2.new(0, 0, 0, 100)
+autoToggle.Position = UDim2.new(0, 0, 0, 75)
 autoToggle.BackgroundColor3 = COLORS.buttonSuccess
 autoToggle.TextColor3 = COLORS.textLight
 autoToggle.Text = "AUTO RE-FLING: ON"
@@ -375,10 +337,10 @@ autoToggleCorner.Parent = autoToggle
 -- Info Label
 local infoLabel = Instance.new("TextLabel")
 infoLabel.Size = UDim2.new(1, 0, 0, 40)
-infoLabel.Position = UDim2.new(0, 0, 0, 135)
+infoLabel.Position = UDim2.new(0, 0, 0, 110)
 infoLabel.BackgroundTransparency = 1
 infoLabel.TextColor3 = COLORS.textMuted
-infoLabel.Text = "Spin flings target via collision\nWorks on other players"
+infoLabel.Text = "Uses physics collision to fling.\nWorks on other players."
 infoLabel.Font = Enum.Font.Gotham
 infoLabel.TextSize = 9
 infoLabel.TextWrapped = true
@@ -531,41 +493,6 @@ local function getRoot(char)
     return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
 end
 
-local spinVelocity = nil
-
-local function startSpin()
-    local myChar = player.Character
-    if not myChar then return false end
-    
-    local myRoot = getRoot(myChar)
-    if not myRoot then return false end
-    
-    -- Create angular velocity
-    spinVelocity = Instance.new("AngularVelocity")
-    spinVelocity.Name = "SpinFling"
-    spinVelocity.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-    spinVelocity.AngularVelocity = Vector3.new(0, spinPower, 0)
-    spinVelocity.Attachment0 = myRoot:FindFirstChildOfClass("Attachment") or Instance.new("Attachment", myRoot)
-    spinVelocity.Parent = myRoot
-    
-    return true
-end
-
-local function stopSpin()
-    if spinVelocity then
-        spinVelocity:Destroy()
-        spinVelocity = nil
-    end
-    
-    local myChar = player.Character
-    if myChar then
-        local myRoot = getRoot(myChar)
-        if myRoot then
-            myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-        end
-    end
-end
-
 local function flingTarget()
     local myChar = player.Character
     if not myChar then return false, "no char" end
@@ -590,30 +517,56 @@ local function flingTarget()
         return false, "protection"
     end
     
-    -- Start spinning
-    startSpin()
+    -- Store original state
+    local originalAnchored = myRoot.Anchored
     
-    -- Teleport to target and stay attached
-    local flingStart = tick()
-    local lastHealth = targetHumanoid.Health
+    -- Step 1: Teleport to target
+    myRoot.CFrame = targetRoot.CFrame
     
-    while tick() - flingStart < flingTime do
-        if targetRoot and myRoot and targetHumanoid.Health > 0 then
-            -- Keep teleporting inside them
-            myRoot.CFrame = targetRoot.CFrame
-            myRoot.Velocity = Vector3.new(0, 0, 0)
+    -- Step 2: Set extreme angular velocity (this is what causes the fling)
+    -- Using AssemblyAngularVelocity which is the modern way
+    for _, part in pairs(myChar:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = true
+            part.Massless = false
         end
-        wait(0.01)
     end
     
-    -- Stop spinning
-    stopSpin()
+    -- Set our root part to have extreme angular velocity
+    myRoot.AssemblyAngularVelocity = Vector3.new(math.huge, math.huge, math.huge)
     
-    -- Check if target took damage or moved
-    wait(0.5)
+    -- Step 3: Keep teleporting to target while spinning
+    -- This ensures constant collision
+    local flingStart = tick()
+    local connection
+    connection = RunService.Heartbeat:Connect(function()
+        if tick() - flingStart > flingTime then
+            connection:Disconnect()
+            return
+        end
+        if targetRoot and myRoot then
+            -- Keep teleporting inside them
+            myRoot.CFrame = targetRoot.CFrame + Vector3.new(math.random(-1, 1), 0, math.random(-1, 1))
+        end
+    end)
     
-    if targetHumanoid.Health < lastHealth or targetRoot.Position.Y > 50 then
-        return true
+    -- Wait for fling duration
+    wait(flingTime)
+    
+    -- Step 4: Stop spinning and clean up
+    if connection then
+        connection:Disconnect()
+    end
+    
+    myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+    myRoot.Velocity = Vector3.new(0, 0, 0)
+    
+    -- Reset all body parts
+    for _, part in pairs(myChar:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+            part.Velocity = Vector3.new(0, 0, 0)
+        end
     end
     
     return true
@@ -623,12 +576,9 @@ end
 
 toggleButton.MouseButton1Click:Connect(function()
     flingEnabled = not flingEnabled
-    spinPower = tonumber(powerInput.Text) or 999999
-    if spinPower < 10000 then spinPower = 10000 end
-    
-    flingTime = tonumber(timeInput.Text) or 3
+    flingTime = tonumber(timeInput.Text) or 5
     if flingTime < 1 then flingTime = 1 end
-    if flingTime > 10 then flingTime = 10 end
+    if flingTime > 15 then flingTime = 15 end
     
     respawnWait = tonumber(respawnInput.Text) or 3
     if respawnWait < 1 then respawnWait = 1 end
@@ -659,22 +609,18 @@ toggleButton.MouseButton1Click:Connect(function()
                     else
                         if autoRefling then
                             statusLabel.Text = "Waiting for respawn..."
-                            stopSpin()
                             wait(respawnWait)
                         else
                             statusLabel.Text = "Target dead!"
-                            stopSpin()
                             break
                         end
                     end
                 else
                     if autoRefling then
                         statusLabel.Text = "Waiting for target..."
-                        stopSpin()
                         wait(1)
                     else
                         statusLabel.Text = "Target not found!"
-                        stopSpin()
                         break
                     end
                 end
@@ -687,7 +633,16 @@ toggleButton.MouseButton1Click:Connect(function()
         toggleButton.Text = "FLING: OFF"
         toggleButton.BackgroundColor3 = COLORS.buttonDanger
         statusLabel.Text = targetPlayer and ("Target: " .. targetPlayer.Name) or "No target selected"
-        stopSpin()
+        
+        -- Clean up
+        local myChar = player.Character
+        if myChar then
+            local myRoot = getRoot(myChar)
+            if myRoot then
+                myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                myRoot.Velocity = Vector3.new(0, 0, 0)
+            end
+        end
     end
 end)
 
@@ -705,7 +660,9 @@ end)
 
 -- Cleanup on death
 player.CharacterRemoving:Connect(function()
-    stopSpin()
+    flingEnabled = false
+    toggleButton.Text = "FLING: OFF"
+    toggleButton.BackgroundColor3 = COLORS.buttonDanger
 end)
 
-print("✅ Spin Fling Loaded")
+print("✅ Network Fling Loaded")
