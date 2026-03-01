@@ -1,4 +1,4 @@
--- Custom Chat GUI (TALL + Full Draggable + Always Clear on Focus)
+-- Custom Chat GUI (TALL + Full Draggable + Simple Clear on Focus)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -163,7 +163,7 @@ local spamCorner = Instance.new("UICorner")
 spamCorner.CornerRadius = UDim.new(0, 6)
 spamCorner.Parent = spamButton
 
--- Dragging (ENTIRE FRAME - including empty areas)
+-- Dragging (ENTIRE FRAME)
 local dragging = false
 local dragInput
 local dragStart
@@ -252,37 +252,32 @@ local function sendMessage(msg)
     return false
 end
 
--- Send button click
+-- Send button click (text STAYS)
 sendButton.MouseButton1Click:Connect(function()
     if textbox.Text ~= "" then
         sendMessage()
-        textbox.Text = ""
     end
 end)
 
--- FocusLost - sends message when mobile keyboard "send" is pressed
+-- FocusLost - mobile keyboard send (text STAYS)
 textbox.FocusLost:Connect(function(enterPressed)
     if textbox.Text ~= "" and enterPressed then
         sendMessage()
-        textbox.Text = ""
     end
 end)
 
--- Enter key sends message (for PC) - prevents newline
+-- Enter key sends message for PC (text STAYS)
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.Enter and textbox:IsFocused() then
         if textbox.Text ~= "" then
             sendMessage()
-            textbox.Text = ""
         end
     end
 end)
 
--- Focused - ALWAYS clear text when clicking into textbox
+-- Focused - clear text when regaining focus (ANY state)
 textbox.Focused:Connect(function()
-    if textbox.Text ~= "" then
-        textbox.Text = ""
-    end
+    textbox.Text = ""
 end)
 
 -- Spam toggle
