@@ -1,5 +1,5 @@
--- Kill Aura Script (Smart Mode Edition)
--- Detects spawn protection and waits
+-- Hybrid Kill Script (Auto-Switch: Fling + Aura)
+-- Detects movement and switches modes automatically
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -11,11 +11,28 @@ local playerGui = player:WaitForChild("PlayerGui")
 -- Settings
 local killEnabled = false
 local targetPlayer = nil
+local autoSwitchEnabled = true
+local velocityThreshold = 5 -- studs/sec
+
+-- Fling settings
+local flingSpinPower = 999999
+local flingLaunchPower = 999999
+
+-- Aura settings
+local teleportDistance = 2
 local teleportDelay = 0.1
 local swingDelay = 0.01
-local teleportDistance = 2
 local smartMode = true
 local spawnWaitTime = 5
+
+-- Tracking
+local currentMode = "NONE" -- "FLING" or "AURA"
+local flingCount = 0
+local killCount = 0
+
+-- Body movers for fling
+local bodyAngularVel = nil
+local bodyVel = nil
 
 -- Colors
 local COLORS = {
@@ -25,6 +42,7 @@ local COLORS = {
     buttonDanger = Color3.fromRGB(220, 53, 69),
     buttonSuccess = Color3.fromRGB(40, 167, 69),
     buttonWarning = Color3.fromRGB(255, 193, 7),
+    buttonPurple = Color3.fromRGB(111, 66, 193),
     textDark = Color3.fromRGB(33, 37, 41),
     textLight = Color3.fromRGB(255, 255, 255),
     textMuted = Color3.fromRGB(134, 142, 150),
@@ -35,7 +53,7 @@ local COLORS = {
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "KillGui"
+screenGui.Name = "HybridKillGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
@@ -68,12 +86,12 @@ hubButtonIcon.Font = Enum.Font.GothamBold
 hubButtonIcon.TextSize = 22
 hubButtonIcon.Parent = hubButton
 
--- ========== MAIN FRAME (450x280) ==========
+-- ========== MAIN FRAME ==========
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 450, 0, 280)
-mainFrame.Position = UDim2.new(0.5, -225, 0.5, -140)
+mainFrame.Size = UDim2.new(0, 500, 0, 320)
+mainFrame.Position = UDim2.new(0.5, -250, 0.5, -160)
 mainFrame.BackgroundColor3 = COLORS.background
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -111,7 +129,7 @@ titleLabel.Size = UDim2.new(1, -50, 1, 0)
 titleLabel.Position = UDim2.new(0, 15, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = COLORS.textDark
-titleLabel.Text = "⚔️ Kill Aura Pro"
+titleLabel.Text = "⚔️ Hybrid Kill Script"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 14
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -131,10 +149,10 @@ local collapseCorner = Instance.new("UICorner")
 collapseCorner.CornerRadius = UDim.new(0, 6)
 collapseCorner.Parent = collapseButton
 
--- ========== CONTENT (LEFT SIDE) ==========
+-- ========== LEFT FRAME ==========
 
 local leftFrame = Instance.new("Frame")
-leftFrame.Size = UDim2.new(0.5, -15, 1, -50)
+leftFrame.Size = UDim2.new(0.4, -15, 1, -50)
 leftFrame.Position = UDim2.new(0, 10, 0, 40)
 leftFrame.BackgroundTransparency = 1
 leftFrame.Parent = mainFrame
@@ -145,7 +163,7 @@ toggleButton.Size = UDim2.new(1, 0, 0, 35)
 toggleButton.Position = UDim2.new(0, 0, 0, 0)
 toggleButton.BackgroundColor3 = COLORS.buttonDanger
 toggleButton.TextColor3 = COLORS.textLight
-toggleButton.Text = "KILL AURA: OFF"
+toggleButton.Text = "AUTO KILL: OFF"
 toggleButton.Font = Enum.Font.GothamBold
 toggleButton.TextSize = 14
 toggleButton.Parent = leftFrame
@@ -154,21 +172,66 @@ local toggleCorner = Instance.new("UICorner")
 toggleCorner.CornerRadius = UDim.new(0, 8)
 toggleCorner.Parent = toggleButton
 
--- Kill Counter
+-- Auto Switch Toggle
+local autoSwitchToggle = Instance.new("TextButton")
+autoSwitchToggle.Size = UDim2.new(1, 0, 0, 28)
+autoSwitchToggle.Position = UDim2.new(0, 0, 0, 40)
+autoSwitchToggle.BackgroundColor3 = COLORS.buttonSuccess
+autoSwitchToggle.TextColor3 = COLORS.textLight
+autoSwitchToggle.Text = "AUTO SWITCH: ON"
+autoSwitchToggle.Font = Enum.Font.GothamBold
+autoSwitchToggle.TextSize = 10
+autoSwitchToggle.Parent = leftFrame
+
+local autoSwitchCorner = Instance.new("UICorner")
+autoSwitchCorner.CornerRadius = UDim.new(0, 6)
+autoSwitchCorner.Parent = autoSwitchToggle
+
+-- Stats Row
+local statsRow = Instance.new("Frame")
+statsRow.Size = UDim2.new(1, 0, 0, 18)
+statsRow.Position = UDim2.new(0, 0, 0, 73)
+statsRow.BackgroundTransparency = 1
+statsRow.Parent = leftFrame
+
+local flingCounter = Instance.new("TextLabel")
+flingCounter.Size = UDim2.new(0.5, 0, 1, 0)
+flingCounter.BackgroundTransparency = 1
+flingCounter.TextColor3 = COLORS.buttonPurple
+flingCounter.Text = "Flings: 0"
+flingCounter.Font = Enum.Font.GothamBold
+flingCounter.TextSize = 10
+flingCounter.Parent = statsRow
+
 local killCounter = Instance.new("TextLabel")
-killCounter.Size = UDim2.new(1, 0, 0, 18)
-killCounter.Position = UDim2.new(0, 0, 0, 40)
+killCounter.Size = UDim2.new(0.5, 0, 1, 0)
+killCounter.Position = UDim2.new(0.5, 0, 0, 0)
 killCounter.BackgroundTransparency = 1
 killCounter.TextColor3 = COLORS.buttonSuccess
 killCounter.Text = "Kills: 0"
 killCounter.Font = Enum.Font.GothamBold
-killCounter.TextSize = 11
-killCounter.Parent = leftFrame
+killCounter.TextSize = 10
+killCounter.Parent = statsRow
+
+-- Current Mode Display
+local modeDisplay = Instance.new("TextLabel")
+modeDisplay.Size = UDim2.new(1, 0, 0, 22)
+modeDisplay.Position = UDim2.new(0, 0, 0, 94)
+modeDisplay.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+modeDisplay.TextColor3 = COLORS.textDark
+modeDisplay.Text = "MODE: NONE"
+modeDisplay.Font = Enum.Font.GothamBold
+modeDisplay.TextSize = 11
+modeDisplay.Parent = leftFrame
+
+local modeCorner = Instance.new("UICorner")
+modeCorner.CornerRadius = UDim.new(0, 5)
+modeCorner.Parent = modeDisplay
 
 -- Target Label
 local targetLabel = Instance.new("TextLabel")
 targetLabel.Size = UDim2.new(1, 0, 0, 16)
-targetLabel.Position = UDim2.new(0, 0, 0, 58)
+targetLabel.Position = UDim2.new(0, 0, 0, 121)
 targetLabel.BackgroundTransparency = 1
 targetLabel.TextColor3 = COLORS.textDark
 targetLabel.Text = "Select Target:"
@@ -179,8 +242,8 @@ targetLabel.Parent = leftFrame
 
 -- Player List
 local playerScroll = Instance.new("ScrollingFrame")
-playerScroll.Size = UDim2.new(1, 0, 0, 105)
-playerScroll.Position = UDim2.new(0, 0, 0, 76)
+playerScroll.Size = UDim2.new(1, 0, 0, 80)
+playerScroll.Position = UDim2.new(0, 0, 0, 139)
 playerScroll.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
 playerScroll.ScrollBarThickness = 4
 playerScroll.Parent = leftFrame
@@ -196,227 +259,347 @@ playerLayout.Parent = playerScroll
 -- Status Label
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, 0, 0, 18)
-statusLabel.Position = UDim2.new(0, 0, 0, 185)
+statusLabel.Position = UDim2.new(0, 0, 0, 222)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = COLORS.textMuted
 statusLabel.Text = "No target selected"
 statusLabel.Font = Enum.Font.Gotham
-statusLabel.TextSize = 10
+statusLabel.TextSize = 9
 statusLabel.TextWrapped = true
 statusLabel.Parent = leftFrame
 
--- ========== CONTENT (RIGHT SIDE) ==========
+-- ========== MIDDLE FRAME (Aura Settings) ==========
 
-local rightFrame = Instance.new("Frame")
-rightFrame.Size = UDim2.new(0.5, -15, 1, -50)
-rightFrame.Position = UDim2.new(0.5, 5, 0, 40)
-rightFrame.BackgroundTransparency = 1
-rightFrame.Parent = mainFrame
+local middleFrame = Instance.new("Frame")
+middleFrame.Size = UDim2.new(0.3, -10, 1, -50)
+middleFrame.Position = UDim2.new(0.4, 5, 0, 40)
+middleFrame.BackgroundTransparency = 1
+middleFrame.Parent = mainFrame
 
--- Settings Header
-local settingsHeader = Instance.new("TextLabel")
-settingsHeader.Size = UDim2.new(1, 0, 0, 18)
-settingsHeader.Position = UDim2.new(0, 0, 0, 0)
-settingsHeader.BackgroundTransparency = 1
-settingsHeader.TextColor3 = COLORS.textDark
-settingsHeader.Text = "Settings"
-settingsHeader.Font = Enum.Font.GothamBold
-settingsHeader.TextSize = 11
-settingsHeader.TextXAlignment = Enum.TextXAlignment.Left
-settingsHeader.Parent = rightFrame
+-- Aura Header
+local auraHeader = Instance.new("TextLabel")
+auraHeader.Size = UDim2.new(1, 0, 0, 18)
+auraHeader.Position = UDim2.new(0, 0, 0, 0)
+auraHeader.BackgroundTransparency = 1
+auraHeader.TextColor3 = COLORS.buttonSuccess
+auraHeader.Text = "⚔️ AURA MODE"
+auraHeader.Font = Enum.Font.GothamBold
+auraHeader.TextSize = 11
+auraHeader.TextXAlignment = Enum.TextXAlignment.Left
+auraHeader.Parent = middleFrame
+
+-- Teleport Distance
+local distRow = Instance.new("Frame")
+distRow.Size = UDim2.new(1, 0, 0, 22)
+distRow.Position = UDim2.new(0, 0, 0, 22)
+distRow.BackgroundTransparency = 1
+distRow.Parent = middleFrame
+
+local distLabel = Instance.new("TextLabel")
+distLabel.Size = UDim2.new(0, 60, 1, 0)
+distLabel.BackgroundTransparency = 1
+distLabel.TextColor3 = COLORS.textDark
+distLabel.Text = "Distance:"
+distLabel.Font = Enum.Font.Gotham
+distLabel.TextSize = 9
+distLabel.TextXAlignment = Enum.TextXAlignment.Left
+distLabel.Parent = distRow
+
+local distInput = Instance.new("TextBox")
+distInput.Size = UDim2.new(0, 50, 1, 0)
+distInput.Position = UDim2.new(0, 65, 0, 0)
+distInput.BackgroundColor3 = COLORS.inputBg
+distInput.TextColor3 = COLORS.textDark
+distInput.Text = "2"
+distInput.Font = Enum.Font.Gotham
+distInput.TextSize = 9
+distInput.ClearTextOnFocus = false
+distInput.Parent = distRow
+
+local distCorner = Instance.new("UICorner")
+distCorner.CornerRadius = UDim.new(0, 4)
+distCorner.Parent = distInput
+
+local distStroke = Instance.new("UIStroke")
+distStroke.Color = COLORS.border
+distStroke.Thickness = 1
+distStroke.Parent = distInput
+
+-- Swing Speed
+local swingRow = Instance.new("Frame")
+swingRow.Size = UDim2.new(1, 0, 0, 22)
+swingRow.Position = UDim2.new(0, 0, 0, 46)
+swingRow.BackgroundTransparency = 1
+swingRow.Parent = middleFrame
+
+local swingLabel = Instance.new("TextLabel")
+swingLabel.Size = UDim2.new(0, 60, 1, 0)
+swingLabel.BackgroundTransparency = 1
+swingLabel.TextColor3 = COLORS.textDark
+swingLabel.Text = "Swing:"
+swingLabel.Font = Enum.Font.Gotham
+swingLabel.TextSize = 9
+swingLabel.TextXAlignment = Enum.TextXAlignment.Left
+swingLabel.Parent = swingRow
+
+local swingInput = Instance.new("TextBox")
+swingInput.Size = UDim2.new(0, 50, 1, 0)
+swingInput.Position = UDim2.new(0, 65, 0, 0)
+swingInput.BackgroundColor3 = COLORS.inputBg
+swingInput.TextColor3 = COLORS.textDark
+swingInput.Text = "0.01"
+swingInput.Font = Enum.Font.Gotham
+swingInput.TextSize = 9
+swingInput.ClearTextOnFocus = false
+swingInput.Parent = swingRow
+
+local swingCorner = Instance.new("UICorner")
+swingCorner.CornerRadius = UDim.new(0, 4)
+swingCorner.Parent = swingInput
+
+local swingStroke = Instance.new("UIStroke")
+swingStroke.Color = COLORS.border
+swingStroke.Thickness = 1
+swingStroke.Parent = swingInput
+
+-- TP Delay
+local tpRow = Instance.new("Frame")
+tpRow.Size = UDim2.new(1, 0, 0, 22)
+tpRow.Position = UDim2.new(0, 0, 0, 70)
+tpRow.BackgroundTransparency = 1
+tpRow.Parent = middleFrame
+
+local tpLabel = Instance.new("TextLabel")
+tpLabel.Size = UDim2.new(0, 60, 1, 0)
+tpLabel.BackgroundTransparency = 1
+tpLabel.TextColor3 = COLORS.textDark
+tpLabel.Text = "TP Delay:"
+tpLabel.Font = Enum.Font.Gotham
+tpLabel.TextSize = 9
+tpLabel.TextXAlignment = Enum.TextXAlignment.Left
+tpLabel.Parent = tpRow
+
+local tpInput = Instance.new("TextBox")
+tpInput.Size = UDim2.new(0, 50, 1, 0)
+tpInput.Position = UDim2.new(0, 65, 0, 0)
+tpInput.BackgroundColor3 = COLORS.inputBg
+tpInput.TextColor3 = COLORS.textDark
+tpInput.Text = "0.1"
+tpInput.Font = Enum.Font.Gotham
+tpInput.TextSize = 9
+tpInput.ClearTextOnFocus = false
+tpInput.Parent = tpRow
+
+local tpCorner = Instance.new("UICorner")
+tpCorner.CornerRadius = UDim.new(0, 4)
+tpCorner.Parent = tpInput
+
+local tpStroke = Instance.new("UIStroke")
+tpStroke.Color = COLORS.border
+tpStroke.Thickness = 1
+tpStroke.Parent = tpInput
 
 -- Smart Mode Toggle
 local smartToggle = Instance.new("TextButton")
-smartToggle.Size = UDim2.new(1, 0, 0, 28)
-smartToggle.Position = UDim2.new(0, 0, 0, 20)
+smartToggle.Size = UDim2.new(1, 0, 0, 24)
+smartToggle.Position = UDim2.new(0, 0, 0, 96)
 smartToggle.BackgroundColor3 = COLORS.buttonSuccess
 smartToggle.TextColor3 = COLORS.textLight
-smartToggle.Text = "SMART MODE: ON"
+smartToggle.Text = "SMART: ON"
 smartToggle.Font = Enum.Font.GothamBold
-smartToggle.TextSize = 11
-smartToggle.Parent = rightFrame
+smartToggle.TextSize = 9
+smartToggle.Parent = middleFrame
 
-local smartToggleCorner = Instance.new("UICorner")
-smartToggleCorner.CornerRadius = UDim.new(0, 6)
-smartToggleCorner.Parent = smartToggle
+local smartCorner = Instance.new("UICorner")
+smartCorner.CornerRadius = UDim.new(0, 5)
+smartCorner.Parent = smartToggle
 
--- Spawn Wait Time
-local spawnWaitRow = Instance.new("Frame")
-spawnWaitRow.Size = UDim2.new(1, 0, 0, 22)
-spawnWaitRow.Position = UDim2.new(0, 0, 0, 52)
-spawnWaitRow.BackgroundTransparency = 1
-spawnWaitRow.Parent = rightFrame
+-- Spawn Wait
+local spawnRow = Instance.new("Frame")
+spawnRow.Size = UDim2.new(1, 0, 0, 22)
+spawnRow.Position = UDim2.new(0, 0, 0, 124)
+spawnRow.BackgroundTransparency = 1
+spawnRow.Parent = middleFrame
 
-local spawnWaitLabel = Instance.new("TextLabel")
-spawnWaitLabel.Size = UDim2.new(0, 110, 1, 0)
-spawnWaitLabel.BackgroundTransparency = 1
-spawnWaitLabel.TextColor3 = COLORS.textDark
-spawnWaitLabel.Text = "Spawn Wait:"
-spawnWaitLabel.Font = Enum.Font.Gotham
-spawnWaitLabel.TextSize = 10
-spawnWaitLabel.TextXAlignment = Enum.TextXAlignment.Left
-spawnWaitLabel.Parent = spawnWaitRow
+local spawnLabel = Instance.new("TextLabel")
+spawnLabel.Size = UDim2.new(0, 60, 1, 0)
+spawnLabel.BackgroundTransparency = 1
+spawnLabel.TextColor3 = COLORS.textDark
+spawnLabel.Text = "Spawn Wait:"
+spawnLabel.Font = Enum.Font.Gotham
+spawnLabel.TextSize = 9
+spawnLabel.TextXAlignment = Enum.TextXAlignment.Left
+spawnLabel.Parent = spawnRow
 
-local spawnWaitInput = Instance.new("TextBox")
-spawnWaitInput.Size = UDim2.new(0, 50, 1, 0)
-spawnWaitInput.Position = UDim2.new(0, 115, 0, 0)
-spawnWaitInput.BackgroundColor3 = COLORS.inputBg
-spawnWaitInput.TextColor3 = COLORS.textDark
-spawnWaitInput.Text = "5"
-spawnWaitInput.Font = Enum.Font.Gotham
-spawnWaitInput.TextSize = 10
-spawnWaitInput.ClearTextOnFocus = false
-spawnWaitInput.Parent = spawnWaitRow
+local spawnInput = Instance.new("TextBox")
+spawnInput.Size = UDim2.new(0, 50, 1, 0)
+spawnInput.Position = UDim2.new(0, 65, 0, 0)
+spawnInput.BackgroundColor3 = COLORS.inputBg
+spawnInput.TextColor3 = COLORS.textDark
+spawnInput.Text = "5"
+spawnInput.Font = Enum.Font.Gotham
+spawnInput.TextSize = 9
+spawnInput.ClearTextOnFocus = false
+spawnInput.Parent = spawnRow
 
-local spawnWaitCorner = Instance.new("UICorner")
-spawnWaitCorner.CornerRadius = UDim.new(0, 5)
-spawnWaitCorner.Parent = spawnWaitInput
+local spawnCorner = Instance.new("UICorner")
+spawnCorner.CornerRadius = UDim.new(0, 4)
+spawnCorner.Parent = spawnInput
 
-local spawnWaitStroke = Instance.new("UIStroke")
-spawnWaitStroke.Color = COLORS.border
-spawnWaitStroke.Thickness = 1
-spawnWaitStroke.Parent = spawnWaitInput
+local spawnStroke = Instance.new("UIStroke")
+spawnStroke.Color = COLORS.border
+spawnStroke.Thickness = 1
+spawnStroke.Parent = spawnInput
 
-local spawnWaitHint = Instance.new("TextLabel")
-spawnWaitHint.Size = UDim2.new(0, 40, 1, 0)
-spawnWaitHint.Position = UDim2.new(0, 170, 0, 0)
-spawnWaitHint.BackgroundTransparency = 1
-spawnWaitHint.TextColor3 = COLORS.textMuted
-spawnWaitHint.Text = "sec"
-spawnWaitHint.Font = Enum.Font.Gotham
-spawnWaitHint.TextSize = 9
-spawnWaitHint.TextXAlignment = Enum.TextXAlignment.Left
-spawnWaitHint.Parent = spawnWaitRow
+-- ========== RIGHT FRAME (Fling Settings) ==========
 
--- Teleport Delay
-local tpDelayRow = Instance.new("Frame")
-tpDelayRow.Size = UDim2.new(1, 0, 0, 22)
-tpDelayRow.Position = UDim2.new(0, 0, 0, 78)
-tpDelayRow.BackgroundTransparency = 1
-tpDelayRow.Parent = rightFrame
+local rightFrame = Instance.new("Frame")
+rightFrame.Size = UDim2.new(0.3, -10, 1, -50)
+rightFrame.Position = UDim2.new(0.7, 5, 0, 40)
+rightFrame.BackgroundTransparency = 1
+rightFrame.Parent = mainFrame
 
-local tpDelayLabel = Instance.new("TextLabel")
-tpDelayLabel.Size = UDim2.new(0, 110, 1, 0)
-tpDelayLabel.BackgroundTransparency = 1
-tpDelayLabel.TextColor3 = COLORS.textDark
-tpDelayLabel.Text = "Teleport Delay:"
-tpDelayLabel.Font = Enum.Font.Gotham
-tpDelayLabel.TextSize = 10
-tpDelayLabel.TextXAlignment = Enum.TextXAlignment.Left
-tpDelayLabel.Parent = tpDelayRow
+-- Fling Header
+local flingHeader = Instance.new("TextLabel")
+flingHeader.Size = UDim2.new(1, 0, 0, 18)
+flingHeader.Position = UDim2.new(0, 0, 0, 0)
+flingHeader.BackgroundTransparency = 1
+flingHeader.TextColor3 = COLORS.buttonPurple
+flingHeader.Text = "🌀 FLING MODE"
+flingHeader.Font = Enum.Font.GothamBold
+flingHeader.TextSize = 11
+flingHeader.TextXAlignment = Enum.TextXAlignment.Left
+flingHeader.Parent = rightFrame
 
-local tpDelayInput = Instance.new("TextBox")
-tpDelayInput.Size = UDim2.new(0, 50, 1, 0)
-tpDelayInput.Position = UDim2.new(0, 115, 0, 0)
-tpDelayInput.BackgroundColor3 = COLORS.inputBg
-tpDelayInput.TextColor3 = COLORS.textDark
-tpDelayInput.Text = "0.1"
-tpDelayInput.Font = Enum.Font.Gotham
-tpDelayInput.TextSize = 10
-tpDelayInput.ClearTextOnFocus = false
-tpDelayInput.Parent = tpDelayRow
+-- Spin Power
+local spinRow = Instance.new("Frame")
+spinRow.Size = UDim2.new(1, 0, 0, 22)
+spinRow.Position = UDim2.new(0, 0, 0, 22)
+spinRow.BackgroundTransparency = 1
+spinRow.Parent = rightFrame
 
-local tpDelayCorner = Instance.new("UICorner")
-tpDelayCorner.CornerRadius = UDim.new(0, 5)
-tpDelayCorner.Parent = tpDelayInput
+local spinLabel = Instance.new("TextLabel")
+spinLabel.Size = UDim2.new(0, 60, 1, 0)
+spinLabel.BackgroundTransparency = 1
+spinLabel.TextColor3 = COLORS.textDark
+spinLabel.Text = "Spin:"
+spinLabel.Font = Enum.Font.Gotham
+spinLabel.TextSize = 9
+spinLabel.TextXAlignment = Enum.TextXAlignment.Left
+spinLabel.Parent = spinRow
 
-local tpDelayStroke = Instance.new("UIStroke")
-tpDelayStroke.Color = COLORS.border
-tpDelayStroke.Thickness = 1
-tpDelayStroke.Parent = tpDelayInput
+local spinInput = Instance.new("TextBox")
+spinInput.Size = UDim2.new(0, 70, 1, 0)
+spinInput.Position = UDim2.new(0, 65, 0, 0)
+spinInput.BackgroundColor3 = COLORS.inputBg
+spinInput.TextColor3 = COLORS.textDark
+spinInput.Text = "999999"
+spinInput.Font = Enum.Font.Gotham
+spinInput.TextSize = 9
+spinInput.ClearTextOnFocus = false
+spinInput.Parent = spinRow
 
--- Swing Delay
-local swingDelayRow = Instance.new("Frame")
-swingDelayRow.Size = UDim2.new(1, 0, 0, 22)
-swingDelayRow.Position = UDim2.new(0, 0, 0, 104)
-swingDelayRow.BackgroundTransparency = 1
-swingDelayRow.Parent = rightFrame
+local spinCorner = Instance.new("UICorner")
+spinCorner.CornerRadius = UDim.new(0, 4)
+spinCorner.Parent = spinInput
 
-local swingDelayLabel = Instance.new("TextLabel")
-swingDelayLabel.Size = UDim2.new(0, 110, 1, 0)
-swingDelayLabel.BackgroundTransparency = 1
-swingDelayLabel.TextColor3 = COLORS.textDark
-swingDelayLabel.Text = "Swing Speed:"
-swingDelayLabel.Font = Enum.Font.Gotham
-swingDelayLabel.TextSize = 10
-swingDelayLabel.TextXAlignment = Enum.TextXAlignment.Left
-swingDelayLabel.Parent = swingDelayRow
+local spinStroke = Instance.new("UIStroke")
+spinStroke.Color = COLORS.border
+spinStroke.Thickness = 1
+spinStroke.Parent = spinInput
 
-local swingDelayInput = Instance.new("TextBox")
-swingDelayInput.Size = UDim2.new(0, 50, 1, 0)
-swingDelayInput.Position = UDim2.new(0, 115, 0, 0)
-swingDelayInput.BackgroundColor3 = COLORS.inputBg
-swingDelayInput.TextColor3 = COLORS.textDark
-swingDelayInput.Text = "0.01"
-swingDelayInput.Font = Enum.Font.Gotham
-swingDelayInput.TextSize = 10
-swingDelayInput.ClearTextOnFocus = false
-swingDelayInput.Parent = swingDelayRow
+-- Launch Power
+local launchRow = Instance.new("Frame")
+launchRow.Size = UDim2.new(1, 0, 0, 22)
+launchRow.Position = UDim2.new(0, 0, 0, 46)
+launchRow.BackgroundTransparency = 1
+launchRow.Parent = rightFrame
 
-local swingDelayCorner = Instance.new("UICorner")
-swingDelayCorner.CornerRadius = UDim.new(0, 5)
-swingDelayCorner.Parent = swingDelayInput
+local launchLabel = Instance.new("TextLabel")
+launchLabel.Size = UDim2.new(0, 60, 1, 0)
+launchLabel.BackgroundTransparency = 1
+launchLabel.TextColor3 = COLORS.textDark
+launchLabel.Text = "Launch:"
+launchLabel.Font = Enum.Font.Gotham
+launchLabel.TextSize = 9
+launchLabel.TextXAlignment = Enum.TextXAlignment.Left
+launchLabel.Parent = launchRow
 
-local swingDelayStroke = Instance.new("UIStroke")
-swingDelayStroke.Color = COLORS.border
-swingDelayStroke.Thickness = 1
-swingDelayStroke.Parent = swingDelayInput
+local launchInput = Instance.new("TextBox")
+launchInput.Size = UDim2.new(0, 70, 1, 0)
+launchInput.Position = UDim2.new(0, 65, 0, 0)
+launchInput.BackgroundColor3 = COLORS.inputBg
+launchInput.TextColor3 = COLORS.textDark
+launchInput.Text = "999999"
+launchInput.Font = Enum.Font.Gotham
+launchInput.TextSize = 9
+launchInput.ClearTextOnFocus = false
+launchInput.Parent = launchRow
 
--- Distance
-local distanceRow = Instance.new("Frame")
-distanceRow.Size = UDim2.new(1, 0, 0, 22)
-distanceRow.Position = UDim2.new(0, 0, 0, 130)
-distanceRow.BackgroundTransparency = 1
-distanceRow.Parent = rightFrame
+local launchCorner = Instance.new("UICorner")
+launchCorner.CornerRadius = UDim.new(0, 4)
+launchCorner.Parent = launchInput
 
-local distanceLabel = Instance.new("TextLabel")
-distanceLabel.Size = UDim2.new(0, 110, 1, 0)
-distanceLabel.BackgroundTransparency = 1
-distanceLabel.TextColor3 = COLORS.textDark
-distanceLabel.Text = "Teleport Dist:"
-distanceLabel.Font = Enum.Font.Gotham
-distanceLabel.TextSize = 10
-distanceLabel.TextXAlignment = Enum.TextXAlignment.Left
-distanceLabel.Parent = distanceRow
+local launchStroke = Instance.new("UIStroke")
+launchStroke.Color = COLORS.border
+launchStroke.Thickness = 1
+launchStroke.Parent = launchInput
 
-local distanceInput = Instance.new("TextBox")
-distanceInput.Size = UDim2.new(0, 50, 1, 0)
-distanceInput.Position = UDim2.new(0, 115, 0, 0)
-distanceInput.BackgroundColor3 = COLORS.inputBg
-distanceInput.TextColor3 = COLORS.textDark
-distanceInput.Text = "2"
-distanceInput.Font = Enum.Font.Gotham
-distanceInput.TextSize = 10
-distanceInput.ClearTextOnFocus = false
-distanceInput.Parent = distanceRow
+-- Velocity Threshold
+local threshRow = Instance.new("Frame")
+threshRow.Size = UDim2.new(1, 0, 0, 22)
+threshRow.Position = UDim2.new(0, 0, 0, 70)
+threshRow.BackgroundTransparency = 1
+threshRow.Parent = rightFrame
 
-local distanceCorner = Instance.new("UICorner")
-distanceCorner.CornerRadius = UDim.new(0, 5)
-distanceCorner.Parent = distanceInput
+local threshLabel = Instance.new("TextLabel")
+threshLabel.Size = UDim2.new(0, 60, 1, 0)
+threshLabel.BackgroundTransparency = 1
+threshLabel.TextColor3 = COLORS.textDark
+threshLabel.Text = "Threshold:"
+threshLabel.Font = Enum.Font.Gotham
+threshLabel.TextSize = 9
+threshLabel.TextXAlignment = Enum.TextXAlignment.Left
+threshLabel.Parent = threshRow
 
-local distanceStroke = Instance.new("UIStroke")
-distanceStroke.Color = COLORS.border
-distanceStroke.Thickness = 1
-distanceStroke.Parent = distanceInput
+local threshInput = Instance.new("TextBox")
+threshInput.Size = UDim2.new(0, 50, 1, 0)
+threshInput.Position = UDim2.new(0, 65, 0, 0)
+threshInput.BackgroundColor3 = COLORS.inputBg
+threshInput.TextColor3 = COLORS.textDark
+threshInput.Text = "5"
+threshInput.Font = Enum.Font.Gotham
+threshInput.TextSize = 9
+threshInput.ClearTextOnFocus = false
+threshInput.Parent = threshRow
 
-local distanceHint = Instance.new("TextLabel")
-distanceHint.Size = UDim2.new(0, 40, 1, 0)
-distanceHint.Position = UDim2.new(0, 170, 0, 0)
-distanceHint.BackgroundTransparency = 1
-distanceHint.TextColor3 = COLORS.textMuted
-distanceHint.Text = "studs"
-distanceHint.Font = Enum.Font.Gotham
-distanceHint.TextSize = 9
-distanceHint.TextXAlignment = Enum.TextXAlignment.Left
-distanceHint.Parent = distanceRow
+local threshCorner = Instance.new("UICorner")
+threshCorner.CornerRadius = UDim.new(0, 4)
+threshCorner.Parent = threshInput
 
--- Info Label
+local threshStroke = Instance.new("UIStroke")
+threshStroke.Color = COLORS.border
+threshStroke.Thickness = 1
+threshStroke.Parent = threshInput
+
+local threshHint = Instance.new("TextLabel")
+threshHint.Size = UDim2.new(0, 40, 1, 0)
+threshHint.Position = UDim2.new(0, 120, 0, 0)
+threshHint.BackgroundTransparency = 1
+threshHint.TextColor3 = COLORS.textMuted
+threshHint.Text = "studs"
+threshHint.Font = Enum.Font.Gotham
+threshHint.TextSize = 8
+threshHint.TextXAlignment = Enum.TextXAlignment.Left
+threshHint.Parent = threshRow
+
+-- Info
 local infoLabel = Instance.new("TextLabel")
-infoLabel.Size = UDim2.new(1, 0, 0, 30)
-infoLabel.Position = UDim2.new(0, 0, 0, 160)
+infoLabel.Size = UDim2.new(1, 0, 0, 60)
+infoLabel.Position = UDim2.new(0, 0, 0, 100)
 infoLabel.BackgroundTransparency = 1
 infoLabel.TextColor3 = COLORS.textMuted
-infoLabel.Text = "Smart Mode waits for\nspawn protection to expire"
+infoLabel.Text = "AUTO SWITCH:\nMoving → Aura\nStill → Fling"
 infoLabel.Font = Enum.Font.Gotham
 infoLabel.TextSize = 9
 infoLabel.TextWrapped = true
@@ -505,7 +688,6 @@ end)
 -- ========== PLAYER LIST ==========
 
 local playerButtons = {}
-local killCount = 0
 
 local function updatePlayerList()
     for _, btn in pairs(playerButtons) do
@@ -549,21 +731,37 @@ end)
 
 updatePlayerList()
 
--- ========== SMART MODE TOGGLE ==========
+-- ========== TOGGLES ==========
+
+autoSwitchToggle.MouseButton1Click:Connect(function()
+    autoSwitchEnabled = not autoSwitchEnabled
+    
+    if autoSwitchEnabled then
+        autoSwitchToggle.Text = "AUTO SWITCH: ON"
+        autoSwitchToggle.BackgroundColor3 = COLORS.buttonSuccess
+    else
+        autoSwitchToggle.Text = "AUTO SWITCH: OFF"
+        autoSwitchToggle.BackgroundColor3 = COLORS.buttonDanger
+    end
+end)
 
 smartToggle.MouseButton1Click:Connect(function()
     smartMode = not smartMode
     
     if smartMode then
-        smartToggle.Text = "SMART MODE: ON"
+        smartToggle.Text = "SMART: ON"
         smartToggle.BackgroundColor3 = COLORS.buttonSuccess
     else
-        smartToggle.Text = "SMART MODE: OFF"
+        smartToggle.Text = "SMART: OFF"
         smartToggle.BackgroundColor3 = COLORS.buttonDanger
     end
 end)
 
--- ========== AUTO EQUIP SWORD ==========
+-- ========== HELPER FUNCTIONS ==========
+
+local function getRoot(char)
+    return char and char:FindFirstChild("HumanoidRootPart") or char and char:FindFirstChild("Torso") or char and char:FindFirstChild("UpperTorso")
+end
 
 local function getSword()
     local character = player.Character
@@ -597,40 +795,102 @@ local function equipSword()
     return nil
 end
 
--- ========== CHECK SPAWN PROTECTION ==========
-
 local function hasSpawnProtection(targetPlr)
     if not targetPlr or not targetPlr.Character then return false end
-    
-    -- Check for ForceField (blue bubble)
     local forceField = targetPlr.Character:FindFirstChild("ForceField")
-    if forceField then
-        return true
-    end
-    
-    return false
+    return forceField ~= nil
 end
 
--- ========== KILL AURA ==========
+local function getTargetVelocity()
+    if not targetPlayer or not targetPlayer.Character then return 0 end
+    local root = getRoot(targetPlayer.Character)
+    if not root then return 0 end
+    return root.Velocity.Magnitude
+end
+
+-- ========== FLING FUNCTIONS ==========
+
+local function stopFling()
+    if bodyAngularVel then
+        bodyAngularVel:Destroy()
+        bodyAngularVel = nil
+    end
+    
+    if bodyVel then
+        bodyVel:Destroy()
+        bodyVel = nil
+    end
+    
+    local myChar = player.Character
+    if myChar then
+        local myRoot = getRoot(myChar)
+        local myHumanoid = myChar:FindFirstChild("Humanoid")
+        
+        if myRoot then
+            myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+            myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        end
+        
+        if myHumanoid then
+            myHumanoid.PlatformStand = false
+        end
+    end
+end
+
+local function startFlingMode()
+    stopFling()
+    
+    local myChar = player.Character
+    if not myChar then return end
+    
+    local myRoot = getRoot(myChar)
+    local myHumanoid = myChar:FindFirstChild("Humanoid")
+    
+    if not myRoot then return end
+    
+    local spinPower = tonumber(spinInput.Text) or 999999
+    local launchPower = tonumber(launchInput.Text) or 999999
+    
+    -- Create BodyAngularVelocity
+    if bodyAngularVel then bodyAngularVel:Destroy() end
+    bodyAngularVel = Instance.new("BodyAngularVelocity")
+    bodyAngularVel.Name = "FlingSpin"
+    bodyAngularVel.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+    bodyAngularVel.AngularVelocity = Vector3.new(spinPower, spinPower, spinPower)
+    bodyAngularVel.P = math.huge
+    bodyAngularVel.Parent = myRoot
+    
+    -- Create BodyVelocity
+    if bodyVel then bodyVel:Destroy() end
+    bodyVel = Instance.new("BodyVelocity")
+    bodyVel.Name = "FlingLaunch"
+    bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bodyVel.Velocity = Vector3.new(0, launchPower, 0)
+    bodyVel.P = math.huge
+    bodyVel.Parent = myRoot
+    
+    if myHumanoid then
+        myHumanoid.PlatformStand = true
+    end
+end
+
+-- ========== AURA FUNCTIONS ==========
 
 local attackAngle = 0
-local lastHealth = 100
-local isWaitingForSpawn = false
 
 local function teleportToTarget()
     if not targetPlayer then return end
     
     local myChar = player.Character
-    local myHum = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    local myHum = myChar and getRoot(myChar)
     
     local targetChar = targetPlayer.Character
-    local targetHum = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+    local targetHum = targetChar and getRoot(targetChar)
     local targetHumanoid = targetChar and targetChar:FindFirstChild("Humanoid")
     
     if not myHum or not targetHum or not targetHumanoid then return end
     if targetHumanoid.Health <= 0 then return end
     
-    -- Rotate around target
     attackAngle = attackAngle + 60
     if attackAngle >= 360 then attackAngle = 0 end
     
@@ -638,10 +898,8 @@ local function teleportToTarget()
     local offsetX = math.cos(angleRad) * teleportDistance
     local offsetZ = math.sin(angleRad) * teleportDistance
     
-    -- Teleport
     myHum.CFrame = targetHum.CFrame * CFrame.new(offsetX, 0, offsetZ)
     
-    -- Reset velocity
     if myChar.HumanoidRootPart then
         myChar.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
     end
@@ -654,140 +912,216 @@ local function swingSword()
     end
 end
 
-local function getTargetHealth()
-    if not targetPlayer then return 0 end
-    local targetChar = targetPlayer.Character
-    local targetHumanoid = targetChar and targetChar:FindFirstChild("Humanoid")
-    if targetHumanoid then
-        return targetHumanoid.Health
-    end
-    return 0
+-- ========== MAIN LOOP ==========
+
+local flingLoop = nil
+local auraLoop = nil
+local swingLoop = nil
+
+local function stopAll()
+    stopFling()
+    if flingLoop then flingLoop:Disconnect(); flingLoop = nil end
+    if auraLoop then auraLoop:Disconnect(); auraLoop = nil end
+    if swingLoop then swingLoop:Disconnect(); swingLoop = nil end
 end
+
+local function startMainLoop()
+    -- Read settings
+    teleportDistance = tonumber(distInput.Text) or 2
+    teleportDelay = tonumber(tpInput.Text) or 0.1
+    swingDelay = tonumber(swingInput.Text) or 0.01
+    spawnWaitTime = tonumber(spawnInput.Text) or 5
+    velocityThreshold = tonumber(threshInput.Text) or 5
+    
+    equipSword()
+    
+    -- Swing loop (always active when enabled)
+    swingLoop = RunService.Heartbeat:Connect(function()
+        if not killEnabled then return end
+        
+        if targetPlayer and targetPlayer.Character then
+            local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
+            if targetHumanoid and targetHumanoid.Health > 0 then
+                if smartMode and hasSpawnProtection(targetPlayer) then
+                    -- Don't swing during spawn protection
+                else
+                    swingSword()
+                end
+            end
+        end
+    end)
+    
+    -- Main detection & switch loop
+    flingLoop = RunService.Heartbeat:Connect(function()
+        if not killEnabled then return end
+        if not targetPlayer or not targetPlayer.Character then return end
+        
+        local targetRoot = getRoot(targetPlayer.Character)
+        local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
+        
+        if not targetRoot or not targetHumanoid or targetHumanoid.Health <= 0 then return end
+        
+        -- Check spawn protection
+        if smartMode and hasSpawnProtection(targetPlayer) then
+            modeDisplay.Text = "MODE: WAITING"
+            modeDisplay.BackgroundColor3 = COLORS.buttonWarning
+            statusLabel.Text = "Waiting for spawn protection..."
+            return
+        end
+        
+        -- Get target velocity
+        local targetVel = targetRoot.Velocity.Magnitude
+        
+        -- Read threshold
+        velocityThreshold = tonumber(threshInput.Text) or 5
+        
+        -- Auto-switch based on movement
+        if autoSwitchEnabled then
+            if targetVel > velocityThreshold then
+                -- Target is MOVING → AURA MODE
+                if currentMode ~= "AURA" then
+                    currentMode = "AURA"
+                    modeDisplay.Text = "MODE: AURA ⚔️"
+                    modeDisplay.BackgroundColor3 = COLORS.buttonSuccess
+                    statusLabel.Text = "Target moving → Aura mode"
+                    stopFling()
+                end
+                
+                -- Aura: teleport around target
+                teleportToTarget()
+                
+            else
+                -- Target is STILL → FLING MODE
+                if currentMode ~= "FLING" then
+                    currentMode = "FLING"
+                    modeDisplay.Text = "MODE: FLING 🌀"
+                    modeDisplay.BackgroundColor3 = COLORS.buttonPurple
+                    statusLabel.Text = "Target still → Fling mode"
+                    startFlingMode()
+                end
+                
+                -- Fling: teleport inside target
+                local myChar = player.Character
+                if myChar then
+                    local myRoot = getRoot(myChar)
+                    if myRoot then
+                        myRoot.CFrame = targetRoot.CFrame
+                        
+                        -- Re-apply body movers if needed
+                        if not myRoot:FindFirstChild("FlingSpin") then
+                            local spinPower = tonumber(spinInput.Text) or 999999
+                            bodyAngularVel = Instance.new("BodyAngularVelocity")
+                            bodyAngularVel.Name = "FlingSpin"
+                            bodyAngularVel.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+                            bodyAngularVel.AngularVelocity = Vector3.new(spinPower, spinPower, spinPower)
+                            bodyAngularVel.P = math.huge
+                            bodyAngularVel.Parent = myRoot
+                        end
+                        
+                        if not myRoot:FindFirstChild("FlingLaunch") then
+                            local launchPower = tonumber(launchInput.Text) or 999999
+                            bodyVel = Instance.new("BodyVelocity")
+                            bodyVel.Name = "FlingLaunch"
+                            bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                            bodyVel.Velocity = Vector3.new(0, launchPower, 0)
+                            bodyVel.P = math.huge
+                            bodyVel.Parent = myRoot
+                        end
+                    end
+                end
+            end
+        else
+            -- Auto-switch OFF: Always use FLING
+            if currentMode ~= "FLING" then
+                currentMode = "FLING"
+                modeDisplay.Text = "MODE: FLING 🌀"
+                modeDisplay.BackgroundColor3 = COLORS.buttonPurple
+                startFlingMode()
+            end
+            
+            local myChar = player.Character
+            if myChar then
+                local myRoot = getRoot(myChar)
+                if myRoot then
+                    myRoot.CFrame = targetRoot.CFrame
+                end
+            end
+        end
+    end)
+    
+    -- Kill detection
+    local lastHealth = 100
+    spawn(function()
+        while killEnabled do
+            if targetPlayer and targetPlayer.Character then
+                local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
+                if targetHumanoid then
+                    if targetHumanoid.Health <= 0 and lastHealth > 0 then
+                        killCount = killCount + 1
+                        killCounter.Text = "Kills: " .. killCount
+                        statusLabel.Text = "Killed " .. targetPlayer.Name .. "!"
+                    end
+                    lastHealth = targetHumanoid.Health
+                end
+            end
+            wait(0.1)
+        end
+    end)
+    
+    -- Re-equip sword loop
+    spawn(function()
+        while killEnabled do
+            local sword = getSword()
+            if not sword then
+                equipSword()
+            end
+            wait(0.5)
+        end
+    end)
+end
+
+-- ========== TOGGLE BUTTON ==========
 
 toggleButton.MouseButton1Click:Connect(function()
     killEnabled = not killEnabled
-    teleportDelay = tonumber(tpDelayInput.Text) or 0.1
-    if teleportDelay < 0.01 then teleportDelay = 0.01 end
-    
-    swingDelay = tonumber(swingDelayInput.Text) or 0.01
-    if swingDelay < 0.001 then swingDelay = 0.001 end
-    
-    teleportDistance = tonumber(distanceInput.Text) or 2
-    if teleportDistance < 1 then teleportDistance = 1 end
-    if teleportDistance > 10 then teleportDistance = 10 end
-    
-    spawnWaitTime = tonumber(spawnWaitInput.Text) or 5
-    if spawnWaitTime < 1 then spawnWaitTime = 1 end
-    if spawnWaitTime > 15 then spawnWaitTime = 15 end
     
     if killEnabled then
-        toggleButton.Text = "KILL AURA: ON"
+        toggleButton.Text = "AUTO KILL: ON"
         toggleButton.BackgroundColor3 = COLORS.buttonSuccess
         statusLabel.Text = targetPlayer and ("Hunting: " .. targetPlayer.Name) or "No target selected"
         
-        equipSword()
-        
-        -- Continuous swing loop
-        spawn(function()
-            while killEnabled do
-                if targetPlayer and targetPlayer.Character then
-                    local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
-                    if targetHumanoid and targetHumanoid.Health > 0 then
-                        if smartMode and hasSpawnProtection(targetPlayer) then
-                            -- Don't swing if they have spawn protection
-                        else
-                            swingSword()
-                        end
-                    end
-                end
-                wait(swingDelay)
-            end
-        end)
-        
-        -- Teleport loop
-        spawn(function()
-            while killEnabled do
-                if targetPlayer and targetPlayer.Character then
-                    local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
-                    if targetHumanoid then
-                        if targetHumanoid.Health > 0 then
-                            -- Smart mode: check for spawn protection
-                            if smartMode and hasSpawnProtection(targetPlayer) then
-                                if not isWaitingForSpawn then
-                                    isWaitingForSpawn = true
-                                    statusLabel.Text = "Waiting for spawn protection..."
-                                end
-                            else
-                                isWaitingForSpawn = false
-                                lastHealth = targetHumanoid.Health
-                                teleportToTarget()
-                                
-                                -- Check for kill
-                                wait(0.1)
-                                if targetHumanoid.Health <= 0 and lastHealth > 0 then
-                                    killCount = killCount + 1
-                                    killCounter.Text = "Kills: " .. killCount
-                                    statusLabel.Text = "Killed " .. targetPlayer.Name .. "!"
-                                end
-                            end
-                        else
-                            if not isWaitingForSpawn then
-                                statusLabel.Text = "Target dead! Waiting..."
-                            end
-                        end
-                    end
-                end
-                wait(teleportDelay)
-            end
-        end)
-        
-        -- Spawn protection watcher
-        spawn(function()
-            while killEnabled do
-                if targetPlayer and targetPlayer.Character and smartMode then
-                    local forceField = targetPlayer.Character:FindFirstChild("ForceField")
-                    if forceField then
-                        forceField.Destroying:Wait()
-                        wait(0.5) -- Extra buffer
-                        statusLabel.Text = "Spawn protection expired!"
-                        wait(1)
-                        if killEnabled and targetPlayer then
-                            statusLabel.Text = "Hunting: " .. targetPlayer.Name
-                        end
-                    end
-                end
-                wait(0.5)
-            end
-        end)
-        
-        -- Re-equip loop
-        spawn(function()
-            while killEnabled do
-                local sword = getSword()
-                if not sword then
-                    equipSword()
-                end
-                wait(0.5)
-            end
-        end)
+        startMainLoop()
         
     else
-        toggleButton.Text = "KILL AURA: OFF"
+        toggleButton.Text = "AUTO KILL: OFF"
         toggleButton.BackgroundColor3 = COLORS.buttonDanger
         statusLabel.Text = targetPlayer and ("Target: " .. targetPlayer.Name) or "No target selected"
-        isWaitingForSpawn = false
+        
+        stopAll()
+        currentMode = "NONE"
+        modeDisplay.Text = "MODE: NONE"
+        modeDisplay.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
     end
 end)
 
--- Respawn handler
-player.CharacterAdded:Connect(function()
-    wait(1)
+-- ========== RESPAWN HANDLER ==========
+
+player.CharacterAdded:Connect(function(char)
+    wait(0.5)
+    
     if killEnabled then
-        equipSword()
+        flingCount = flingCount + 1
+        flingCounter.Text = "Flings: " .. flingCount
+        startFlingMode()
     end
 end)
 
--- Toggle with key
+player.CharacterRemoving:Connect(function()
+    stopAll()
+end)
+
+-- ========== KEYBIND ==========
+
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.RightControl then
         if mainFrame.Visible then
@@ -799,4 +1133,5 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Kill Aura Pro Loaded (Smart Mode)")
+print("✅ Hybrid Kill Script Loaded")
+print("   Auto-switches between AURA and FLING based on target movement")
