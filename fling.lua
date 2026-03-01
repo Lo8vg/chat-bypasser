@@ -1,5 +1,5 @@
--- Working Fling Script
--- PlatformStand + AssemblyAngularVelocity = actual fling
+-- Aggressive Netless-Style Fling
+-- Constantly re-applies velocity every frame
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -11,9 +11,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 -- Settings
 local flingEnabled = false
 local targetPlayer = nil
-local flingTime = 5
-local autoRefling = true
-local respawnWait = 3
+local flingLoop = nil
 
 -- Colors
 local COLORS = {
@@ -69,8 +67,8 @@ hubButtonIcon.Parent = hubButton
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 450, 0, 280)
-mainFrame.Position = UDim2.new(0.5, -225, 0.5, -140)
+mainFrame.Size = UDim2.new(0, 400, 0, 220)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -110)
 mainFrame.BackgroundColor3 = COLORS.background
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -108,7 +106,7 @@ titleLabel.Size = UDim2.new(1, -50, 1, 0)
 titleLabel.Position = UDim2.new(0, 15, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = COLORS.textDark
-titleLabel.Text = "🌀 Fling Script"
+titleLabel.Text = "🌀 Aggressive Fling"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 14
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -176,7 +174,7 @@ targetLabel.Parent = leftFrame
 
 -- Player List
 local playerScroll = Instance.new("ScrollingFrame")
-playerScroll.Size = UDim2.new(1, 0, 0, 105)
+playerScroll.Size = UDim2.new(1, 0, 0, 80)
 playerScroll.Position = UDim2.new(0, 0, 0, 76)
 playerScroll.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
 playerScroll.ScrollBarThickness = 4
@@ -193,7 +191,7 @@ playerLayout.Parent = playerScroll
 -- Status Label
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, 0, 0, 18)
-statusLabel.Position = UDim2.new(0, 0, 0, 185)
+statusLabel.Position = UDim2.new(0, 0, 0, 160)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = COLORS.textMuted
 statusLabel.Text = "No target selected"
@@ -210,138 +208,15 @@ rightFrame.Position = UDim2.new(0.5, 5, 0, 40)
 rightFrame.BackgroundTransparency = 1
 rightFrame.Parent = mainFrame
 
--- Settings Header
-local settingsHeader = Instance.new("TextLabel")
-settingsHeader.Size = UDim2.new(1, 0, 0, 18)
-settingsHeader.Position = UDim2.new(0, 0, 0, 0)
-settingsHeader.BackgroundTransparency = 1
-settingsHeader.TextColor3 = COLORS.textDark
-settingsHeader.Text = "Settings"
-settingsHeader.Font = Enum.Font.GothamBold
-settingsHeader.TextSize = 11
-settingsHeader.TextXAlignment = Enum.TextXAlignment.Left
-settingsHeader.Parent = rightFrame
-
--- Fling Duration
-local timeRow = Instance.new("Frame")
-timeRow.Size = UDim2.new(1, 0, 0, 22)
-timeRow.Position = UDim2.new(0, 0, 0, 20)
-timeRow.BackgroundTransparency = 1
-timeRow.Parent = rightFrame
-
-local timeLabel = Instance.new("TextLabel")
-timeLabel.Size = UDim2.new(0, 110, 1, 0)
-timeLabel.BackgroundTransparency = 1
-timeLabel.TextColor3 = COLORS.textDark
-timeLabel.Text = "Fling Duration:"
-timeLabel.Font = Enum.Font.Gotham
-timeLabel.TextSize = 10
-timeLabel.TextXAlignment = Enum.TextXAlignment.Left
-timeLabel.Parent = timeRow
-
-local timeInput = Instance.new("TextBox")
-timeInput.Size = UDim2.new(0, 60, 1, 0)
-timeInput.Position = UDim2.new(0, 115, 0, 0)
-timeInput.BackgroundColor3 = COLORS.inputBg
-timeInput.TextColor3 = COLORS.textDark
-timeInput.Text = "5"
-timeInput.Font = Enum.Font.Gotham
-timeInput.TextSize = 10
-timeInput.ClearTextOnFocus = false
-timeInput.Parent = timeRow
-
-local timeCorner = Instance.new("UICorner")
-timeCorner.CornerRadius = UDim.new(0, 5)
-timeCorner.Parent = timeInput
-
-local timeStroke = Instance.new("UIStroke")
-timeStroke.Color = COLORS.border
-timeStroke.Thickness = 1
-timeStroke.Parent = timeInput
-
-local timeHint = Instance.new("TextLabel")
-timeHint.Size = UDim2.new(0, 70, 1, 0)
-timeHint.Position = UDim2.new(0, 180, 0, 0)
-timeHint.BackgroundTransparency = 1
-timeHint.TextColor3 = COLORS.textMuted
-timeHint.Text = "seconds"
-timeHint.Font = Enum.Font.Gotham
-timeHint.TextSize = 9
-timeHint.TextXAlignment = Enum.TextXAlignment.Left
-timeHint.Parent = timeRow
-
--- Respawn Wait
-local respawnRow = Instance.new("Frame")
-respawnRow.Size = UDim2.new(1, 0, 0, 22)
-respawnRow.Position = UDim2.new(0, 0, 0, 46)
-respawnRow.BackgroundTransparency = 1
-respawnRow.Parent = rightFrame
-
-local respawnLabel = Instance.new("TextLabel")
-respawnLabel.Size = UDim2.new(0, 110, 1, 0)
-respawnLabel.BackgroundTransparency = 1
-respawnLabel.TextColor3 = COLORS.textDark
-respawnLabel.Text = "Respawn Wait:"
-respawnLabel.Font = Enum.Font.Gotham
-respawnLabel.TextSize = 10
-respawnLabel.TextXAlignment = Enum.TextXAlignment.Left
-respawnLabel.Parent = respawnRow
-
-local respawnInput = Instance.new("TextBox")
-respawnInput.Size = UDim2.new(0, 60, 1, 0)
-respawnInput.Position = UDim2.new(0, 115, 0, 0)
-respawnInput.BackgroundColor3 = COLORS.inputBg
-respawnInput.TextColor3 = COLORS.textDark
-respawnInput.Text = "3"
-respawnInput.Font = Enum.Font.Gotham
-respawnInput.TextSize = 10
-respawnInput.ClearTextOnFocus = false
-respawnInput.Parent = respawnRow
-
-local respawnCorner = Instance.new("UICorner")
-respawnCorner.CornerRadius = UDim.new(0, 5)
-respawnCorner.Parent = respawnInput
-
-local respawnStroke = Instance.new("UIStroke")
-respawnStroke.Color = COLORS.border
-respawnStroke.Thickness = 1
-respawnStroke.Parent = respawnInput
-
-local respawnHint = Instance.new("TextLabel")
-respawnHint.Size = UDim2.new(0, 70, 1, 0)
-respawnHint.Position = UDim2.new(0, 180, 0, 0)
-respawnHint.BackgroundTransparency = 1
-respawnHint.TextColor3 = COLORS.textMuted
-respawnHint.Text = "seconds"
-respawnHint.Font = Enum.Font.Gotham
-respawnHint.TextSize = 9
-respawnHint.TextXAlignment = Enum.TextXAlignment.Left
-respawnHint.Parent = respawnRow
-
--- Auto Re-Fling Toggle
-local autoToggle = Instance.new("TextButton")
-autoToggle.Size = UDim2.new(1, 0, 0, 28)
-autoToggle.Position = UDim2.new(0, 0, 0, 75)
-autoToggle.BackgroundColor3 = COLORS.buttonSuccess
-autoToggle.TextColor3 = COLORS.textLight
-autoToggle.Text = "AUTO RE-FLING: ON"
-autoToggle.Font = Enum.Font.GothamBold
-autoToggle.TextSize = 10
-autoToggle.Parent = rightFrame
-
-local autoToggleCorner = Instance.new("UICorner")
-autoToggleCorner.CornerRadius = UDim.new(0, 6)
-autoToggleCorner.Parent = autoToggle
-
--- Info Label
+-- Info
 local infoLabel = Instance.new("TextLabel")
-infoLabel.Size = UDim2.new(1, 0, 0, 40)
-infoLabel.Position = UDim2.new(0, 0, 0, 110)
+infoLabel.Size = UDim2.new(1, 0, 0, 120)
+infoLabel.Position = UDim2.new(0, 0, 0, 10)
 infoLabel.BackgroundTransparency = 1
-infoLabel.TextColor3 = COLORS.textMuted
-infoLabel.Text = "Uses physics to fling target.\nPlatformStand method."
+infoLabel.TextColor3 = COLORS.textDark
+infoLabel.Text = "HOW IT WORKS:\n\n1. Select target\n2. Toggle FLING ON\n3. Script teleports inside\n   them constantly\n4. Applies spin every frame\n5. Physics flings them\n6. Anti-cheat kills you\n7. Auto-respawn & repeat"
 infoLabel.Font = Enum.Font.Gotham
-infoLabel.TextSize = 9
+infoLabel.TextSize = 10
 infoLabel.TextWrapped = true
 infoLabel.TextXAlignment = Enum.TextXAlignment.Left
 infoLabel.Parent = rightFrame
@@ -472,32 +347,16 @@ end)
 
 updatePlayerList()
 
--- ========== AUTO RE-FLING TOGGLE ==========
-
-autoToggle.MouseButton1Click:Connect(function()
-    autoRefling = not autoRefling
-    
-    if autoRefling then
-        autoToggle.Text = "AUTO RE-FLING: ON"
-        autoToggle.BackgroundColor3 = COLORS.buttonSuccess
-    else
-        autoToggle.Text = "AUTO RE-FLING: OFF"
-        autoToggle.BackgroundColor3 = COLORS.buttonDanger
-    end
-end)
-
 -- ========== FLING FUNCTION ==========
 
 local function getRoot(char)
     return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
 end
 
-local flingConnection = nil
-
 local function stopFling()
-    if flingConnection then
-        flingConnection:Disconnect()
-        flingConnection = nil
+    if flingLoop then
+        flingLoop:Disconnect()
+        flingLoop = nil
     end
     
     local myChar = player.Character
@@ -507,7 +366,7 @@ local function stopFling()
         
         if myRoot then
             myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-            myRoot.Velocity = Vector3.new(0, 0, 0)
+            myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
         end
         
         if myHumanoid then
@@ -517,141 +376,74 @@ local function stopFling()
         for _, part in pairs(myChar:GetDescendants()) do
             if part:IsA("BasePart") then
                 part.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-                part.Velocity = Vector3.new(0, 0, 0)
+                part.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
             end
         end
     end
 end
 
-local function flingTarget()
-    local myChar = player.Character
-    if not myChar then return false, "no char" end
-    
-    local myRoot = getRoot(myChar)
-    local myHumanoid = myChar:FindFirstChild("Humanoid")
-    
-    if not myRoot then return false, "no root" end
-    
-    local targetChar = targetPlayer.Character
-    if not targetChar then return false, "no target char" end
-    
-    local targetRoot = getRoot(targetChar)
-    local targetHumanoid = targetChar:FindFirstChild("Humanoid")
-    
-    if not targetRoot then return false, "no target root" end
-    if targetHumanoid and targetHumanoid.Health <= 0 then return false, "dead" end
-    
-    -- Check spawn protection
-    local forceField = targetChar:FindFirstChild("ForceField")
-    if forceField then
-        return false, "protection"
+local function startFling()
+    if flingLoop then
+        flingLoop:Disconnect()
     end
     
-    -- Enable PlatformStand (KEY - this lets physics control your character)
-    if myHumanoid then
-        myHumanoid.PlatformStand = true
-    end
-    
-    -- Make sure all parts can collide
-    for _, part in pairs(myChar:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.CanCollide = true
-            part.Massless = false
-        end
-    end
-    
-    -- Set INSANE angular velocity
-    myRoot.AssemblyAngularVelocity = Vector3.new(math.huge, math.huge, math.huge)
-    
-    -- Keep teleporting to target and spinning
-    local flingStart = tick()
-    flingConnection = RunService.Heartbeat:Connect(function()
-        if tick() - flingStart > flingTime then
-            stopFling()
+    flingLoop = RunService.Heartbeat:Connect(function()
+        if not flingEnabled then return end
+        
+        local myChar = player.Character
+        if not myChar then return end
+        
+        local myRoot = getRoot(myChar)
+        local myHumanoid = myChar:FindFirstChild("Humanoid")
+        
+        if not myRoot then return end
+        
+        if not targetPlayer or not targetPlayer.Character then
             return
         end
         
-        if targetRoot and myRoot then
-            -- Teleport inside target
-            myRoot.CFrame = targetRoot.CFrame
-            -- Keep spinning
-            myRoot.AssemblyAngularVelocity = Vector3.new(math.huge, math.huge, math.huge)
+        local targetRoot = getRoot(targetPlayer.Character)
+        if not targetRoot then return end
+        
+        -- Enable PlatformStand
+        if myHumanoid then
+            myHumanoid.PlatformStand = true
+        end
+        
+        -- Teleport inside target EVERY FRAME
+        myRoot.CFrame = targetRoot.CFrame
+        
+        -- Apply INSANE velocity EVERY FRAME
+        myRoot.AssemblyAngularVelocity = Vector3.new(math.huge, math.huge, math.huge)
+        myRoot.AssemblyLinearVelocity = Vector3.new(math.huge, math.huge, math.huge)
+        
+        -- Also apply to all body parts
+        for _, part in pairs(myChar:GetDescendants()) do
+            if part:IsA("BasePart") and part ~= myRoot then
+                part.AssemblyAngularVelocity = Vector3.new(math.huge, math.huge, math.huge)
+                part.AssemblyLinearVelocity = Vector3.new(math.huge, math.huge, math.huge)
+            end
         end
     end)
-    
-    -- Wait for fling to complete
-    wait(flingTime)
-    stopFling()
-    
-    return true
 end
 
--- ========== FLING LOOP ==========
+-- ========== FLING TOGGLE ==========
 
 toggleButton.MouseButton1Click:Connect(function()
     flingEnabled = not flingEnabled
-    flingTime = tonumber(timeInput.Text) or 5
-    if flingTime < 1 then flingTime = 1 end
-    if flingTime > 15 then flingTime = 15 end
-    
-    respawnWait = tonumber(respawnInput.Text) or 3
-    if respawnWait < 1 then respawnWait = 1 end
     
     if flingEnabled then
         toggleButton.Text = "FLING: ON"
         toggleButton.BackgroundColor3 = COLORS.buttonSuccess
-        statusLabel.Text = targetPlayer and ("Target: " .. targetPlayer.Name) or "No target selected"
+        statusLabel.Text = targetPlayer and ("Flinging: " .. targetPlayer.Name) or "No target selected"
         
-        spawn(function()
-            while flingEnabled do
-                if targetPlayer and targetPlayer.Character then
-                    local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
-                    local targetRoot = getRoot(targetPlayer.Character)
-                    
-                    if targetRoot and (not targetHumanoid or targetHumanoid.Health > 0) then
-                        local success, reason = flingTarget()
-                        
-                        if success then
-                            flingCount = flingCount + 1
-                            flingCounter.Text = "Flings: " .. flingCount
-                            statusLabel.Text = "Flinged " .. targetPlayer.Name .. "!"
-                        elseif reason == "protection" then
-                            statusLabel.Text = "Waiting for spawn protection..."
-                            wait(3)
-                        else
-                            statusLabel.Text = "Fling failed: " .. (reason or "unknown")
-                        end
-                    else
-                        if autoRefling then
-                            statusLabel.Text = "Waiting for respawn..."
-                            stopFling()
-                            wait(respawnWait)
-                        else
-                            statusLabel.Text = "Target dead!"
-                            stopFling()
-                            break
-                        end
-                    end
-                else
-                    if autoRefling then
-                        statusLabel.Text = "Waiting for target..."
-                        stopFling()
-                        wait(1)
-                    else
-                        statusLabel.Text = "Target not found!"
-                        stopFling()
-                        break
-                    end
-                end
-                
-                wait(0.5)
-            end
-        end)
+        startFling()
         
     else
         toggleButton.Text = "FLING: OFF"
         toggleButton.BackgroundColor3 = COLORS.buttonDanger
         statusLabel.Text = targetPlayer and ("Target: " .. targetPlayer.Name) or "No target selected"
+        
         stopFling()
     end
 end)
@@ -668,12 +460,19 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Cleanup on death
-player.CharacterRemoving:Connect(function()
-    flingEnabled = false
-    stopFling()
-    toggleButton.Text = "FLING: OFF"
-    toggleButton.BackgroundColor3 = COLORS.buttonDanger
+-- Auto-restart on respawn
+player.CharacterAdded:Connect(function(char)
+    if flingEnabled then
+        wait(0.5) -- Wait for character to load
+        startFling()
+        flingCount = flingCount + 1
+        flingCounter.Text = "Flings: " .. flingCount
+    end
 end)
 
-print("✅ Fling Script Loaded (PlatformStand Method)")
+-- Cleanup
+player.CharacterRemoving:Connect(function()
+    stopFling()
+end)
+
+print("✅ Aggressive Fling Loaded")
