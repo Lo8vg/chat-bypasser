@@ -1,5 +1,5 @@
--- Hybrid Script with Tabs (Fixed Aura Loop)
--- Fling + Kill Aura (Separate Modes, No Smart Mode)
+-- Kill Aura Script (Auto-Equip + Aggressive Loop)
+-- Auto equips sword, teleports, and swings
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -9,93 +9,31 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 -- Settings
-local flingEnabled = false
-local auraEnabled = false
+local killEnabled = false
 local targetPlayer = nil
+local attackDelay = 0.05
+local swingsPerAttack = 3
 
--- Fling settings
-local bodyAngularVel = nil
-local bodyVel = nil
-local flingLoop = nil
-
--- Aura settings
-local teleportDistance = 2
-local teleportDelay = 0.1
-local swingDelay = 0.01
-local attackAngle = 0
-
--- Stats
-local flingCount = 0
-local killCount = 0
-
--- Colors
+-- Colors (White Theme)
 local COLORS = {
     background = Color3.fromRGB(245, 245, 245),
     header = Color3.fromRGB(255, 255, 255),
     buttonPrimary = Color3.fromRGB(0, 120, 215),
     buttonDanger = Color3.fromRGB(220, 53, 69),
     buttonSuccess = Color3.fromRGB(40, 167, 69),
-    buttonPurple = Color3.fromRGB(111, 66, 193),
     textDark = Color3.fromRGB(33, 37, 41),
     textLight = Color3.fromRGB(255, 255, 255),
     textMuted = Color3.fromRGB(134, 142, 150),
     inputBg = Color3.fromRGB(255, 255, 255),
     border = Color3.fromRGB(222, 226, 230),
-    cardBg = Color3.fromRGB(255, 255, 255),
-    tabActive = Color3.fromRGB(0, 120, 215),
-    tabInactive = Color3.fromRGB(200, 200, 200)
+    cardBg = Color3.fromRGB(255, 255, 255)
 }
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "HybridGui"
+screenGui.Name = "KillGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
-
--- ========== HELPER FUNCTIONS (DEFINED FIRST) ==========
-
-local function getRoot(char)
-    return char and char:FindFirstChild("HumanoidRootPart") or char and char:FindFirstChild("Torso") or char and char:FindFirstChild("UpperTorso")
-end
-
-local function getSword()
-    local character = player.Character
-    if not character then return nil end
-    
-    for _, item in pairs(character:GetChildren()) do
-        if item:IsA("Tool") then
-            return item
-        end
-    end
-    return nil
-end
-
-local function equipSword()
-    local character = player.Character
-    local backpack = player:FindFirstChild("Backpack")
-    
-    if not character or not backpack then return nil end
-    
-    local currentTool = getSword()
-    if currentTool then return currentTool end
-    
-    for _, item in pairs(backpack:GetChildren()) do
-        if item:IsA("Tool") then
-            character.Humanoid:EquipTool(item)
-            wait(0.1)
-            return item
-        end
-    end
-    
-    return nil
-end
-
-local function swingSword()
-    local sword = getSword()
-    if sword then
-        sword:Activate()
-    end
-end
 
 -- ========== HUB BUTTON ==========
 
@@ -130,8 +68,8 @@ hubButtonIcon.Parent = hubButton
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 450, 0, 300)
-mainFrame.Position = UDim2.new(0.5, -225, 0.5, -150)
+mainFrame.Size = UDim2.new(0, 280, 0, 380)
+mainFrame.Position = UDim2.new(0.5, -140, 0.5, -190)
 mainFrame.BackgroundColor3 = COLORS.background
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -148,7 +86,7 @@ mainFrameShadow.Parent = mainFrame
 
 -- Title Bar
 local titleBar = Instance.new("Frame")
-titleBar.Size = UDim2.new(1, 0, 0, 35)
+titleBar.Size = UDim2.new(1, 0, 0, 40)
 titleBar.BackgroundColor3 = COLORS.header
 titleBar.BorderSizePixel = 0
 titleBar.Parent = mainFrame
@@ -169,337 +107,173 @@ titleLabel.Size = UDim2.new(1, -50, 1, 0)
 titleLabel.Position = UDim2.new(0, 15, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = COLORS.textDark
-titleLabel.Text = "⚔️ Hybrid Script"
+titleLabel.Text = "⚔️ Kill Aura"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 14
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = titleBar
 
 local collapseButton = Instance.new("TextButton")
-collapseButton.Size = UDim2.new(0, 28, 0, 22)
-collapseButton.Position = UDim2.new(1, -35, 0.5, -11)
+collapseButton.Size = UDim2.new(0, 30, 0, 24)
+collapseButton.Position = UDim2.new(1, -38, 0.5, -12)
 collapseButton.BackgroundColor3 = COLORS.buttonDanger
 collapseButton.TextColor3 = COLORS.textLight
 collapseButton.Text = "✕"
 collapseButton.Font = Enum.Font.GothamBold
-collapseButton.TextSize = 11
+collapseButton.TextSize = 12
 collapseButton.Parent = titleBar
 
 local collapseCorner = Instance.new("UICorner")
 collapseCorner.CornerRadius = UDim.new(0, 6)
 collapseCorner.Parent = collapseButton
 
--- ========== TAB BAR ==========
+-- ========== CONTENT ==========
 
-local tabBar = Instance.new("Frame")
-tabBar.Size = UDim2.new(1, -20, 0, 35)
-tabBar.Position = UDim2.new(0, 10, 0, 40)
-tabBar.BackgroundTransparency = 1
-tabBar.Parent = mainFrame
+local contentFrame = Instance.new("Frame")
+contentFrame.Size = UDim2.new(1, -30, 1, -55)
+contentFrame.Position = UDim2.new(0, 15, 0, 45)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Parent = mainFrame
 
-local flingTab = Instance.new("TextButton")
-flingTab.Size = UDim2.new(0.5, -5, 1, 0)
-flingTab.Position = UDim2.new(0, 0, 0, 0)
-flingTab.BackgroundColor3 = COLORS.tabActive
-flingTab.TextColor3 = COLORS.textLight
-flingTab.Text = "🌀 FLING"
-flingTab.Font = Enum.Font.GothamBold
-flingTab.TextSize = 12
-flingTab.Parent = tabBar
+-- Toggle Button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(1, 0, 0, 45)
+toggleButton.Position = UDim2.new(0, 0, 0, 0)
+toggleButton.BackgroundColor3 = COLORS.buttonDanger
+toggleButton.TextColor3 = COLORS.textLight
+toggleButton.Text = "KILL AURA: OFF"
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.TextSize = 16
+toggleButton.Parent = contentFrame
 
-local flingTabCorner = Instance.new("UICorner")
-flingTabCorner.CornerRadius = UDim.new(0, 8)
-flingTabCorner.Parent = flingTab
-
-local auraTab = Instance.new("TextButton")
-auraTab.Size = UDim2.new(0.5, -5, 1, 0)
-auraTab.Position = UDim2.new(0.5, 5, 0, 0)
-auraTab.BackgroundColor3 = COLORS.tabInactive
-auraTab.TextColor3 = COLORS.textDark
-auraTab.Text = "⚔️ AURA"
-auraTab.Font = Enum.Font.GothamBold
-auraTab.TextSize = 12
-auraTab.Parent = tabBar
-
-local auraTabCorner = Instance.new("UICorner")
-auraTabCorner.CornerRadius = UDim.new(0, 8)
-auraTabCorner.Parent = auraTab
-
--- ========== FLING PAGE ==========
-
-local flingPage = Instance.new("Frame")
-flingPage.Name = "FlingPage"
-flingPage.Size = UDim2.new(1, -20, 1, -85)
-flingPage.Position = UDim2.new(0, 10, 0, 80)
-flingPage.BackgroundTransparency = 1
-flingPage.Visible = true
-flingPage.Parent = mainFrame
-
--- Fling Toggle
-local flingToggle = Instance.new("TextButton")
-flingToggle.Size = UDim2.new(1, 0, 0, 35)
-flingToggle.Position = UDim2.new(0, 0, 0, 0)
-flingToggle.BackgroundColor3 = COLORS.buttonDanger
-flingToggle.TextColor3 = COLORS.textLight
-flingToggle.Text = "FLING: OFF"
-flingToggle.Font = Enum.Font.GothamBold
-flingToggle.TextSize = 14
-flingToggle.Parent = flingPage
-
-local flingToggleCorner = Instance.new("UICorner")
-flingToggleCorner.CornerRadius = UDim.new(0, 8)
-flingToggleCorner.Parent = flingToggle
-
--- Fling Counter
-local flingCounterLabel = Instance.new("TextLabel")
-flingCounterLabel.Size = UDim2.new(1, 0, 0, 18)
-flingCounterLabel.Position = UDim2.new(0, 0, 0, 40)
-flingCounterLabel.BackgroundTransparency = 1
-flingCounterLabel.TextColor3 = COLORS.buttonPurple
-flingCounterLabel.Text = "Flings: 0"
-flingCounterLabel.Font = Enum.Font.GothamBold
-flingCounterLabel.TextSize = 11
-flingCounterLabel.Parent = flingPage
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0, 8)
+toggleCorner.Parent = toggleButton
 
 -- Target Label
-local flingTargetLabel = Instance.new("TextLabel")
-flingTargetLabel.Size = UDim2.new(1, 0, 0, 16)
-flingTargetLabel.Position = UDim2.new(0, 0, 0, 60)
-flingTargetLabel.BackgroundTransparency = 1
-flingTargetLabel.TextColor3 = COLORS.textDark
-flingTargetLabel.Text = "Select Target:"
-flingTargetLabel.Font = Enum.Font.GothamBold
-flingTargetLabel.TextSize = 10
-flingTargetLabel.TextXAlignment = Enum.TextXAlignment.Left
-flingTargetLabel.Parent = flingPage
+local targetLabel = Instance.new("TextLabel")
+targetLabel.Size = UDim2.new(1, 0, 0, 20)
+targetLabel.Position = UDim2.new(0, 0, 0, 55)
+targetLabel.BackgroundTransparency = 1
+targetLabel.TextColor3 = COLORS.textDark
+targetLabel.Text = "Select Target:"
+targetLabel.Font = Enum.Font.GothamBold
+targetLabel.TextSize = 12
+targetLabel.TextXAlignment = Enum.TextXAlignment.Left
+targetLabel.Parent = contentFrame
 
--- Fling Player List
-local flingPlayerScroll = Instance.new("ScrollingFrame")
-flingPlayerScroll.Size = UDim2.new(1, 0, 0, 100)
-flingPlayerScroll.Position = UDim2.new(0, 0, 0, 78)
-flingPlayerScroll.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
-flingPlayerScroll.ScrollBarThickness = 4
-flingPlayerScroll.Parent = flingPage
+-- Player List
+local playerScroll = Instance.new("ScrollingFrame")
+playerScroll.Size = UDim2.new(1, 0, 0, 150)
+playerScroll.Position = UDim2.new(0, 0, 0, 80)
+playerScroll.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
+playerScroll.ScrollBarThickness = 4
+playerScroll.Parent = contentFrame
 
-local flingPlayerScrollCorner = Instance.new("UICorner")
-flingPlayerScrollCorner.CornerRadius = UDim.new(0, 6)
-flingPlayerScrollCorner.Parent = flingPlayerScroll
+local playerScrollCorner = Instance.new("UICorner")
+playerScrollCorner.CornerRadius = UDim.new(0, 6)
+playerScrollCorner.Parent = playerScroll
 
-local flingPlayerLayout = Instance.new("UIListLayout")
-flingPlayerLayout.Padding = UDim.new(0, 2)
-flingPlayerLayout.Parent = flingPlayerScroll
+local playerLayout = Instance.new("UIListLayout")
+playerLayout.Padding = UDim.new(0, 4)
+playerLayout.Parent = playerScroll
 
--- Spin Power
-local spinRow = Instance.new("Frame")
-spinRow.Size = UDim2.new(1, 0, 0, 22)
-spinRow.Position = UDim2.new(0, 0, 0, 182)
-spinRow.BackgroundTransparency = 1
-spinRow.Parent = flingPage
+-- Status Label
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, 0, 0, 30)
+statusLabel.Position = UDim2.new(0, 0, 0, 240)
+statusLabel.BackgroundTransparency = 1
+statusLabel.TextColor3 = COLORS.textMuted
+statusLabel.Text = "No target selected"
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextSize = 11
+statusLabel.TextWrapped = true
+statusLabel.Parent = contentFrame
 
-local spinLabel = Instance.new("TextLabel")
-spinLabel.Size = UDim2.new(0, 80, 1, 0)
-spinLabel.BackgroundTransparency = 1
-spinLabel.TextColor3 = COLORS.textDark
-spinLabel.Text = "Spin Power:"
-spinLabel.Font = Enum.Font.Gotham
-spinLabel.TextSize = 10
-spinLabel.TextXAlignment = Enum.TextXAlignment.Left
-spinLabel.Parent = spinRow
+-- Delay Input
+local delayRow = Instance.new("Frame")
+delayRow.Size = UDim2.new(1, 0, 0, 30)
+delayRow.Position = UDim2.new(0, 0, 0, 270)
+delayRow.BackgroundTransparency = 1
+delayRow.Parent = contentFrame
 
-local spinInput = Instance.new("TextBox")
-spinInput.Size = UDim2.new(0, 80, 1, 0)
-spinInput.Position = UDim2.new(0, 85, 0, 0)
-spinInput.BackgroundColor3 = COLORS.inputBg
-spinInput.TextColor3 = COLORS.textDark
-spinInput.Text = "999999"
-spinInput.Font = Enum.Font.Gotham
-spinInput.TextSize = 10
-spinInput.ClearTextOnFocus = false
-spinInput.Parent = spinRow
+local delayLabel = Instance.new("TextLabel")
+delayLabel.Size = UDim2.new(0, 90, 1, 0)
+delayLabel.BackgroundTransparency = 1
+delayLabel.TextColor3 = COLORS.textDark
+delayLabel.Text = "Attack Delay:"
+delayLabel.Font = Enum.Font.Gotham
+delayLabel.TextSize = 11
+delayLabel.TextXAlignment = Enum.TextXAlignment.Left
+delayLabel.Parent = delayRow
 
-local spinCorner = Instance.new("UICorner")
-spinCorner.CornerRadius = UDim.new(0, 5)
-spinCorner.Parent = spinInput
+local delayInput = Instance.new("TextBox")
+delayInput.Size = UDim2.new(0, 60, 1, 0)
+delayInput.Position = UDim2.new(0, 95, 0, 0)
+delayInput.BackgroundColor3 = COLORS.inputBg
+delayInput.TextColor3 = COLORS.textDark
+delayInput.Text = "0.05"
+delayInput.Font = Enum.Font.Gotham
+delayInput.TextSize = 12
+delayInput.ClearTextOnFocus = false
+delayInput.Parent = delayRow
 
-local spinStroke = Instance.new("UIStroke")
-spinStroke.Color = COLORS.border
-spinStroke.Thickness = 1
-spinStroke.Parent = spinInput
+local delayInputCorner = Instance.new("UICorner")
+delayInputCorner.CornerRadius = UDim.new(0, 6)
+delayInputCorner.Parent = delayInput
 
--- Launch Power
-local launchRow = Instance.new("Frame")
-launchRow.Size = UDim2.new(1, 0, 0, 22)
-launchRow.Position = UDim2.new(0, 0, 0, 206)
-launchRow.BackgroundTransparency = 1
-launchRow.Parent = flingPage
+local delayInputStroke = Instance.new("UIStroke")
+delayInputStroke.Color = COLORS.border
+delayInputStroke.Thickness = 1
+delayInputStroke.Parent = delayInput
 
-local launchLabel = Instance.new("TextLabel")
-launchLabel.Size = UDim2.new(0, 80, 1, 0)
-launchLabel.BackgroundTransparency = 1
-launchLabel.TextColor3 = COLORS.textDark
-launchLabel.Text = "Launch Power:"
-launchLabel.Font = Enum.Font.Gotham
-launchLabel.TextSize = 10
-launchLabel.TextXAlignment = Enum.TextXAlignment.Left
-launchLabel.Parent = launchRow
+local delayHint = Instance.new("TextLabel")
+delayHint.Size = UDim2.new(0, 50, 1, 0)
+delayHint.Position = UDim2.new(0, 160, 0, 0)
+delayHint.BackgroundTransparency = 1
+delayHint.TextColor3 = COLORS.textMuted
+delayHint.Text = "seconds"
+delayHint.Font = Enum.Font.Gotham
+delayHint.TextSize = 10
+delayHint.TextXAlignment = Enum.TextXAlignment.Left
+delayHint.Parent = delayRow
 
-local launchInput = Instance.new("TextBox")
-launchInput.Size = UDim2.new(0, 80, 1, 0)
-launchInput.Position = UDim2.new(0, 85, 0, 0)
-launchInput.BackgroundColor3 = COLORS.inputBg
-launchInput.TextColor3 = COLORS.textDark
-launchInput.Text = "999999"
-launchInput.Font = Enum.Font.Gotham
-launchInput.TextSize = 10
-launchInput.ClearTextOnFocus = false
-launchInput.Parent = launchRow
+-- Swings Input
+local swingsRow = Instance.new("Frame")
+swingsRow.Size = UDim2.new(1, 0, 0, 30)
+swingsRow.Position = UDim2.new(0, 0, 0, 305)
+swingsRow.BackgroundTransparency = 1
+swingsRow.Parent = contentFrame
 
-local launchCorner = Instance.new("UICorner")
-launchCorner.CornerRadius = UDim.new(0, 5)
-launchCorner.Parent = launchInput
+local swingsLabel = Instance.new("TextLabel")
+swingsLabel.Size = UDim2.new(0, 90, 1, 0)
+swingsLabel.BackgroundTransparency = 1
+swingsLabel.TextColor3 = COLORS.textDark
+swingsLabel.Text = "Swings/Hit:"
+swingsLabel.Font = Enum.Font.Gotham
+swingsLabel.TextSize = 11
+swingsLabel.TextXAlignment = Enum.TextXAlignment.Left
+swingsLabel.Parent = swingsRow
 
-local launchStroke = Instance.new("UIStroke")
-launchStroke.Color = COLORS.border
-launchStroke.Thickness = 1
-launchStroke.Parent = launchInput
+local swingsInput = Instance.new("TextBox")
+swingsInput.Size = UDim2.new(0, 60, 1, 0)
+swingsInput.Position = UDim2.new(0, 95, 0, 0)
+swingsInput.BackgroundColor3 = COLORS.inputBg
+swingsInput.TextColor3 = COLORS.textDark
+swingsInput.Text = "3"
+swingsInput.Font = Enum.Font.Gotham
+swingsInput.TextSize = 12
+swingsInput.ClearTextOnFocus = false
+swingsInput.Parent = swingsRow
 
--- ========== AURA PAGE ==========
+local swingsInputCorner = Instance.new("UICorner")
+swingsInputCorner.CornerRadius = UDim.new(0, 6)
+swingsInputCorner.Parent = swingsInput
 
-local auraPage = Instance.new("Frame")
-auraPage.Name = "AuraPage"
-auraPage.Size = UDim2.new(1, -20, 1, -85)
-auraPage.Position = UDim2.new(0, 10, 0, 80)
-auraPage.BackgroundTransparency = 1
-auraPage.Visible = false
-auraPage.Parent = mainFrame
-
--- Aura Toggle
-local auraToggle = Instance.new("TextButton")
-auraToggle.Size = UDim2.new(1, 0, 0, 35)
-auraToggle.Position = UDim2.new(0, 0, 0, 0)
-auraToggle.BackgroundColor3 = COLORS.buttonDanger
-auraToggle.TextColor3 = COLORS.textLight
-auraToggle.Text = "KILL AURA: OFF"
-auraToggle.Font = Enum.Font.GothamBold
-auraToggle.TextSize = 14
-auraToggle.Parent = auraPage
-
-local auraToggleCorner = Instance.new("UICorner")
-auraToggleCorner.CornerRadius = UDim.new(0, 8)
-auraToggleCorner.Parent = auraToggle
-
--- Kill Counter
-local killCounterLabel = Instance.new("TextLabel")
-killCounterLabel.Size = UDim2.new(1, 0, 0, 18)
-killCounterLabel.Position = UDim2.new(0, 0, 0, 40)
-killCounterLabel.BackgroundTransparency = 1
-killCounterLabel.TextColor3 = COLORS.buttonSuccess
-killCounterLabel.Text = "Kills: 0"
-killCounterLabel.Font = Enum.Font.GothamBold
-killCounterLabel.TextSize = 11
-killCounterLabel.Parent = auraPage
-
--- Target Label
-local auraTargetLabel = Instance.new("TextLabel")
-auraTargetLabel.Size = UDim2.new(1, 0, 0, 16)
-auraTargetLabel.Position = UDim2.new(0, 0, 0, 60)
-auraTargetLabel.BackgroundTransparency = 1
-auraTargetLabel.TextColor3 = COLORS.textDark
-auraTargetLabel.Text = "Select Target:"
-auraTargetLabel.Font = Enum.Font.GothamBold
-auraTargetLabel.TextSize = 10
-auraTargetLabel.TextXAlignment = Enum.TextXAlignment.Left
-auraTargetLabel.Parent = auraPage
-
--- Aura Player List
-local auraPlayerScroll = Instance.new("ScrollingFrame")
-auraPlayerScroll.Size = UDim2.new(1, 0, 0, 100)
-auraPlayerScroll.Position = UDim2.new(0, 0, 0, 78)
-auraPlayerScroll.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
-auraPlayerScroll.ScrollBarThickness = 4
-auraPlayerScroll.Parent = auraPage
-
-local auraPlayerScrollCorner = Instance.new("UICorner")
-auraPlayerScrollCorner.CornerRadius = UDim.new(0, 6)
-auraPlayerScrollCorner.Parent = auraPlayerScroll
-
-local auraPlayerLayout = Instance.new("UIListLayout")
-auraPlayerLayout.Padding = UDim.new(0, 2)
-auraPlayerLayout.Parent = auraPlayerScroll
-
--- Distance
-local distRow = Instance.new("Frame")
-distRow.Size = UDim2.new(1, 0, 0, 22)
-distRow.Position = UDim2.new(0, 0, 0, 182)
-distRow.BackgroundTransparency = 1
-distRow.Parent = auraPage
-
-local distLabel = Instance.new("TextLabel")
-distLabel.Size = UDim2.new(0, 80, 1, 0)
-distLabel.BackgroundTransparency = 1
-distLabel.TextColor3 = COLORS.textDark
-distLabel.Text = "Distance:"
-distLabel.Font = Enum.Font.Gotham
-distLabel.TextSize = 10
-distLabel.TextXAlignment = Enum.TextXAlignment.Left
-distLabel.Parent = distRow
-
-local distInput = Instance.new("TextBox")
-distInput.Size = UDim2.new(0, 50, 1, 0)
-distInput.Position = UDim2.new(0, 85, 0, 0)
-distInput.BackgroundColor3 = COLORS.inputBg
-distInput.TextColor3 = COLORS.textDark
-distInput.Text = "2"
-distInput.Font = Enum.Font.Gotham
-distInput.TextSize = 10
-distInput.ClearTextOnFocus = false
-distInput.Parent = distRow
-
-local distCorner = Instance.new("UICorner")
-distCorner.CornerRadius = UDim.new(0, 5)
-distCorner.Parent = distInput
-
-local distStroke = Instance.new("UIStroke")
-distStroke.Color = COLORS.border
-distStroke.Thickness = 1
-distStroke.Parent = distInput
-
--- Swing Speed
-local swingRow = Instance.new("Frame")
-swingRow.Size = UDim2.new(1, 0, 0, 22)
-swingRow.Position = UDim2.new(0, 0, 0, 206)
-swingRow.BackgroundTransparency = 1
-swingRow.Parent = auraPage
-
-local swingLabel = Instance.new("TextLabel")
-swingLabel.Size = UDim2.new(0, 80, 1, 0)
-swingLabel.BackgroundTransparency = 1
-swingLabel.TextColor3 = COLORS.textDark
-swingLabel.Text = "Swing Speed:"
-swingLabel.Font = Enum.Font.Gotham
-swingLabel.TextSize = 10
-swingLabel.TextXAlignment = Enum.TextXAlignment.Left
-swingLabel.Parent = swingRow
-
-local swingInput = Instance.new("TextBox")
-swingInput.Size = UDim2.new(0, 50, 1, 0)
-swingInput.Position = UDim2.new(0, 85, 0, 0)
-swingInput.BackgroundColor3 = COLORS.inputBg
-swingInput.TextColor3 = COLORS.textDark
-swingInput.Text = "0.01"
-swingInput.Font = Enum.Font.Gotham
-swingInput.TextSize = 10
-swingInput.ClearTextOnFocus = false
-swingInput.Parent = swingRow
-
-local swingCorner = Instance.new("UICorner")
-swingCorner.CornerRadius = UDim.new(0, 5)
-swingCorner.Parent = swingInput
-
-local swingStroke = Instance.new("UIStroke")
-swingStroke.Color = COLORS.border
-swingStroke.Thickness = 1
-swingStroke.Parent = swingInput
+local swingsInputStroke = Instance.new("UIStroke")
+swingsInputStroke.Color = COLORS.border
+swingsInputStroke.Thickness = 1
+swingsInputStroke.Parent = swingsInput
 
 -- ========== DRAGGING ==========
 
@@ -580,379 +354,177 @@ collapseButton.MouseButton1Click:Connect(function()
     hubButton.Visible = true
 end)
 
--- ========== TAB SWITCHING ==========
+-- ========== PLAYER LIST ==========
 
-flingTab.MouseButton1Click:Connect(function()
-    flingPage.Visible = true
-    auraPage.Visible = false
-    flingTab.BackgroundColor3 = COLORS.tabActive
-    flingTab.TextColor3 = COLORS.textLight
-    auraTab.BackgroundColor3 = COLORS.tabInactive
-    auraTab.TextColor3 = COLORS.textDark
-end)
+local playerButtons = {}
 
-auraTab.MouseButton1Click:Connect(function()
-    flingPage.Visible = false
-    auraPage.Visible = true
-    auraTab.BackgroundColor3 = COLORS.tabActive
-    auraTab.TextColor3 = COLORS.textLight
-    flingTab.BackgroundColor3 = COLORS.tabInactive
-    flingTab.TextColor3 = COLORS.textDark
-end)
-
--- ========== PLAYER LISTS ==========
-
-local flingPlayerButtons = {}
-local auraPlayerButtons = {}
-
-local function updatePlayerLists()
-    for _, btn in pairs(flingPlayerButtons) do btn:Destroy() end
-    for _, btn in pairs(auraPlayerButtons) do btn:Destroy() end
-    flingPlayerButtons = {}
-    auraPlayerButtons = {}
+local function updatePlayerList()
+    for _, btn in pairs(playerButtons) do
+        btn:Destroy()
+    end
+    playerButtons = {}
     
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= player then
-            -- Fling list
-            local btn1 = Instance.new("TextButton")
-            btn1.Size = UDim2.new(1, 0, 0, 22)
-            btn1.BackgroundColor3 = targetPlayer == plr and COLORS.buttonPrimary or Color3.fromRGB(240, 240, 240)
-            btn1.TextColor3 = targetPlayer == plr and COLORS.textLight or COLORS.textDark
-            btn1.Text = plr.Name
-            btn1.Font = Enum.Font.Gotham
-            btn1.TextSize = 10
-            btn1.Parent = flingPlayerScroll
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(1, 0, 0, 28)
+            btn.BackgroundColor3 = targetPlayer == plr and COLORS.buttonPrimary or Color3.fromRGB(240, 240, 240)
+            btn.TextColor3 = targetPlayer == plr and COLORS.textLight or COLORS.textDark
+            btn.Text = plr.Name
+            btn.Font = Enum.Font.Gotham
+            btn.TextSize = 11
+            btn.Parent = playerScroll
             
-            local btn1Corner = Instance.new("UICorner")
-            btn1Corner.CornerRadius = UDim.new(0, 5)
-            btn1Corner.Parent = btn1
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(0, 5)
+            btnCorner.Parent = btn
             
-            btn1.MouseButton1Click:Connect(function()
+            btn.MouseButton1Click:Connect(function()
                 targetPlayer = plr
-                updatePlayerLists()
+                statusLabel.Text = "Target: " .. plr.Name
+                updatePlayerList()
             end)
             
-            table.insert(flingPlayerButtons, btn1)
-            
-            -- Aura list
-            local btn2 = Instance.new("TextButton")
-            btn2.Size = UDim2.new(1, 0, 0, 22)
-            btn2.BackgroundColor3 = targetPlayer == plr and COLORS.buttonPrimary or Color3.fromRGB(240, 240, 240)
-            btn2.TextColor3 = targetPlayer == plr and COLORS.textLight or COLORS.textDark
-            btn2.Text = plr.Name
-            btn2.Font = Enum.Font.Gotham
-            btn2.TextSize = 10
-            btn2.Parent = auraPlayerScroll
-            
-            local btn2Corner = Instance.new("UICorner")
-            btn2Corner.CornerRadius = UDim.new(0, 5)
-            btn2Corner.Parent = btn2
-            
-            btn2.MouseButton1Click:Connect(function()
-                targetPlayer = plr
-                updatePlayerLists()
-            end)
-            
-            table.insert(auraPlayerButtons, btn2)
+            table.insert(playerButtons, btn)
         end
     end
     
-    flingPlayerScroll.CanvasSize = UDim2.new(0, 0, 0, #flingPlayerButtons * 24)
-    auraPlayerScroll.CanvasSize = UDim2.new(0, 0, 0, #auraPlayerButtons * 24)
+    playerScroll.CanvasSize = UDim2.new(0, 0, 0, #playerButtons * 32)
 end
 
-Players.PlayerAdded:Connect(updatePlayerLists)
+Players.PlayerAdded:Connect(updatePlayerList)
 Players.PlayerRemoving:Connect(function()
     wait(0.5)
-    updatePlayerLists()
+    updatePlayerList()
 end)
 
-updatePlayerLists()
+updatePlayerList()
 
--- ========== FLING FUNCTIONS ==========
+-- ========== AUTO EQUIP SWORD ==========
 
-local function stopFling()
-    if flingLoop then
-        flingLoop:Disconnect()
-        flingLoop = nil
-    end
+local function getSword()
+    local character = player.Character
+    if not character then return nil end
     
-    if bodyAngularVel then
-        bodyAngularVel:Destroy()
-        bodyAngularVel = nil
-    end
-    
-    if bodyVel then
-        bodyVel:Destroy()
-        bodyVel = nil
-    end
-    
-    local myChar = player.Character
-    if myChar then
-        local myRoot = getRoot(myChar)
-        local myHumanoid = myChar:FindFirstChild("Humanoid")
-        
-        if myRoot then
-            myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-            myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-        end
-        
-        if myHumanoid then
-            myHumanoid.PlatformStand = false
+    -- Check if already holding a tool
+    for _, item in pairs(character:GetChildren()) do
+        if item:IsA("Tool") then
+            return item
         end
     end
+    return nil
 end
 
-local function startFling()
-    stopFling()
+local function equipSword()
+    local character = player.Character
+    local backpack = player:FindFirstChild("Backpack")
     
-    local myChar = player.Character
-    if not myChar then return end
+    if not character or not backpack then return nil end
     
-    local myRoot = getRoot(myChar)
-    local myHumanoid = myChar:FindFirstChild("Humanoid")
+    -- Check if already holding something
+    local currentTool = getSword()
+    if currentTool then return currentTool end
     
-    if not myRoot then return end
-    
-    local spinPower = tonumber(spinInput.Text) or 999999
-    local launchPower = tonumber(launchInput.Text) or 999999
-    
-    -- Create BodyAngularVelocity
-    if bodyAngularVel then bodyAngularVel:Destroy() end
-    bodyAngularVel = Instance.new("BodyAngularVelocity")
-    bodyAngularVel.Name = "FlingSpin"
-    bodyAngularVel.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-    bodyAngularVel.AngularVelocity = Vector3.new(spinPower, spinPower, spinPower)
-    bodyAngularVel.P = math.huge
-    bodyAngularVel.Parent = myRoot
-    
-    -- Create BodyVelocity
-    if bodyVel then bodyVel:Destroy() end
-    bodyVel = Instance.new("BodyVelocity")
-    bodyVel.Name = "FlingLaunch"
-    bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-    bodyVel.Velocity = Vector3.new(0, launchPower, 0)
-    bodyVel.P = math.huge
-    bodyVel.Parent = myRoot
-    
-    if myHumanoid then
-        myHumanoid.PlatformStand = true
+    -- Find a tool in backpack and equip it
+    for _, item in pairs(backpack:GetChildren()) do
+        if item:IsA("Tool") then
+            character.Humanoid:EquipTool(item)
+            wait(0.1)
+            return item
+        end
     end
     
-    flingLoop = RunService.Heartbeat:Connect(function()
-        if not flingEnabled then return end
-        
-        local char = player.Character
-        if not char then return end
-        
-        local root = getRoot(char)
-        if not root then return end
-        
-        if not targetPlayer or not targetPlayer.Character then return end
-        
-        local targetRoot = getRoot(targetPlayer.Character)
-        if not targetRoot then return end
-        
-        -- Teleport inside target
-        root.CFrame = targetRoot.CFrame
-        
-        -- Re-apply body movers if needed
-        if not root:FindFirstChild("FlingSpin") then
-            bodyAngularVel = Instance.new("BodyAngularVelocity")
-            bodyAngularVel.Name = "FlingSpin"
-            bodyAngularVel.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-            bodyAngularVel.AngularVelocity = Vector3.new(spinPower, spinPower, spinPower)
-            bodyAngularVel.P = math.huge
-            bodyAngularVel.Parent = root
-        end
-        
-        if not root:FindFirstChild("FlingLaunch") then
-            bodyVel = Instance.new("BodyVelocity")
-            bodyVel.Name = "FlingLaunch"
-            bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            bodyVel.Velocity = Vector3.new(0, launchPower, 0)
-            bodyVel.P = math.huge
-            bodyVel.Parent = root
-        end
-    end)
+    return nil
 end
 
--- ========== AURA FUNCTIONS ==========
+-- ========== KILL AURA ==========
 
-local function teleportToTarget()
-    if not targetPlayer or not targetPlayer.Character then return end
+local function attackTarget()
+    if not targetPlayer then return end
     
     local myChar = player.Character
-    local myHum = myChar and getRoot(myChar)
+    local myHum = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    local myHumanoid = myChar and myChar:FindFirstChild("Humanoid")
     
     local targetChar = targetPlayer.Character
-    local targetHum = targetChar and getRoot(targetChar)
+    local targetHum = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
     local targetHumanoid = targetChar and targetChar:FindFirstChild("Humanoid")
     
-    if not myHum or not targetHum or not targetHumanoid then return end
-    if targetHumanoid.Health <= 0 then return end
+    if not myHum or not myHumanoid or not targetHum or not targetHumanoid then
+        return
+    end
     
-    attackAngle = attackAngle + 60
-    if attackAngle >= 360 then attackAngle = 0 end
+    if targetHumanoid.Health <= 0 then
+        return
+    end
     
-    local angleRad = math.rad(attackAngle)
-    local offsetX = math.cos(angleRad) * teleportDistance
-    local offsetZ = math.sin(angleRad) * teleportDistance
+    -- Equip sword if not holding one
+    local sword = getSword()
+    if not sword then
+        sword = equipSword()
+    end
     
-    myHum.CFrame = targetHum.CFrame * CFrame.new(offsetX, 0, offsetZ)
+    -- Teleport to target (slightly in front of them)
+    myHum.CFrame = targetHum.CFrame * CFrame.new(0, 0, 2)
     
-    if myChar.HumanoidRootPart then
-        myChar.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+    -- Attack with sword multiple times
+    if sword then
+        for i = 1, swingsPerAttack do
+            sword:Activate()
+            wait(0.01)
+        end
     end
 end
 
-local function startAura()
-    -- Read settings
-    teleportDistance = tonumber(distInput.Text) or 2
-    teleportDelay = 0.1
-    swingDelay = tonumber(swingInput.Text) or 0.01
+toggleButton.MouseButton1Click:Connect(function()
+    killEnabled = not killEnabled
+    attackDelay = tonumber(delayInput.Text) or 0.05
+    if attackDelay < 0.01 then attackDelay = 0.01 end
     
-    -- Equip sword
-    equipSword()
+    swingsPerAttack = tonumber(swingsInput.Text) or 3
+    if swingsPerAttack < 1 then swingsPerAttack = 1 end
+    if swingsPerAttack > 10 then swingsPerAttack = 10 end
     
-    -- Continuous swing loop (THIS IS THE FIX - using spawn with while loop)
-    spawn(function()
-        while auraEnabled do
-            if targetPlayer and targetPlayer.Character then
-                local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
-                if targetHumanoid and targetHumanoid.Health > 0 then
-                    swingSword()
-                end
-            end
-            wait(swingDelay)
-        end
-    end)
-    
-    -- Teleport loop
-    spawn(function()
-        while auraEnabled do
-            if targetPlayer and targetPlayer.Character then
-                local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
-                if targetHumanoid then
-                    if targetHumanoid.Health > 0 then
-                        teleportToTarget()
+    if killEnabled then
+        toggleButton.Text = "KILL AURA: ON"
+        toggleButton.BackgroundColor3 = COLORS.buttonSuccess
+        statusLabel.Text = targetPlayer and ("Hunting: " .. targetPlayer.Name) or "No target selected"
+        
+        -- Auto equip sword on start
+        equipSword()
+        
+        spawn(function()
+            while killEnabled do
+                if targetPlayer and targetPlayer.Character then
+                    local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
+                    if targetHumanoid and targetHumanoid.Health > 0 then
+                        attackTarget()
+                    else
+                        statusLabel.Text = "Waiting for target respawn..."
                     end
+                else
+                    statusLabel.Text = "Target left or respawning..."
                 end
+                wait(attackDelay)
             end
-            wait(teleportDelay)
-        end
-    end)
-    
-    -- Re-equip sword loop
-    spawn(function()
-        while auraEnabled do
-            local sword = getSword()
-            if not sword then
-                equipSword()
-            end
-            wait(0.5)
         end)
-    
-    -- Kill detection loop
-    spawn(function()
-        local lastHealth = 100
-        while auraEnabled do
-            wait(0.1)
-            if targetPlayer and targetPlayer.Character then
-                local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
-                if targetHumanoid then
-                    if targetHumanoid.Health <= 0 and lastHealth > 0 then
-                        killCount = killCount + 1
-                        killCounterLabel.Text = "Kills: " .. killCount
-                    end
-                    lastHealth = targetHumanoid.Health
-                end
-            end
-        end
-    end)
-end
-
-local function stopAura()
-    auraEnabled = false
-end
-
--- ========== FLING TOGGLE ==========
-
-flingToggle.MouseButton1Click:Connect(function()
-    flingEnabled = not flingEnabled
-    
-    if flingEnabled then
-        -- Disable aura if on
-        if auraEnabled then
-            auraEnabled = false
-            auraToggle.Text = "KILL AURA: OFF"
-            auraToggle.BackgroundColor3 = COLORS.buttonDanger
-            stopAura()
-        end
-        
-        flingToggle.Text = "FLING: ON"
-        flingToggle.BackgroundColor3 = COLORS.buttonSuccess
-        
-        if targetPlayer then
-            startFling()
-        end
-        
     else
-        flingToggle.Text = "FLING: OFF"
-        flingToggle.BackgroundColor3 = COLORS.buttonDanger
-        stopFling()
+        toggleButton.Text = "KILL AURA: OFF"
+        toggleButton.BackgroundColor3 = COLORS.buttonDanger
+        statusLabel.Text = targetPlayer and ("Target: " .. targetPlayer.Name) or "No target selected"
     end
 end)
 
--- ========== AURA TOGGLE ==========
+-- ========== RESPAWN HANDLER (RE-EQUIP ON DEATH) ==========
 
-auraToggle.MouseButton1Click:Connect(function()
-    auraEnabled = not auraEnabled
-    
-    if auraEnabled then
-        -- Disable fling if on
-        if flingEnabled then
-            flingEnabled = false
-            flingToggle.Text = "FLING: OFF"
-            flingToggle.BackgroundColor3 = COLORS.buttonDanger
-            stopFling()
-        end
-        
-        auraToggle.Text = "KILL AURA: ON"
-        auraToggle.BackgroundColor3 = COLORS.buttonSuccess
-        
-        if targetPlayer then
-            startAura()
-        end
-        
-    else
-        auraToggle.Text = "KILL AURA: OFF"
-        auraToggle.BackgroundColor3 = COLORS.buttonDanger
-        stopAura()
-    end
-end)
-
--- ========== RESPAWN HANDLER ==========
-
-player.CharacterAdded:Connect(function(char)
-    wait(0.5)
-    
-    if flingEnabled then
-        flingCount = flingCount + 1
-        flingCounterLabel.Text = "Flings: " .. flingCount
-        startFling()
-    end
-    
-    if auraEnabled then
+player.CharacterAdded:Connect(function()
+    wait(1)
+    if killEnabled then
         equipSword()
     end
 end)
 
-player.CharacterRemoving:Connect(function()
-    stopFling()
-end)
-
--- ========== KEYBIND ==========
+-- ========== TOGGLE WITH KEY ==========
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.RightControl then
@@ -965,7 +537,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Hybrid Script Loaded")
-print("   FLING tab - Fling targets")
-print("   AURA tab - Teleport + sword kill")
-print("   Toggle one ON, other turns OFF automatically")
+print("✅ Kill Aura Loaded (Auto-Equip)")
