@@ -1,5 +1,5 @@
--- Auto Fling Script
--- Flings target to the sky, loops on respawn
+-- Velocity Fling Script
+-- Attaches to target and flings both players into sky
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -11,8 +11,9 @@ local playerGui = player:WaitForChild("PlayerGui")
 -- Settings
 local flingEnabled = false
 local targetPlayer = nil
-local flingPower = 5000
-local flingDelay = 1
+local flingTime = 3
+local respawnWait = 3
+local autoRefling = true
 
 -- Colors
 local COLORS = {
@@ -108,7 +109,7 @@ titleLabel.Size = UDim2.new(1, -50, 1, 0)
 titleLabel.Position = UDim2.new(0, 15, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = COLORS.textDark
-titleLabel.Text = "🌀 Auto Fling"
+titleLabel.Text = "🌀 Velocity Fling"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 14
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -222,106 +223,58 @@ settingsHeader.TextSize = 11
 settingsHeader.TextXAlignment = Enum.TextXAlignment.Left
 settingsHeader.Parent = rightFrame
 
--- Fling Power
-local powerRow = Instance.new("Frame")
-powerRow.Size = UDim2.new(1, 0, 0, 22)
-powerRow.Position = UDim2.new(0, 0, 0, 20)
-powerRow.BackgroundTransparency = 1
-powerRow.Parent = rightFrame
+-- Fling Duration
+local timeRow = Instance.new("Frame")
+timeRow.Size = UDim2.new(1, 0, 0, 22)
+timeRow.Position = UDim2.new(0, 0, 0, 20)
+timeRow.BackgroundTransparency = 1
+timeRow.Parent = rightFrame
 
-local powerLabel = Instance.new("TextLabel")
-powerLabel.Size = UDim2.new(0, 110, 1, 0)
-powerLabel.BackgroundTransparency = 1
-powerLabel.TextColor3 = COLORS.textDark
-powerLabel.Text = "Fling Power:"
-powerLabel.Font = Enum.Font.Gotham
-powerLabel.TextSize = 10
-powerLabel.TextXAlignment = Enum.TextXAlignment.Left
-powerLabel.Parent = powerRow
+local timeLabel = Instance.new("TextLabel")
+timeLabel.Size = UDim2.new(0, 110, 1, 0)
+timeLabel.BackgroundTransparency = 1
+timeLabel.TextColor3 = COLORS.textDark
+timeLabel.Text = "Fling Duration:"
+timeLabel.Font = Enum.Font.Gotham
+timeLabel.TextSize = 10
+timeLabel.TextXAlignment = Enum.TextXAlignment.Left
+timeLabel.Parent = timeRow
 
-local powerInput = Instance.new("TextBox")
-powerInput.Size = UDim2.new(0, 60, 1, 0)
-powerInput.Position = UDim2.new(0, 115, 0, 0)
-powerInput.BackgroundColor3 = COLORS.inputBg
-powerInput.TextColor3 = COLORS.textDark
-powerInput.Text = "5000"
-powerInput.Font = Enum.Font.Gotham
-powerInput.TextSize = 10
-powerInput.ClearTextOnFocus = false
-powerInput.Parent = powerRow
+local timeInput = Instance.new("TextBox")
+timeInput.Size = UDim2.new(0, 60, 1, 0)
+timeInput.Position = UDim2.new(0, 115, 0, 0)
+timeInput.BackgroundColor3 = COLORS.inputBg
+timeInput.TextColor3 = COLORS.textDark
+timeInput.Text = "3"
+timeInput.Font = Enum.Font.Gotham
+timeInput.TextSize = 10
+timeInput.ClearTextOnFocus = false
+timeInput.Parent = timeRow
 
-local powerCorner = Instance.new("UICorner")
-powerCorner.CornerRadius = UDim.new(0, 5)
-powerCorner.Parent = powerInput
+local timeCorner = Instance.new("UICorner")
+timeCorner.CornerRadius = UDim.new(0, 5)
+timeCorner.Parent = timeInput
 
-local powerStroke = Instance.new("UIStroke")
-powerStroke.Color = COLORS.border
-powerStroke.Thickness = 1
-powerStroke.Parent = powerInput
+local timeStroke = Instance.new("UIStroke")
+timeStroke.Color = COLORS.border
+timeStroke.Thickness = 1
+timeStroke.Parent = timeInput
 
-local powerHint = Instance.new("TextLabel")
-powerHint.Size = UDim2.new(0, 70, 1, 0)
-powerHint.Position = UDim2.new(0, 180, 0, 0)
-powerHint.BackgroundTransparency = 1
-powerHint.TextColor3 = COLORS.textMuted
-powerHint.Text = "(higher=far)"
-powerHint.Font = Enum.Font.Gotham
-powerHint.TextSize = 9
-powerHint.TextXAlignment = Enum.TextXAlignment.Left
-powerHint.Parent = powerRow
-
--- Fling Delay
-local delayRow = Instance.new("Frame")
-delayRow.Size = UDim2.new(1, 0, 0, 22)
-delayRow.Position = UDim2.new(0, 0, 0, 46)
-delayRow.BackgroundTransparency = 1
-delayRow.Parent = rightFrame
-
-local delayLabel = Instance.new("TextLabel")
-delayLabel.Size = UDim2.new(0, 110, 1, 0)
-delayLabel.BackgroundTransparency = 1
-delayLabel.TextColor3 = COLORS.textDark
-delayLabel.Text = "Fling Delay:"
-delayLabel.Font = Enum.Font.Gotham
-delayLabel.TextSize = 10
-delayLabel.TextXAlignment = Enum.TextXAlignment.Left
-delayLabel.Parent = delayRow
-
-local delayInput = Instance.new("TextBox")
-delayInput.Size = UDim2.new(0, 60, 1, 0)
-delayInput.Position = UDim2.new(0, 115, 0, 0)
-delayInput.BackgroundColor3 = COLORS.inputBg
-delayInput.TextColor3 = COLORS.textDark
-delayInput.Text = "1"
-delayInput.Font = Enum.Font.Gotham
-delayInput.TextSize = 10
-delayInput.ClearTextOnFocus = false
-delayInput.Parent = delayRow
-
-local delayCorner = Instance.new("UICorner")
-delayCorner.CornerRadius = UDim.new(0, 5)
-delayCorner.Parent = delayInput
-
-local delayStroke = Instance.new("UIStroke")
-delayStroke.Color = COLORS.border
-delayStroke.Thickness = 1
-delayStroke.Parent = delayInput
-
-local delayHint = Instance.new("TextLabel")
-delayHint.Size = UDim2.new(0, 70, 1, 0)
-delayHint.Position = UDim2.new(0, 180, 0, 0)
-delayHint.BackgroundTransparency = 1
-delayHint.TextColor3 = COLORS.textMuted
-delayHint.Text = "seconds"
-delayHint.Font = Enum.Font.Gotham
-delayHint.TextSize = 9
-delayHint.TextXAlignment = Enum.TextXAlignment.Left
-delayHint.Parent = delayRow
+local timeHint = Instance.new("TextLabel")
+timeHint.Size = UDim2.new(0, 70, 1, 0)
+timeHint.Position = UDim2.new(0, 180, 0, 0)
+timeHint.BackgroundTransparency = 1
+timeHint.TextColor3 = COLORS.textMuted
+timeHint.Text = "seconds"
+timeHint.Font = Enum.Font.Gotham
+timeHint.TextSize = 9
+timeHint.TextXAlignment = Enum.TextXAlignment.Left
+timeHint.Parent = timeRow
 
 -- Respawn Wait
 local respawnRow = Instance.new("Frame")
 respawnRow.Size = UDim2.new(1, 0, 0, 22)
-respawnRow.Position = UDim2.new(0, 0, 0, 72)
+respawnRow.Position = UDim2.new(0, 0, 0, 46)
 respawnRow.BackgroundTransparency = 1
 respawnRow.Parent = rightFrame
 
@@ -369,7 +322,7 @@ respawnHint.Parent = respawnRow
 -- Auto Re-Fling Toggle
 local autoToggle = Instance.new("TextButton")
 autoToggle.Size = UDim2.new(1, 0, 0, 28)
-autoToggle.Position = UDim2.new(0, 0, 0, 100)
+autoToggle.Position = UDim2.new(0, 0, 0, 75)
 autoToggle.BackgroundColor3 = COLORS.buttonSuccess
 autoToggle.TextColor3 = COLORS.textLight
 autoToggle.Text = "AUTO RE-FLING: ON"
@@ -383,11 +336,11 @@ autoToggleCorner.Parent = autoToggle
 
 -- Info Label
 local infoLabel = Instance.new("TextLabel")
-infoLabel.Size = UDim2.new(1, 0, 0, 30)
-infoLabel.Position = UDim2.new(0, 0, 0, 135)
+infoLabel.Size = UDim2.new(1, 0, 0, 40)
+infoLabel.Position = UDim2.new(0, 0, 0, 110)
 infoLabel.BackgroundTransparency = 1
 infoLabel.TextColor3 = COLORS.textMuted
-infoLabel.Text = "Auto re-flings target\nafter they respawn"
+infoLabel.Text = "Fling both you and target\ninto the sky together"
 infoLabel.Font = Enum.Font.Gotham
 infoLabel.TextSize = 9
 infoLabel.TextWrapped = true
@@ -477,7 +430,6 @@ end)
 
 local playerButtons = {}
 local flingCount = 0
-local autoRefling = true
 
 local function updatePlayerList()
     for _, btn in pairs(playerButtons) do
@@ -537,45 +489,79 @@ end)
 
 -- ========== FLING FUNCTION ==========
 
+local function getRoot(char)
+    return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+end
+
 local function flingTarget()
-    if not targetPlayer then return false end
-    
     local myChar = player.Character
-    local myHum = myChar and myChar:FindFirstChild("HumanoidRootPart")
-    local myHumanoid = myChar and myChar:FindFirstChild("Humanoid")
+    if not myChar then return false end
+    
+    local myRoot = getRoot(myChar)
+    local myHumanoid = myChar:FindFirstChild("Humanoid")
+    
+    if not myRoot or not myHumanoid then return false end
     
     local targetChar = targetPlayer.Character
-    local targetHum = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
-    local targetHumanoid = targetChar and targetChar:FindFirstChild("Humanoid")
+    if not targetChar then return false end
     
-    if not myHum or not myHumanoid or not targetHum or not targetHumanoid then
-        return false
+    local targetRoot = getRoot(targetChar)
+    local targetHumanoid = targetChar:FindFirstChild("Humanoid")
+    
+    if not targetRoot or not targetHumanoid then return false end
+    if targetHumanoid.Health <= 0 then return false end
+    
+    -- Check spawn protection
+    local forceField = targetChar:FindFirstChild("ForceField")
+    if forceField then
+        return false, "protection"
     end
     
-    if targetHumanoid.Health <= 0 then
-        return false
-    end
+    -- Store original position
+    local originalPos = myRoot.CFrame
     
-    -- Get network ownership
-    targetHum:SetNetworkOwner(nil)
+    -- Set network ownership
+    pcall(function()
+        myRoot:SetNetworkOwner(nil)
+    end)
     
-    -- Teleport inside target
-    myHum.CFrame = targetHum.CFrame
+    -- Teleport to target
+    myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 0)
     
-    -- Set high velocity (fling)
-    myHum.Velocity = Vector3.new(0, flingPower, 0)
-    myHum.RotVelocity = Vector3.new(flingPower, flingPower, flingPower)
+    -- Disable platform stand temporarily
+    local platformStand = myHumanoid.PlatformStand
+    myHumanoid.PlatformStand = true
     
-    -- Push
-    for i = 1, 10 do
-        myHum.CFrame = targetHum.CFrame
+    -- Apply crazy velocity
+    local bv = Instance.new("BodyVelocity")
+    bv.Name = "FlingVelocity"
+    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bv.Velocity = Vector3.new(0, 999999, 0)
+    bv.Parent = myRoot
+    
+    local bg = Instance.new("BodyGyro")
+    bg.Name = "FlingGyro"
+    bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+    bg.P = 9e9
+    bg.Parent = myRoot
+    
+    -- Keep teleporting to target during fling
+    local flingStart = tick()
+    while tick() - flingStart < flingTime do
+        if targetRoot and myRoot then
+            myRoot.CFrame = targetRoot.CFrame
+        end
         wait(0.01)
     end
     
-    -- Reset my velocity
-    wait(0.1)
-    myHum.Velocity = Vector3.new(0, 0, 0)
-    myHum.RotVelocity = Vector3.new(0, 0, 0)
+    -- Clean up
+    bv:Destroy()
+    bg:Destroy()
+    
+    -- Reset
+    myHumanoid.PlatformStand = platformStand
+    myRoot.Velocity = Vector3.new(0, 0, 0)
+    myRoot.RotVelocity = Vector3.new(0, 0, 0)
     
     return true
 end
@@ -584,47 +570,36 @@ end
 
 toggleButton.MouseButton1Click:Connect(function()
     flingEnabled = not flingEnabled
-    flingPower = tonumber(powerInput.Text) or 5000
-    if flingPower < 100 then flingPower = 100 end
-    if flingPower > 50000 then flingPower = 50000 end
+    flingTime = tonumber(timeInput.Text) or 3
+    if flingTime < 1 then flingTime = 1 end
+    if flingTime > 10 then flingTime = 10 end
     
-    flingDelay = tonumber(delayInput.Text) or 1
-    if flingDelay < 0.1 then flingDelay = 0.1 end
-    
-    local respawnWait = tonumber(respawnInput.Text) or 3
+    respawnWait = tonumber(respawnInput.Text) or 3
     if respawnWait < 1 then respawnWait = 1 end
     
     if flingEnabled then
         toggleButton.Text = "FLING: ON"
         toggleButton.BackgroundColor3 = COLORS.buttonSuccess
-        statusLabel.Text = targetPlayer and ("Flinging: " .. targetPlayer.Name) or "No target selected"
+        statusLabel.Text = targetPlayer and ("Target: " .. targetPlayer.Name) or "No target selected"
         
         spawn(function()
             while flingEnabled do
                 if targetPlayer and targetPlayer.Character then
                     local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
-                    local targetHum = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
                     
-                    if targetHumanoid and targetHum and targetHumanoid.Health > 0 then
-                        -- Check for spawn protection
-                        local forceField = targetPlayer.Character:FindFirstChild("ForceField")
-                        
-                        if forceField then
-                            statusLabel.Text = "Waiting for spawn protection..."
-                            forceField.Destroying:Wait()
-                            wait(0.5)
-                        end
-                        
-                        statusLabel.Text = "Flinging " .. targetPlayer.Name .. "..."
-                        local success = flingTarget()
+                    if targetHumanoid and targetHumanoid.Health > 0 then
+                        local success, reason = flingTarget()
                         
                         if success then
                             flingCount = flingCount + 1
                             flingCounter.Text = "Flings: " .. flingCount
                             statusLabel.Text = "Flinged " .. targetPlayer.Name .. "!"
+                        elseif reason == "protection" then
+                            statusLabel.Text = "Waiting for spawn protection..."
+                            wait(3)
+                        else
+                            statusLabel.Text = "Fling failed, retrying..."
                         end
-                        
-                        wait(flingDelay)
                     else
                         if autoRefling then
                             statusLabel.Text = "Waiting for respawn..."
@@ -643,6 +618,8 @@ toggleButton.MouseButton1Click:Connect(function()
                         break
                     end
                 end
+                
+                wait(0.5)
             end
         end)
         
@@ -665,4 +642,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Auto Fling Loaded")
+print("✅ Velocity Fling Loaded")
