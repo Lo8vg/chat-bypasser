@@ -1,4 +1,4 @@
--- Custom Chat GUI (Mobile Send Fix - Method 1: FocusLost)
+-- Custom Chat GUI (Persistent through respawn)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -11,13 +11,15 @@ local playerGui = player:WaitForChild("PlayerGui")
 local MAX_CHARS = 200
 local spamEnabled = false
 local spamDelay = 1
+local justSent = false
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "CustomChatGui"
+screenGui.ResetOnSpawn = false  -- <-- THIS MAKES IT PERSISTENT
 screenGui.Parent = playerGui
 
--- Main Frame (compact)
+-- Main Frame
 local frame = Instance.new("Frame")
 frame.Name = "ChatFrame"
 frame.Size = UDim2.new(0, 300, 0, 100)
@@ -31,7 +33,7 @@ local frameCorner = Instance.new("UICorner")
 frameCorner.CornerRadius = UDim.new(0, 8)
 frameCorner.Parent = frame
 
--- Title Bar (for dragging)
+-- Title Bar
 local titleBar = Instance.new("Frame")
 titleBar.Name = "TitleBar"
 titleBar.Size = UDim2.new(1, 0, 0, 25)
@@ -203,13 +205,6 @@ textbox:GetPropertyChangedSignal("Text"):Connect(function()
     end
 end)
 
--- Clear on focus (when clicking to type again)
-textbox.Focused:Connect(function()
-    if textbox.Text ~= "" then
-        textbox.Text = ""
-    end
-end)
-
 -- Send message function
 local function sendMessage(msg)
     local message = msg or textbox.Text
@@ -250,14 +245,25 @@ end
 
 -- Send button click
 sendButton.MouseButton1Click:Connect(function()
-    sendMessage()
+    if textbox.Text ~= "" then
+        sendMessage()
+        justSent = true
+    end
 end)
 
--- ===== METHOD 1: FocusLost =====
+-- FocusLost - sends message when mobile keyboard "send" is pressed
 textbox.FocusLost:Connect(function(enterPressed)
-    print("FocusLost triggered, enterPressed:", enterPressed)
-    if enterPressed and textbox.Text ~= "" then
+    if textbox.Text ~= "" and enterPressed then
         sendMessage()
+        justSent = true
+    end
+end)
+
+-- Focused - clear text when clicking to type again
+textbox.Focused:Connect(function()
+    if justSent then
+        justSent = false
+        textbox.Text = ""
     end
 end)
 
@@ -301,4 +307,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Custom Chat GUI Loaded - Method 1: FocusLost")
+print("✅ Custom Chat GUI Loaded (Persistent)")
