@@ -1,5 +1,5 @@
--- Kill Aura Script (Auto-Equip + Aggressive Loop)
--- Auto equips sword, teleports, and swings
+-- Kill Aura Script (Spawn Protection Detection)
+-- Detects when target's protection is gone, attacks immediately
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -13,6 +13,7 @@ local killEnabled = false
 local targetPlayer = nil
 local attackDelay = 0.05
 local swingsPerAttack = 3
+local checkRate = 0.1
 
 -- Colors (White Theme)
 local COLORS = {
@@ -21,6 +22,7 @@ local COLORS = {
     buttonPrimary = Color3.fromRGB(0, 120, 215),
     buttonDanger = Color3.fromRGB(220, 53, 69),
     buttonSuccess = Color3.fromRGB(40, 167, 69),
+    buttonWarning = Color3.fromRGB(255, 193, 7),
     textDark = Color3.fromRGB(33, 37, 41),
     textLight = Color3.fromRGB(255, 255, 255),
     textMuted = Color3.fromRGB(134, 142, 150),
@@ -68,8 +70,8 @@ hubButtonIcon.Parent = hubButton
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 280, 0, 380)
-mainFrame.Position = UDim2.new(0.5, -140, 0.5, -190)
+mainFrame.Size = UDim2.new(0, 280, 0, 420)
+mainFrame.Position = UDim2.new(0.5, -140, 0.5, -210)
 mainFrame.BackgroundColor3 = COLORS.background
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -150,10 +152,21 @@ local toggleCorner = Instance.new("UICorner")
 toggleCorner.CornerRadius = UDim.new(0, 8)
 toggleCorner.Parent = toggleButton
 
+-- Protection Status
+local protectionLabel = Instance.new("TextLabel")
+protectionLabel.Size = UDim2.new(1, 0, 0, 20)
+protectionLabel.Position = UDim2.new(0, 0, 0, 50)
+protectionLabel.BackgroundTransparency = 1
+protectionLabel.TextColor3 = COLORS.textMuted
+protectionLabel.Text = "Protection: Waiting..."
+protectionLabel.Font = Enum.Font.Gotham
+protectionLabel.TextSize = 11
+protectionLabel.Parent = contentFrame
+
 -- Target Label
 local targetLabel = Instance.new("TextLabel")
 targetLabel.Size = UDim2.new(1, 0, 0, 20)
-targetLabel.Position = UDim2.new(0, 0, 0, 55)
+targetLabel.Position = UDim2.new(0, 0, 0, 72)
 targetLabel.BackgroundTransparency = 1
 targetLabel.TextColor3 = COLORS.textDark
 targetLabel.Text = "Select Target:"
@@ -164,8 +177,8 @@ targetLabel.Parent = contentFrame
 
 -- Player List
 local playerScroll = Instance.new("ScrollingFrame")
-playerScroll.Size = UDim2.new(1, 0, 0, 150)
-playerScroll.Position = UDim2.new(0, 0, 0, 80)
+playerScroll.Size = UDim2.new(1, 0, 0, 130)
+playerScroll.Position = UDim2.new(0, 0, 0, 95)
 playerScroll.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
 playerScroll.ScrollBarThickness = 4
 playerScroll.Parent = contentFrame
@@ -180,8 +193,8 @@ playerLayout.Parent = playerScroll
 
 -- Status Label
 local statusLabel = Instance.new("TextLabel")
-statusLabel.Size = UDim2.new(1, 0, 0, 30)
-statusLabel.Position = UDim2.new(0, 0, 0, 240)
+statusLabel.Size = UDim2.new(1, 0, 0, 20)
+statusLabel.Position = UDim2.new(0, 0, 0, 230)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = COLORS.textMuted
 statusLabel.Text = "No target selected"
@@ -193,7 +206,7 @@ statusLabel.Parent = contentFrame
 -- Delay Input
 local delayRow = Instance.new("Frame")
 delayRow.Size = UDim2.new(1, 0, 0, 30)
-delayRow.Position = UDim2.new(0, 0, 0, 270)
+delayRow.Position = UDim2.new(0, 0, 0, 255)
 delayRow.BackgroundTransparency = 1
 delayRow.Parent = contentFrame
 
@@ -241,7 +254,7 @@ delayHint.Parent = delayRow
 -- Swings Input
 local swingsRow = Instance.new("Frame")
 swingsRow.Size = UDim2.new(1, 0, 0, 30)
-swingsRow.Position = UDim2.new(0, 0, 0, 305)
+swingsRow.Position = UDim2.new(0, 0, 0, 290)
 swingsRow.BackgroundTransparency = 1
 swingsRow.Parent = contentFrame
 
@@ -274,6 +287,54 @@ local swingsInputStroke = Instance.new("UIStroke")
 swingsInputStroke.Color = COLORS.border
 swingsInputStroke.Thickness = 1
 swingsInputStroke.Parent = swingsInput
+
+-- Check Rate Input
+local checkRow = Instance.new("Frame")
+checkRow.Size = UDim2.new(1, 0, 0, 30)
+checkRow.Position = UDim2.new(0, 0, 0, 325)
+checkRow.BackgroundTransparency = 1
+checkRow.Parent = contentFrame
+
+local checkLabel = Instance.new("TextLabel")
+checkLabel.Size = UDim2.new(0, 90, 1, 0)
+checkLabel.BackgroundTransparency = 1
+checkLabel.TextColor3 = COLORS.textDark
+checkLabel.Text = "Check Rate:"
+checkLabel.Font = Enum.Font.Gotham
+checkLabel.TextSize = 11
+checkLabel.TextXAlignment = Enum.TextXAlignment.Left
+checkLabel.Parent = checkRow
+
+local checkInput = Instance.new("TextBox")
+checkInput.Size = UDim2.new(0, 60, 1, 0)
+checkInput.Position = UDim2.new(0, 95, 0, 0)
+checkInput.BackgroundColor3 = COLORS.inputBg
+checkInput.TextColor3 = COLORS.textDark
+checkInput.Text = "0.1"
+checkInput.Font = Enum.Font.Gotham
+checkInput.TextSize = 12
+checkInput.ClearTextOnFocus = false
+checkInput.Parent = checkRow
+
+local checkInputCorner = Instance.new("UICorner")
+checkInputCorner.CornerRadius = UDim.new(0, 6)
+checkInputCorner.Parent = checkInput
+
+local checkInputStroke = Instance.new("UIStroke")
+checkInputStroke.Color = COLORS.border
+checkInputStroke.Thickness = 1
+checkInputStroke.Parent = checkInput
+
+local checkHint = Instance.new("TextLabel")
+checkHint.Size = UDim2.new(0, 80, 1, 0)
+checkHint.Position = UDim2.new(0, 160, 0, 0)
+checkHint.BackgroundTransparency = 1
+checkHint.TextColor3 = COLORS.textMuted
+checkHint.Text = "protection check"
+checkHint.Font = Enum.Font.Gotham
+checkHint.TextSize = 10
+checkHint.TextXAlignment = Enum.TextXAlignment.Left
+checkHint.Parent = checkRow
 
 -- ========== DRAGGING ==========
 
@@ -400,13 +461,12 @@ end)
 
 updatePlayerList()
 
--- ========== AUTO EQUIP SWORD ==========
+-- ========== HELPER FUNCTIONS ==========
 
 local function getSword()
     local character = player.Character
     if not character then return nil end
     
-    -- Check if already holding a tool
     for _, item in pairs(character:GetChildren()) do
         if item:IsA("Tool") then
             return item
@@ -421,11 +481,9 @@ local function equipSword()
     
     if not character or not backpack then return nil end
     
-    -- Check if already holding something
     local currentTool = getSword()
     if currentTool then return currentTool end
     
-    -- Find a tool in backpack and equip it
     for _, item in pairs(backpack:GetChildren()) do
         if item:IsA("Tool") then
             character.Humanoid:EquipTool(item)
@@ -435,6 +493,12 @@ local function equipSword()
     end
     
     return nil
+end
+
+local function hasProtection(targetPlr)
+    if not targetPlr or not targetPlr.Character then return false end
+    local forceField = targetPlr.Character:FindFirstChild("ForceField")
+    return forceField ~= nil
 end
 
 -- ========== KILL AURA ==========
@@ -464,10 +528,10 @@ local function attackTarget()
         sword = equipSword()
     end
     
-    -- Teleport to target (slightly in front of them)
+    -- Teleport to target
     myHum.CFrame = targetHum.CFrame * CFrame.new(0, 0, 2)
     
-    -- Attack with sword multiple times
+    -- Attack with sword
     if sword then
         for i = 1, swingsPerAttack do
             sword:Activate()
@@ -485,37 +549,67 @@ toggleButton.MouseButton1Click:Connect(function()
     if swingsPerAttack < 1 then swingsPerAttack = 1 end
     if swingsPerAttack > 10 then swingsPerAttack = 10 end
     
+    checkRate = tonumber(checkInput.Text) or 0.1
+    if checkRate < 0.05 then checkRate = 0.05 end
+    
     if killEnabled then
         toggleButton.Text = "KILL AURA: ON"
         toggleButton.BackgroundColor3 = COLORS.buttonSuccess
         statusLabel.Text = targetPlayer and ("Hunting: " .. targetPlayer.Name) or "No target selected"
         
-        -- Auto equip sword on start
         equipSword()
         
+        -- Protection check loop
         spawn(function()
             while killEnabled do
                 if targetPlayer and targetPlayer.Character then
                     local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
-                    if targetHumanoid and targetHumanoid.Health > 0 then
-                        attackTarget()
+                    
+                    if targetHumanoid then
+                        if targetHumanoid.Health > 0 then
+                            -- Check if target has protection
+                            if hasProtection(targetPlayer) then
+                                protectionLabel.Text = "Protection: TARGET PROTECTED"
+                                protectionLabel.TextColor3 = COLORS.buttonWarning
+                                statusLabel.Text = "Waiting for target protection to end..."
+                            else
+                                protectionLabel.Text = "Protection: TARGET VULNERABLE"
+                                protectionLabel.TextColor3 = COLORS.buttonSuccess
+                                statusLabel.Text = "ATTACKING!"
+                                
+                                -- Attack immediately when vulnerable
+                                attackTarget()
+                                wait(attackDelay)
+                            end
+                        else
+                            protectionLabel.Text = "Protection: Target dead"
+                            protectionLabel.TextColor3 = COLORS.textMuted
+                            statusLabel.Text = "Waiting for target respawn..."
+                        end
                     else
-                        statusLabel.Text = "Waiting for target respawn..."
+                        protectionLabel.Text = "Protection: No humanoid"
+                        protectionLabel.TextColor3 = COLORS.textMuted
                     end
                 else
+                    protectionLabel.Text = "Protection: No target"
+                    protectionLabel.TextColor3 = COLORS.textMuted
                     statusLabel.Text = "Target left or respawning..."
                 end
-                wait(attackDelay)
+                
+                wait(checkRate)
             end
         end)
+        
     else
         toggleButton.Text = "KILL AURA: OFF"
         toggleButton.BackgroundColor3 = COLORS.buttonDanger
         statusLabel.Text = targetPlayer and ("Target: " .. targetPlayer.Name) or "No target selected"
+        protectionLabel.Text = "Protection: Waiting..."
+        protectionLabel.TextColor3 = COLORS.textMuted
     end
 end)
 
--- ========== RESPAWN HANDLER (RE-EQUIP ON DEATH) ==========
+-- ========== RESPAWN HANDLER ==========
 
 player.CharacterAdded:Connect(function()
     wait(1)
@@ -524,7 +618,7 @@ player.CharacterAdded:Connect(function()
     end
 end)
 
--- ========== TOGGLE WITH KEY ==========
+-- ========== KEYBIND ==========
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.RightControl then
@@ -537,4 +631,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Kill Aura Loaded (Auto-Equip)")
+print("✅ Kill Aura Loaded (Spawn Protection Detection)")
