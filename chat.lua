@@ -1,4 +1,4 @@
--- Custom Chat GUI (TALL + Big Textbox + Horizontal Buttons)
+-- Custom Chat GUI (TALL + Big Textbox + Text Wrapping)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -74,7 +74,7 @@ charCounter.Font = Enum.Font.Gotham
 charCounter.TextSize = 10
 charCounter.Parent = titleBar
 
--- Textbox (BIG for easy tapping)
+-- Textbox (BIG for easy tapping + TEXT WRAPPING)
 local textbox = Instance.new("TextBox")
 textbox.Name = "ChatInput"
 textbox.Size = UDim2.new(1, -20, 0, 70)
@@ -90,7 +90,8 @@ textbox.TextXAlignment = Enum.TextXAlignment.Left
 textbox.TextYAlignment = Enum.TextYAlignment.Top
 textbox.ClearTextOnFocus = false
 textbox.ReturnKeyType = Enum.ReturnKeyType.Send
-textbox.MultiLine = false
+textbox.MultiLine = true
+textbox.TextWrapped = true
 textbox.Parent = frame
 
 local textboxCorner = Instance.new("UICorner")
@@ -218,6 +219,9 @@ local function sendMessage(msg)
     local message = msg or textbox.Text
     message = message:gsub("^%s+", ""):gsub("%s+$", "")
     
+    -- Remove newlines for sending (optional - keeps it as one message)
+    message = message:gsub("\n", " ")
+    
     if message == "" then
         return false
     end
@@ -267,9 +271,19 @@ textbox.FocusLost:Connect(function(enterPressed)
     end
 end)
 
--- Focused - clear text when clicking to type again (FIXED)
+-- Enter key sends message (for PC) - prevents newline
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == Enum.KeyCode.Enter and textbox:IsFocused() then
+        if textbox.Text ~= "" then
+            sendMessage()
+            justSent = true
+            textbox.Text = "" -- Clear after sending
+        end
+    end
+end)
+
+-- Focused - clear text when clicking to type again
 textbox.Focused:Connect(function()
-    wait(0.05) -- Small delay to ensure it triggers properly
     if justSent then
         justSent = false
         textbox.Text = ""
@@ -316,4 +330,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Custom Chat GUI Loaded")
+print("✅ Custom Chat GUI Loaded (Text Wrapping Enabled)")
