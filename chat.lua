@@ -1,4 +1,4 @@
--- Custom Chat GUI (TALL - Vertical Stack)
+-- Custom Chat GUI (TALL + Big Textbox + Horizontal Buttons)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -19,11 +19,11 @@ screenGui.Name = "CustomChatGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Main Frame (TALL - not wide)
+-- Main Frame (TALL)
 local frame = Instance.new("Frame")
 frame.Name = "ChatFrame"
-frame.Size = UDim2.new(0, 180, 0, 240)
-frame.Position = UDim2.new(0.5, -90, 0.5, -120)
+frame.Size = UDim2.new(0, 200, 0, 180)
+frame.Position = UDim2.new(0.5, -100, 0.5, -90)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.BorderSizePixel = 2
 frame.BorderColor3 = Color3.fromRGB(60, 60, 60)
@@ -74,19 +74,20 @@ charCounter.Font = Enum.Font.Gotham
 charCounter.TextSize = 10
 charCounter.Parent = titleBar
 
--- Textbox (VERTICAL - stacked)
+-- Textbox (BIG for easy tapping)
 local textbox = Instance.new("TextBox")
 textbox.Name = "ChatInput"
-textbox.Size = UDim2.new(1, -20, 0, 40)
-textbox.Position = UDim2.new(0, 10, 0, 38)
+textbox.Size = UDim2.new(1, -20, 0, 70)
+textbox.Position = UDim2.new(0, 10, 0, 35)
 textbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textbox.Text = ""
 textbox.PlaceholderText = "Message..."
 textbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 textbox.Font = Enum.Font.Gotham
-textbox.TextSize = 14
+textbox.TextSize = 16
 textbox.TextXAlignment = Enum.TextXAlignment.Left
+textbox.TextYAlignment = Enum.TextYAlignment.Top
 textbox.ClearTextOnFocus = false
 textbox.ReturnKeyType = Enum.ReturnKeyType.Send
 textbox.MultiLine = false
@@ -96,37 +97,32 @@ local textboxCorner = Instance.new("UICorner")
 textboxCorner.CornerRadius = UDim.new(0, 6)
 textboxCorner.Parent = textbox
 
--- Send Button (VERTICAL - below textbox)
+-- Bottom Row (HORIZONTAL - side by side)
+local bottomRow = Instance.new("Frame")
+bottomRow.Size = UDim2.new(1, -20, 0, 32)
+bottomRow.Position = UDim2.new(0, 10, 0, 115)
+bottomRow.BackgroundTransparency = 1
+bottomRow.Parent = frame
+
+-- Send Button
 local sendButton = Instance.new("TextButton")
-sendButton.Size = UDim2.new(1, -20, 0, 32)
-sendButton.Position = UDim2.new(0, 10, 0, 86)
+sendButton.Size = UDim2.new(0, 55, 0, 32)
+sendButton.Position = UDim2.new(0, 0, 0, 0)
 sendButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 sendButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 sendButton.Text = "Send"
 sendButton.Font = Enum.Font.GothamBold
-sendButton.TextSize = 13
-sendButton.Parent = frame
+sendButton.TextSize = 12
+sendButton.Parent = bottomRow
 
 local sendCorner = Instance.new("UICorner")
 sendCorner.CornerRadius = UDim.new(0, 6)
 sendCorner.Parent = sendButton
 
--- Delay Label (VERTICAL - below send)
-local delayLabel = Instance.new("TextLabel")
-delayLabel.Size = UDim2.new(1, -20, 0, 20)
-delayLabel.Position = UDim2.new(0, 10, 0, 124)
-delayLabel.BackgroundTransparency = 1
-delayLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-delayLabel.Text = "Delay:"
-delayLabel.Font = Enum.Font.Gotham
-delayLabel.TextSize = 11
-delayLabel.TextXAlignment = Enum.TextXAlignment.Left
-delayLabel.Parent = frame
-
--- Delay Textbox (VERTICAL - below label)
+-- Delay Textbox
 local delayTextbox = Instance.new("TextBox")
-delayTextbox.Size = UDim2.new(1, -20, 0, 28)
-delayTextbox.Position = UDim2.new(0, 10, 0, 144)
+delayTextbox.Size = UDim2.new(0, 35, 0, 32)
+delayTextbox.Position = UDim2.new(0, 60, 0, 0)
 delayTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 delayTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
 delayTextbox.Text = "1"
@@ -135,22 +131,33 @@ delayTextbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 delayTextbox.Font = Enum.Font.Gotham
 delayTextbox.TextSize = 12
 delayTextbox.ClearTextOnFocus = false
-delayTextbox.Parent = frame
+delayTextbox.Parent = bottomRow
 
 local delayCorner = Instance.new("UICorner")
 delayCorner.CornerRadius = UDim.new(0, 6)
 delayCorner.Parent = delayTextbox
 
--- Spam Button (VERTICAL - at bottom)
+-- Delay Label
+local delayLabel = Instance.new("TextLabel")
+delayLabel.Size = UDim2.new(0, 35, 0, 32)
+delayLabel.Position = UDim2.new(0, 98, 0, 0)
+delayLabel.BackgroundTransparency = 1
+delayLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+delayLabel.Text = "sec"
+delayLabel.Font = Enum.Font.Gotham
+delayLabel.TextSize = 10
+delayLabel.Parent = bottomRow
+
+-- Spam Button
 local spamButton = Instance.new("TextButton")
-spamButton.Size = UDim2.new(1, -20, 0, 32)
-spamButton.Position = UDim2.new(0, 10, 0, 180)
+spamButton.Size = UDim2.new(0, 75, 0, 32)
+spamButton.Position = UDim2.new(1, -75, 0, 0)
 spamButton.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 spamButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 spamButton.Text = "SPAM: OFF"
 spamButton.Font = Enum.Font.GothamBold
-spamButton.TextSize = 12
-spamButton.Parent = frame
+spamButton.TextSize = 10
+spamButton.Parent = bottomRow
 
 local spamCorner = Instance.new("UICorner")
 spamCorner.CornerRadius = UDim.new(0, 6)
@@ -260,8 +267,9 @@ textbox.FocusLost:Connect(function(enterPressed)
     end
 end)
 
--- Focused - clear text when clicking to type again
+-- Focused - clear text when clicking to type again (FIXED)
 textbox.Focused:Connect(function()
+    wait(0.05) -- Small delay to ensure it triggers properly
     if justSent then
         justSent = false
         textbox.Text = ""
@@ -308,4 +316,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Custom Chat GUI Loaded (TALL Layout)")
+print("✅ Custom Chat GUI Loaded")
