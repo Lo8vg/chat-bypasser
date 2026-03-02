@@ -1,4 +1,4 @@
--- BodyMover Fling Script
+-- BodyMover Fling Script (Mobile Fixed v2)
 -- Uses actual physics constraints (BodyAngularVelocity + BodyVelocity)
 
 local Players = game:GetService("Players")
@@ -282,7 +282,7 @@ launchStroke.Color = COLORS.border
 launchStroke.Thickness = 1
 launchStroke.Parent = launchInput
 
--- Prediction (NEW)
+-- Prediction
 local predRow = Instance.new("Frame")
 predRow.Size = UDim2.new(1, 0, 0, 22)
 predRow.Position = UDim2.new(0, 0, 0, 52)
@@ -332,46 +332,18 @@ infoLabel.TextWrapped = true
 infoLabel.TextXAlignment = Enum.TextXAlignment.Left
 infoLabel.Parent = rightFrame
 
--- ========== DRAGGING ==========
+-- ========== CLEAN DRAG LOGIC (Like Chat Hub) ==========
 
-local dragging = false
-local dragInput, dragStart, startPos
+local hubDragging = false
+local hubDragInput = nil
+local hubDragStart = nil
+local hubStartPos = nil
 
 hubButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = hubButton.Position
-        
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-hubButton.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        local delta = input.Position - dragStart
-        hubButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-
-local hubDragging = false
-local hubDragInput, hubDragStart, hubDragPos
-
-titleBar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         hubDragging = true
         hubDragStart = input.Position
-        hubDragPos = mainFrame.Position
+        hubStartPos = hubButton.Position
         
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
@@ -381,7 +353,7 @@ titleBar.InputBegan:Connect(function(input)
     end
 end)
 
-titleBar.InputChanged:Connect(function(input)
+hubButton.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         hubDragInput = input
     end
@@ -390,22 +362,58 @@ end)
 UserInputService.InputChanged:Connect(function(input)
     if input == hubDragInput and hubDragging then
         local delta = input.Position - hubDragStart
-        mainFrame.Position = UDim2.new(hubDragPos.X.Scale, hubDragPos.X.Offset + delta.X, hubDragPos.Y.Scale, hubDragPos.Y.Offset + delta.Y)
+        hubButton.Position = UDim2.new(hubStartPos.X.Scale, hubStartPos.X.Offset + delta.X, hubStartPos.Y.Scale, hubStartPos.Y.Offset + delta.Y)
     end
 end)
 
--- ========== TOGGLE HUB ==========
-
-hubButton.InputBegan:Connect(function(input)
+-- Tap to open (no wait, just check if didn't drag)
+hubButton.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        wait(0.1)
-        if not dragging then
-            hubButton.Visible = false
-            mainFrame.Visible = true
+        if hubDragStart then
+            local moved = (input.Position - hubDragStart).Magnitude
+            if moved < 5 then
+                hubButton.Visible = false
+                mainFrame.Visible = true
+            end
         end
+        hubDragStart = nil
     end
 end)
 
+-- Main frame drag
+local mainDragging = false
+local mainDragInput = nil
+local mainDragStart = nil
+local mainStartPos = nil
+
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        mainDragging = true
+        mainDragStart = input.Position
+        mainStartPos = mainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                mainDragging = false
+            end
+        end)
+    end
+end)
+
+titleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        mainDragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input, gameProcessed)
+    if input == mainDragInput and mainDragging then
+        local delta = input.Position - mainDragStart
+        mainFrame.Position = UDim2.new(mainStartPos.X.Scale, mainStartPos.X.Offset + delta.X, mainStartPos.Y.Scale, mainStartPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Collapse button
 collapseButton.MouseButton1Click:Connect(function()
     mainFrame.Visible = false
     hubButton.Visible = true
@@ -452,7 +460,7 @@ end
 
 Players.PlayerAdded:Connect(updatePlayerList)
 Players.PlayerRemoving:Connect(function()
-    wait(0.5)
+    task.wait(0.5)
     updatePlayerList()
 end)
 
@@ -473,7 +481,6 @@ local function stopFling()
         flingLoop = nil
     end
     
-    -- Remove body movers
     if bodyAngularVel then
         bodyAngularVel:Destroy()
         bodyAngularVel = nil
@@ -513,12 +520,10 @@ local function startFling()
     
     if not myRoot then return end
     
-    -- Get power values
     local spinPower = tonumber(spinInput.Text) or 999999
     local launchPower = tonumber(launchInput.Text) or 999999
     local prediction = tonumber(predInput.Text) or 0.15
     
-    -- Create BodyAngularVelocity (this creates VISIBLE SPIN)
     if bodyAngularVel then bodyAngularVel:Destroy() end
     bodyAngularVel = Instance.new("BodyAngularVelocity")
     bodyAngularVel.Name = "FlingSpin"
@@ -527,21 +532,18 @@ local function startFling()
     bodyAngularVel.P = math.huge
     bodyAngularVel.Parent = myRoot
     
-    -- Create BodyVelocity (this creates LAUNCH force)
     if bodyVel then bodyVel:Destroy() end
     bodyVel = Instance.new("BodyVelocity")
     bodyVel.Name = "FlingLaunch"
-    bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bodyVel.MaxMaxForce = Vector3.new(math.huge, math.huge, math.huge)
     bodyVel.Velocity = Vector3.new(0, launchPower, 0)
     bodyVel.P = math.huge
     bodyVel.Parent = myRoot
     
-    -- PlatformStand to let physics take over
     if myHumanoid then
         myHumanoid.PlatformStand = true
     end
     
-    -- Teleport loop (CHANGED TO RenderStepped + Prediction)
     flingLoop = RunService.RenderStepped:Connect(function()
         if not flingEnabled then return end
         
@@ -558,14 +560,11 @@ local function startFling()
         local targetRoot = getRoot(targetPlayer.Character)
         if not targetRoot then return end
         
-        -- VELOCITY PREDICTION (NEW)
         local targetVel = targetRoot.AssemblyLinearVelocity or Vector3.new(0, 0, 0)
         local predictedPos = targetRoot.Position + (targetVel * prediction)
         
-        -- Teleport to predicted position
         root.CFrame = CFrame.new(predictedPos) * targetRoot.CFrame.Rotation
         
-        -- Re-apply body movers (they might get removed)
         if not root:FindFirstChild("FlingSpin") then
             bodyAngularVel = Instance.new("BodyAngularVelocity")
             bodyAngularVel.Name = "FlingSpin"
@@ -597,7 +596,6 @@ toggleButton.MouseButton1Click:Connect(function()
         statusLabel.Text = targetPlayer and ("Flinging: " .. targetPlayer.Name) or "No target selected"
         
         startFling()
-        
     else
         toggleButton.Text = "FLING: OFF"
         toggleButton.BackgroundColor3 = COLORS.buttonDanger
@@ -621,7 +619,7 @@ end)
 
 -- Auto-restart on respawn
 player.CharacterAdded:Connect(function(char)
-    wait(0.3)
+    task.wait(0.3)
     
     if flingEnabled then
         flingCount = flingCount + 1
@@ -635,6 +633,4 @@ player.CharacterRemoving:Connect(function()
     stopFling()
 end)
 
-print("✅ BodyMover Fling Loaded")
-print("   Uses BodyAngularVelocity + BodyVelocity")
-print("   Prediction added for moving targets")
+print("✅ BodyMover Fling Loaded (Mobile Fixed v2)")
