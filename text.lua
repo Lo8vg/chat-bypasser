@@ -1,4 +1,4 @@
--- Multi-Line Chat Hub (Draggable Expanded Frame)
+-- Multi-Line Chat Hub (Fully Draggable)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -249,11 +249,11 @@ hubButton.InputChanged:Connect(function(input)
     end
 end)
 
--- ========== DRAGGING FOR MAIN FRAME (Title Bar) ==========
+-- ========== DRAGGING FOR MAIN FRAME (ANYWHERE ON FRAME) ==========
 local mainDragging = false
 local mainDragInput, mainDragStart, mainStartPos
 
-titleBar.InputBegan:Connect(function(input)
+mainFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         mainDragging = true
         mainDragStart = input.Position
@@ -261,13 +261,13 @@ titleBar.InputBegan:Connect(function(input)
     end
 end)
 
-titleBar.InputEnded:Connect(function(input)
+mainFrame.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         mainDragging = false
     end
 end)
 
-titleBar.InputChanged:Connect(function(input)
+mainFrame.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         mainDragInput = input
     end
@@ -281,7 +281,7 @@ UserInputService.InputChanged:Connect(function(input)
         hubButton.Position = UDim2.new(hubStartPos.X.Scale, hubStartPos.X.Offset + delta.X, hubStartPos.Y.Scale, hubStartPos.Y.Offset + delta.Y)
     end
     
-    -- Main frame dragging
+    -- Main frame dragging (from anywhere on frame)
     if input == mainDragInput and mainDragging then
         local delta = input.Position - mainDragStart
         mainFrame.Position = UDim2.new(mainStartPos.X.Scale, mainStartPos.X.Offset + delta.X, mainStartPos.Y.Scale, mainStartPos.Y.Offset + delta.Y)
@@ -303,7 +303,6 @@ end
 
 hubButton.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        -- Check if it was a click (not a drag)
         local wasDragging = hubDragging
         wait(0.05)
         if not wasDragging then
@@ -431,4 +430,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Multi-Line Chat Hub Loaded (Draggable)")
+print("✅ Multi-Line Chat Hub Loaded (Fully Draggable)")
