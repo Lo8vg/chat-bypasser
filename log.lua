@@ -1,4 +1,4 @@
--- Flinger Logger (Server-Wide Scanner)
+-- Flinger Logger (Server-Wide Scanner) - With Live View
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -8,12 +8,13 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 -- Settings
-local VELOCITY_THRESHOLD = 50  -- Angular velocity threshold to flag as suspicious
-local SCAN_INTERVAL = 0.1      -- How often to scan
-local MAX_LOG_ENTRIES = 50     -- Max entries in log
+local VELOCITY_THRESHOLD = 50
+local SCAN_INTERVAL = 0.1
+local MAX_LOG_ENTRIES = 50
 
--- Suspicious players tracking
+-- Threat tracking
 local suspiciousPlayers = {}
+local threatCount = 0
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -45,7 +46,6 @@ hubIcon.Font = Enum.Font.GothamBold
 hubIcon.TextSize = 26
 hubIcon.Parent = hubButton
 
--- Warning indicator on hub
 local warningDot = Instance.new("Frame")
 warningDot.Size = UDim2.new(0, 12, 0, 12)
 warningDot.Position = UDim2.new(1, -8, 0, -4)
@@ -60,8 +60,8 @@ warningDotCorner.Parent = warningDot
 -- ========== MAIN FRAME ==========
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 350, 0, 450)
-mainFrame.Position = UDim2.new(0.5, -175, 0.5, -225)
+mainFrame.Size = UDim2.new(0, 400, 0, 500)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -250)
 mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 mainFrame.BorderSizePixel = 2
 mainFrame.BorderColor3 = Color3.fromRGB(60, 60, 60)
@@ -101,7 +101,6 @@ titleLabel.TextSize = 14
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = titleBar
 
--- Collapse Button
 local collapseBtn = Instance.new("TextButton")
 collapseBtn.Size = UDim2.new(0, 28, 0, 24)
 collapseBtn.Position = UDim2.new(1, -36, 0.5, -12)
@@ -175,49 +174,82 @@ local thresholdCorner = Instance.new("UICorner")
 thresholdCorner.CornerRadius = UDim.new(0, 4)
 thresholdCorner.Parent = thresholdInput
 
-local autoScrollLabel = Instance.new("TextLabel")
-autoScrollLabel.Size = UDim2.new(0, 70, 1, 0)
-autoScrollLabel.Position = UDim2.new(0, 145, 0, 0)
-autoScrollLabel.BackgroundTransparency = 1
-autoScrollLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-autoScrollLabel.Text = "Auto Scroll:"
-autoScrollLabel.Font = Enum.Font.Gotham
-autoScrollLabel.TextSize = 11
-autoScrollLabel.TextXAlignment = Enum.TextXAlignment.Left
-autoScrollLabel.Parent = settingsBar
+-- ========== LIVE VIEW PANEL ==========
+local liveLabel = Instance.new("TextLabel")
+liveLabel.Size = UDim2.new(0, 100, 1, 0)
+liveLabel.Position = UDim2.new(0, 140, 0, 0)
+liveLabel.BackgroundTransparency = 1
+liveLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
+liveLabel.Text = "🔴 LIVE THREATS"
+liveLabel.Font = Enum.Font.GothamBold
+liveLabel.TextSize = 11
+liveLabel.TextXAlignment = Enum.TextXAlignment.Left
+liveLabel.Parent = settingsBar
 
-local autoScrollBtn = Instance.new("TextButton")
-autoScrollBtn.Size = UDim2.new(0, 50, 1, 0)
-autoScrollBtn.Position = UDim2.new(0, 215, 0, 0)
-autoScrollBtn.BackgroundColor3 = Color3.fromRGB(40, 167, 69)
-autoScrollBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-autoScrollBtn.Text = "ON"
-autoScrollBtn.Font = Enum.Font.GothamBold
-autoScrollBtn.TextSize = 10
-autoScrollBtn.Parent = settingsBar
+-- Live View Frame
+local liveFrame = Instance.new("Frame")
+liveFrame.Size = UDim2.new(1, -20, 0, 160)
+liveFrame.Position = UDim2.new(0, 10, 0, 108)
+liveFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+liveFrame.Parent = mainFrame
 
-local autoScrollCorner = Instance.new("UICorner")
-autoScrollCorner.CornerRadius = UDim.new(0, 4)
-autoScrollCorner.Parent = autoScrollBtn
+local liveFrameCorner = Instance.new("UICorner")
+liveFrameCorner.CornerRadius = UDim.new(0, 6)
+liveFrameCorner.Parent = liveFrame
+
+local liveTitle = Instance.new("TextLabel")
+liveTitle.Size = UDim2.new(1, 0, 0, 22)
+liveTitle.Position = UDim2.new(0, 0, 0, 0)
+liveTitle.BackgroundTransparency = 1
+liveTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+liveTitle.Text = "  Player                    | Angular Vel (X, Y, Z)              | Dist  | Threat"
+liveTitle.Font = Enum.Font.Gotham
+liveTitle.TextSize = 9
+liveTitle.TextXAlignment = Enum.TextXAlignment.Left
+liveTitle.Parent = liveFrame
+
+local liveScroll = Instance.new("ScrollingFrame")
+liveScroll.Size = UDim2.new(1, -8, 1, -24)
+liveScroll.Position = UDim2.new(0, 4, 0, 22)
+liveScroll.BackgroundTransparency = 1
+liveScroll.ScrollBarThickness = 4
+liveScroll.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+liveScroll.Parent = liveFrame
+
+local liveLayout = Instance.new("UIListLayout")
+liveLayout.Padding = UDim.new(0, 2)
+liveLayout.Parent = liveScroll
+
+-- ========== LOG SECTION ==========
+local logLabel = Instance.new("TextLabel")
+logLabel.Size = UDim2.new(1, -20, 0, 20)
+logLabel.Position = UDim2.new(0, 10, 0, 275)
+logLabel.BackgroundTransparency = 1
+logLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+logLabel.Text = "📋 Activity Log (New threats appear here)"
+logLabel.Font = Enum.Font.GothamBold
+logLabel.TextSize = 11
+logLabel.TextXAlignment = Enum.TextXAlignment.Left
+logLabel.Parent = mainFrame
 
 local clearBtn = Instance.new("TextButton")
-clearBtn.Size = UDim2.new(0, 55, 1, 0)
-clearBtn.Position = UDim2.new(1, -55, 0, 0)
+clearBtn.Size = UDim2.new(0, 55, 0, 20)
+clearBtn.Position = UDim2.new(1, -65, 0, 275)
 clearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 clearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 clearBtn.Text = "Clear"
 clearBtn.Font = Enum.Font.GothamBold
-clearBtn.TextSize = 10
-clearBtn.Parent = settingsBar
+clearBtn.TextSize = 9
+clearBtn.Parent = mainFrame
 
 local clearCorner = Instance.new("UICorner")
 clearCorner.CornerRadius = UDim.new(0, 4)
 clearCorner.Parent = clearBtn
 
--- ========== LOG SCROLLING FRAME ==========
+-- Log Frame
 local logFrame = Instance.new("Frame")
-logFrame.Size = UDim2.new(1, -20, 1, -115)
-logFrame.Position = UDim2.new(0, 10, 0, 108)
+logFrame.Size = UDim2.new(1, -20, 1, -300)
+logFrame.Position = UDim2.new(0, 10, 0, 298)
 logFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 logFrame.Parent = mainFrame
 
@@ -268,7 +300,6 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Main frame dragging
 local mainDragging = false
 local mainDragInput, mainDragStart, mainDragPos
 
@@ -315,15 +346,6 @@ collapseBtn.MouseButton1Click:Connect(function()
     hubButton.Visible = true
 end)
 
--- ========== AUTO SCROLL TOGGLE ==========
-local autoScroll = true
-
-autoScrollBtn.MouseButton1Click:Connect(function()
-    autoScroll = not autoScroll
-    autoScrollBtn.Text = autoScroll and "ON" or "OFF"
-    autoScrollBtn.BackgroundColor3 = autoScroll and Color3.fromRGB(40, 167, 69) or Color3.fromRGB(108, 117, 125)
-end)
-
 -- ========== CLEAR LOG ==========
 clearBtn.MouseButton1Click:Connect(function()
     for _, child in pairs(logScroll:GetChildren()) do
@@ -331,10 +353,6 @@ clearBtn.MouseButton1Click:Connect(function()
             child:Destroy()
         end
     end
-    suspiciousPlayers = {}
-    threatLabel.Text = "⚠ Threats: 0"
-    threatLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-    warningDot.Visible = false
 end)
 
 -- ========== THRESHOLD UPDATE ==========
@@ -347,14 +365,69 @@ thresholdInput.FocusLost:Connect(function()
     end
 end)
 
+-- ========== LIVE VIEW ENTRIES ==========
+local liveEntries = {}
+
+local function updateOrCreateLiveEntry(plrName, velX, velY, velZ, distance, threatLevel, color)
+    local entry = liveEntries[plrName]
+    
+    if not entry then
+        -- Create new entry
+        entry = Instance.new("Frame")
+        entry.Size = UDim2.new(1, 0, 0, 20)
+        entry.BackgroundColor3 = color
+        entry.Parent = liveScroll
+        
+        local entryCorner = Instance.new("UICorner")
+        entryCorner.CornerRadius = UDim.new(0, 3)
+        entryCorner.Parent = entry
+        
+        local textLabel = Instance.new("TextLabel")
+        textLabel.Name = "Text"
+        textLabel.Size = UDim2.new(1, -8, 1, 0)
+        textLabel.Position = UDim2.new(0, 4, 0, 0)
+        textLabel.BackgroundTransparency = 1
+        textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        textLabel.Font = Enum.Font.Gotham
+        textLabel.TextSize = 9
+        textLabel.TextXAlignment = Enum.TextXAlignment.Left
+        textLabel.Parent = entry
+        
+        liveEntries[plrName] = {frame = entry, label = textLabel}
+    end
+    
+    -- Update entry
+    entry.frame.BackgroundColor3 = color
+    local velStr = string.format("%6.1f, %6.1f, %6.1f", velX, velY, velZ)
+    local distStr = string.format("%5.1f", distance)
+    entry.label.Text = string.format("%-20s | %-30s | %s | %s", plrName:sub(1, 18), velStr, distStr, threatLevel)
+end
+
+local function removeLiveEntry(plrName)
+    if liveEntries[plrName] then
+        liveEntries[plrName].frame:Destroy()
+        liveEntries[plrName] = nil
+    end
+end
+
 -- ========== ADD LOG ENTRY ==========
 local logCount = 0
+local lastLoggedVelocity = {}
 
 local function addLogEntry(playerName, velocity, distance, threatLevel, color)
+    local velTotal = math.abs(velocity.X) + math.abs(velocity.Y) + math.abs(velocity.Z)
+    
+    -- Only log if this is a NEW threat or velocity changed significantly
+    local lastVel = lastLoggedVelocity[playerName]
+    if lastVel and math.abs(lastVel - velTotal) < 100 then
+        return -- Skip logging, not enough change
+    end
+    lastLoggedVelocity[playerName] = velTotal
+    
     logCount = logCount + 1
     
     local entry = Instance.new("Frame")
-    entry.Size = UDim2.new(1, 0, 0, 50)
+    entry.Size = UDim2.new(1, 0, 0, 36)
     entry.BackgroundColor3 = color
     entry.Parent = logScroll
     
@@ -362,59 +435,41 @@ local function addLogEntry(playerName, velocity, distance, threatLevel, color)
     entryCorner.CornerRadius = UDim.new(0, 4)
     entryCorner.Parent = entry
     
-    -- Player name
     local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, -10, 0, 16)
-    nameLabel.Position = UDim2.new(0, 8, 0, 3)
+    nameLabel.Size = UDim2.new(1, -60, 0, 14)
+    nameLabel.Position = UDim2.new(0, 8, 0, 2)
     nameLabel.BackgroundTransparency = 1
     nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    nameLabel.Text = playerName
+    nameLabel.Text = playerName.." - "..threatLevel
     nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.TextSize = 12
+    nameLabel.TextSize = 10
     nameLabel.TextXAlignment = Enum.TextXAlignment.Left
     nameLabel.Parent = entry
     
-    -- Velocity
     local velLabel = Instance.new("TextLabel")
-    velLabel.Size = UDim2.new(1, -10, 0, 14)
-    velLabel.Position = UDim2.new(0, 8, 0, 19)
+    velLabel.Size = UDim2.new(1, -60, 0, 12)
+    velLabel.Position = UDim2.new(0, 8, 0, 16)
     velLabel.BackgroundTransparency = 1
     velLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    velLabel.Text = string.format("Angular Vel: X=%.1f Y=%.1f Z=%.1f", velocity.X, velocity.Y, velocity.Z)
+    velLabel.Text = string.format("Vel: X=%.1f Y=%.1f Z=%.1f", velocity.X, velocity.Y, velocity.Z)
     velLabel.Font = Enum.Font.Gotham
-    velLabel.TextSize = 10
+    velLabel.TextSize = 9
     velLabel.TextXAlignment = Enum.TextXAlignment.Left
     velLabel.Parent = entry
     
-    -- Distance and threat
     local distLabel = Instance.new("TextLabel")
-    distLabel.Size = UDim2.new(1, -10, 0, 14)
-    distLabel.Position = UDim2.new(0, 8, 0, 33)
+    distLabel.Size = UDim2.new(1, -60, 0, 12)
+    distLabel.Position = UDim2.new(0, 8, 0, 26)
     distLabel.BackgroundTransparency = 1
     distLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-    distLabel.Text = string.format("Distance: %.1f studs | Threat: %s", distance, threatLevel)
+    distLabel.Text = string.format("Distance: %.1f studs | %s", distance, os.date("%H:%M:%S"))
     distLabel.Font = Enum.Font.Gotham
-    distLabel.TextSize = 10
+    distLabel.TextSize = 9
     distLabel.TextXAlignment = Enum.TextXAlignment.Left
     distLabel.Parent = entry
     
-    -- Time stamp
-    local timeLabel = Instance.new("TextLabel")
-    timeLabel.Size = UDim2.new(0, 60, 0, 14)
-    timeLabel.Position = UDim2.new(1, -65, 0, 3)
-    timeLabel.BackgroundTransparency = 1
-    timeLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-    timeLabel.Text = os.date("%H:%M:%S")
-    timeLabel.Font = Enum.Font.Gotham
-    timeLabel.TextSize = 9
-    timeLabel.TextXAlignment = Enum.TextXAlignment.Right
-    timeLabel.Parent = entry
-    
-    -- Auto scroll
-    if autoScroll then
-        logScroll.CanvasSize = UDim2.new(0, 0, 0, logLayout.AbsoluteContentSize.Y + 8)
-        logScroll.CanvasPosition = Vector2.new(0, math.huge)
-    end
+    logScroll.CanvasSize = UDim2.new(0, 0, 0, logLayout.AbsoluteContentSize.Y + 8)
+    logScroll.CanvasPosition = Vector2.new(0, math.huge)
     
     -- Limit entries
     local children = logScroll:GetChildren()
@@ -437,7 +492,6 @@ end
 
 -- ========== SCAN PLAYERS ==========
 local lastScanTime = 0
-local threatCount = 0
 
 RunService.Heartbeat:Connect(function()
     local currentTime = tick()
@@ -449,6 +503,7 @@ RunService.Heartbeat:Connect(function()
     
     local playerCount = 0
     local newThreatCount = 0
+    local currentThreats = {}
     
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= player then
@@ -468,6 +523,7 @@ RunService.Heartbeat:Connect(function()
                 
                 if totalVel > VELOCITY_THRESHOLD then
                     newThreatCount = newThreatCount + 1
+                    currentThreats[plr.Name] = true
                     
                     -- Determine threat level
                     local threatLevel, color
@@ -482,19 +538,31 @@ RunService.Heartbeat:Connect(function()
                         color = Color3.fromRGB(180, 150, 40)
                     end
                     
-                    -- Only log if new or changed significantly
+                    -- Update live view
+                    updateOrCreateLiveEntry(plr.Name, angularVel.X, angularVel.Y, angularVel.Z, distance, threatLevel, color)
+                    
+                    -- Log if significant change
                     local lastVel = suspiciousPlayers[plr.Name]
-                    if not lastVel or math.abs(lastVel - totalVel) > 10 then
+                    if not lastVel or math.abs(lastVel - totalVel) > 200 then
                         addLogEntry(plr.Name, angularVel, distance, threatLevel, color)
-                        suspiciousPlayers[plr.Name] = totalVel
                     end
+                    suspiciousPlayers[plr.Name] = totalVel
                 else
-                    -- Reset if no longer suspicious
+                    -- Remove from live view if no longer a threat
+                    removeLiveEntry(plr.Name)
                     if suspiciousPlayers[plr.Name] then
                         suspiciousPlayers[plr.Name] = nil
+                        lastLoggedVelocity[plr.Name] = nil
                     end
                 end
             end
+        end
+    end
+    
+    -- Clean up live entries for players who left
+    for name, _ in pairs(liveEntries) do
+        if not currentThreats[name] then
+            removeLiveEntry(name)
         end
     end
     
