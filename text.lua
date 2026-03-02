@@ -1,4 +1,4 @@
--- Multi-Line Chat Hub
+-- Multi-Line Chat Hub (Draggable Expanded Frame)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -75,7 +75,7 @@ titleFix.BorderSizePixel = 0
 titleFix.Parent = titleBar
 
 local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, -10, 1, 0)
+titleLabel.Size = UDim2.new(1, -40, 1, 0)
 titleLabel.Position = UDim2.new(0, 10, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -225,35 +225,66 @@ statusLabel.TextSize = 10
 statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 statusLabel.Parent = contentFrame
 
--- ========== DRAGGING ==========
-local dragging = false
-local dragInput, dragStart, startPos
+-- ========== DRAGGING FOR HUB BUTTON ==========
+local hubDragging = false
+local hubDragInput, hubDragStart, hubStartPos
 
 hubButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = hubButton.Position
-        
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
+        hubDragging = true
+        hubDragStart = input.Position
+        hubStartPos = hubButton.Position
+    end
+end)
+
+hubButton.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        hubDragging = false
     end
 end)
 
 hubButton.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
+        hubDragInput = input
     end
 end)
 
+-- ========== DRAGGING FOR MAIN FRAME (Title Bar) ==========
+local mainDragging = false
+local mainDragInput, mainDragStart, mainStartPos
+
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        mainDragging = true
+        mainDragStart = input.Position
+        mainStartPos = mainFrame.Position
+    end
+end)
+
+titleBar.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        mainDragging = false
+    end
+end)
+
+titleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        mainDragInput = input
+    end
+end)
+
+-- ========== GLOBAL INPUT CHANGED (Handles Both Draggings) ==========
 UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        local delta = input.Position - dragStart
-        hubButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        mainFrame.Position = UDim2.new(hubButton.Position.X.Scale, hubButton.Position.X.Offset, hubButton.Position.Y.Scale, hubButton.Position.Y.Offset - 140 + 25)
+    -- Hub dragging
+    if input == hubDragInput and hubDragging then
+        local delta = input.Position - hubDragStart
+        hubButton.Position = UDim2.new(hubStartPos.X.Scale, hubStartPos.X.Offset + delta.X, hubStartPos.Y.Scale, hubStartPos.Y.Offset + delta.Y)
+    end
+    
+    -- Main frame dragging
+    if input == mainDragInput and mainDragging then
+        local delta = input.Position - mainDragStart
+        mainFrame.Position = UDim2.new(mainStartPos.X.Scale, mainStartPos.X.Offset + delta.X, mainStartPos.Y.Scale, mainStartPos.Y.Offset + delta.Y)
     end
 end)
 
@@ -270,10 +301,12 @@ local function toggleHub()
     end
 end
 
-hubButton.InputBegan:Connect(function(input)
+hubButton.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        wait(0.1)
-        if not dragging then
+        -- Check if it was a click (not a drag)
+        local wasDragging = hubDragging
+        wait(0.05)
+        if not wasDragging then
             toggleHub()
         end
     end
@@ -398,4 +431,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Multi-Line Chat Hub Loaded")
+print("✅ Multi-Line Chat Hub Loaded (Draggable)")
