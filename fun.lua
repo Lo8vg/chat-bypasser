@@ -1,4 +1,4 @@
--- KBL Chat Hub (Mobile Fixed)
+-- KBL Chat Hub (Mobile Fixed v2)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -48,18 +48,13 @@ hubButton.Name = "HubButton"
 hubButton.Size = UDim2.new(0, 55, 0, 55)
 hubButton.Position = UDim2.new(0, 20, 0.5, -27)
 hubButton.BackgroundColor3 = COLORS.card
-hubButton.BorderSizePixel = 0
-hubButton.Visible = true
+hubButton.BorderSizePixel = 2
+hubButton.BorderColor3 = COLORS.accent
 hubButton.Parent = screenGui
 
 local hubButtonCorner = Instance.new("UICorner")
 hubButtonCorner.CornerRadius = UDim.new(0, 12)
 hubButtonCorner.Parent = hubButton
-
-local hubButtonStroke = Instance.new("UIStroke")
-hubButtonStroke.Color = COLORS.accent
-hubButtonStroke.Thickness = 2
-hubButtonStroke.Parent = hubButton
 
 local hubButtonIcon = Instance.new("TextLabel")
 hubButtonIcon.Size = UDim2.new(1, 0, 1, 0)
@@ -77,7 +72,8 @@ hubFrame.Name = "HubFrame"
 hubFrame.Size = UDim2.new(0, 500, 0, 300)
 hubFrame.Position = UDim2.new(0.5, -250, 0.5, -150)
 hubFrame.BackgroundColor3 = COLORS.background
-hubFrame.BorderSizePixel = 0
+hubFrame.BorderSizePixel = 2
+hubFrame.BorderColor3 = Color3.fromRGB(50, 50, 60)
 hubFrame.Visible = false
 hubFrame.Parent = screenGui
 
@@ -85,13 +81,9 @@ local hubFrameCorner = Instance.new("UICorner")
 hubFrameCorner.CornerRadius = UDim.new(0, 16)
 hubFrameCorner.Parent = hubFrame
 
-local hubFrameStroke = Instance.new("UIStroke")
-hubFrameStroke.Color = Color3.fromRGB(50, 50, 60)
-hubFrameStroke.Thickness = 1
-hubFrameStroke.Parent = hubFrame
-
 -- Title Bar
 local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
 titleBar.Size = UDim2.new(1, 0, 0, 45)
 titleBar.BackgroundColor3 = COLORS.header
 titleBar.BorderSizePixel = 0
@@ -192,10 +184,11 @@ chatInput.TextXAlignment = Enum.TextXAlignment.Left
 chatInput.TextYAlignment = Enum.TextYAlignment.Top
 chatInput.MultiLine = true
 chatInput.TextWrapped = true
+chatInput.ClearTextOnFocus = false
 chatInput.Parent = mainSection
 
 local chatInputCorner = Instance.new("UICorner")
-chatInputCorner.CornerRadius = UDim.new(0, 8)
+chatInputCorner.Radius = UDim.new(0, 8)
 chatInputCorner.Parent = chatInput
 
 -- Status Label
@@ -229,7 +222,7 @@ autoCapsBtn.TextSize = 11
 autoCapsBtn.Parent = buttonRow1
 
 local autoCapsCorner = Instance.new("UICorner")
-autoCapsCorner.CornerRadius = UDim.new(0, 6)
+autoCapsCorner.Radius = UDim.new(0, 6)
 autoCapsCorner.Parent = autoCapsBtn
 
 -- Auto Lower Button
@@ -244,7 +237,7 @@ autoLowerBtn.TextSize = 11
 autoLowerBtn.Parent = buttonRow1
 
 local autoLowerCorner = Instance.new("UICorner")
-autoLowerCorner.CornerRadius = UDim.new(0, 6)
+autoLowerCorner.Radius = UDim.new(0, 6)
 autoLowerCorner.Parent = autoLowerBtn
 
 -- Button Row 2
@@ -266,7 +259,7 @@ sendBtn.TextSize = 12
 sendBtn.Parent = buttonRow2
 
 local sendCorner = Instance.new("UICorner")
-sendCorner.CornerRadius = UDim.new(0, 6)
+sendCorner.Radius = UDim.new(0, 6)
 sendCorner.Parent = sendBtn
 
 -- Clear Button
@@ -281,7 +274,7 @@ clearBtn.TextSize = 12
 clearBtn.Parent = buttonRow2
 
 local clearCorner = Instance.new("UICorner")
-clearCorner.CornerRadius = UDim.new(0, 6)
+clearCorner.Radius = UDim.new(0, 6)
 clearCorner.Parent = clearBtn
 
 -- Quick Messages Label
@@ -297,7 +290,7 @@ quickLabel.TextXAlignment = Enum.TextXAlignment.Left
 quickLabel.Parent = mainSection
 
 -- Quick Messages
-local quickMsgs = {"GG", "Hello!", "Nice!", "LOL", "WTF", "Bye", "EZ", "Good game", "Noob", "Ty", "Hacker", "Lag"}
+local quickMsgs = {"GG", "Hello!", "Nice!", "LOL", "WTF", "Bye", "EZ", "Good game", "Noob", "Ty", " "acker", "Lag"}
 local quickButtons = {}
 
 for i, msg in ipairs(quickMsgs) do
@@ -340,7 +333,7 @@ antiAFKBtn.TextSize = 10
 antiAFKBtn.Parent = toolsSection
 
 local antiAFKCorner = Instance.new("UICorner")
-antiAFKCorner.CornerRadius = UDim.new(0, 6)
+antiAFKCorner.Radius = UDim.new(0, 6)
 antiAFKCorner.Parent = antiAFKBtn
 
 -- Anti AFK Delay
@@ -368,6 +361,7 @@ antiAFKDelayInput.TextColor3 = COLORS.text
 antiAFKDelayInput.Text = "60"
 antiAFKDelayInput.Font = Enum.Font.Gotham
 antiAFKDelayInput.TextSize = 11
+antiAFKDelayInput.ClearTextOnFocus = false
 antiAFKDelayInput.Parent = antiAFKDelayRow
 
 local antiAFKDelayCorner = Instance.new("UICorner")
@@ -399,6 +393,7 @@ antiAFKMsgInput.TextColor3 = COLORS.text
 antiAFKMsgInput.Text = "afk"
 antiAFKMsgInput.Font = Enum.Font.Gotham
 antiAFKMsgInput.TextSize = 11
+antiAFKMsgInput.ClearTextOnFocus = false
 antiAFKMsgInput.Parent = antiAFKMsgRow
 
 local antiAFKMsgCorner = Instance.new("UICorner")
@@ -445,6 +440,7 @@ repeatCountInput.TextColor3 = COLORS.text
 repeatCountInput.Text = "5"
 repeatCountInput.Font = Enum.Font.Gotham
 repeatCountInput.TextSize = 11
+repeatCountInput.ClearTextOnFocus = false
 repeatCountInput.Parent = repeatCountRow
 
 local repeatCountCorner = Instance.new("UICorner")
@@ -472,6 +468,7 @@ spamInput.TextSize = 12
 spamInput.TextYAlignment = Enum.TextYAlignment.Top
 spamInput.MultiLine = true
 spamInput.TextWrapped = true
+spamInput.ClearTextOnFocus = false
 spamInput.Parent = spamSection
 
 local spamInputCorner = Instance.new("UICorner")
@@ -518,6 +515,7 @@ spamDelayInput.TextColor3 = COLORS.text
 spamDelayInput.Text = "1"
 spamDelayInput.Font = Enum.Font.Gotham
 spamDelayInput.TextSize = 12
+spamDelayInput.ClearTextOnFocus = false
 spamDelayInput.Parent = spamDelayRow
 
 local spamDelayCorner = Instance.new("UICorner")
@@ -626,7 +624,7 @@ local historyLayout = Instance.new("UIListLayout")
 historyLayout.Padding = UDim.new(0, 3)
 historyLayout.Parent = historyScroll
 
--- ========== DRAGGING (HUB BUTTON) ==========
+-- ========== DRAGGING FOR HUB BUTTON (SAME AS YOUR WORKING SCRIPT) ==========
 
 local dragging = false
 local dragInput, dragStart, startPos
@@ -658,12 +656,12 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ========== DRAGGING (HUB FRAME) ==========
+-- ========== DRAGGING FOR HUB FRAME ==========
 
 local hubDragging = false
 local hubDragInput, hubDragStart, hubDragPos
 
-titleBar.InputBegan:Connect(function(input)
+hubFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         hubDragging = true
         hubDragStart = input.Position
@@ -677,7 +675,7 @@ titleBar.InputBegan:Connect(function(input)
     end
 end)
 
-titleBar.InputChanged:Connect(function(input)
+hubFrame.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         hubDragInput = input
     end
@@ -690,12 +688,12 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ========== TOGGLE HUB (MOBILE FIX) ==========
+-- ========== TOGGLE HUB (SAME AS YOUR WORKING SCRIPT) ==========
 
-hubButton.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-        local dragDistance = (input.Position - dragStart).Magnitude
-        if dragDistance < 10 then
+hubButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        wait(0.1)
+        if not dragging then
             hubButton.Visible = false
             hubFrame.Visible = true
         end
@@ -717,15 +715,6 @@ local function switchTab(tabName)
     historySection.Visible = tabName == "History"
     
     for name, btn in pairs(tabButtons) do
-        if name == tabName then
-            btn.BackgroundColor3 = COLORS.accent
-        else
-            btn.BackgroundColor3 = COLORS.card
-        end
-    end
-end
-
-for name, btn in pairs(tabButtons) do
     btn.MouseButton1Click:Connect(function()
         switchTab(name)
     end)
@@ -735,7 +724,7 @@ end
 
 local function sendMessage(msg)
     local message = msg or chatInput.Text
-    message = message:gsub("^%s+", ""):gsub("%s+\$", ""):gsub("\n", " ")
+    message = message:gsub("^%s+", ""):gsub("%s+$", ""):gsub("\n", " ")
     
     if message == "" then return false end
     
@@ -937,7 +926,10 @@ end)
 local repeatState = false
 
 repeatBtn.MouseButton1Click:Connect(function()
-    if lastSentMessage == "" then return end
+    if lastSentMessage == "" then
+        statusLabel.Text = "No message to repeat!"
+        return
+    end
     
     repeatState = not repeatState
     toggleBtn(repeatBtn, repeatState, "🔁 REPEAT: ON", "🔁 REPEAT: OFF")
@@ -1003,6 +995,19 @@ clearHistoryBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+-- ========== TOGGLE WITH RIGHT CONTROL ==========
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == Enum.KeyCode.RightControl then
+        if hubFrame.Visible then
+            hubFrame.Visible = false
+            hubButton.Visible = true
+        else
+            hubButton.Visible = not hubButton.Visible
+        end
+    end
+end)
+
 -- ========== INITIALIZE ==========
 
-print("✅ KBL Chat Hub Loaded - Tap the K button to open")
+print("✅ KBL Chat Hub Loaded - Tap the K button to open!")
