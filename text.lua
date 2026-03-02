@@ -314,6 +314,7 @@ textbox2.TextYAlignment = Enum.TextYAlignment.Top
 textbox2.ClearTextOnFocus = false
 textbox2.MultiLine = true
 textbox2.TextWrapped = true
+textbox2.ReturnKeyType = Enum.ReturnKeyType.Default
 textbox2.Parent = tab2Content
 
 local textbox2Corner = Instance.new("UICorner")
