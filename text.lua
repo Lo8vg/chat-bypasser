@@ -314,7 +314,6 @@ textbox2.TextYAlignment = Enum.TextYAlignment.Top
 textbox2.ClearTextOnFocus = false
 textbox2.MultiLine = true
 textbox2.TextWrapped = true
-textbox2.ReturnKeyType = Enum.ReturnKeyType.Default
 textbox2.Parent = tab2Content
 
 local textbox2Corner = Instance.new("UICorner")
@@ -622,25 +621,27 @@ sendButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- FocusLost (Tab 1)
+-- FocusLost (Tab 1) - Send on Enter
 textbox.FocusLost:Connect(function(enterPressed)
-    if textbox.Text ~= "" and enterPressed then
+    if enterPressed and textbox.Text ~= "" then
         sendMessage()
-    end
-end)
-
--- Enter key (Tab 1)
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if input.KeyCode == Enum.KeyCode.Enter and textbox:IsFocused() then
-        if textbox.Text ~= "" then
-            sendMessage()
-        end
     end
 end)
 
 -- Focused - clear (Tab 1)
 textbox.Focused:Connect(function()
     textbox.Text = ""
+end)
+
+-- ========== MOBILE FIX FOR TAB 2 (Multi-line textbox) ==========
+textbox2.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        -- Mobile pressed Enter - add newline and refocus
+        textbox2.Text = textbox2.Text .. "\n"
+        task.wait()
+        textbox2:CaptureFocus()
+    end
+    -- Don't send on Enter - only send via button
 end)
 
 -- Send All Button (Tab 2)
@@ -741,4 +742,4 @@ end)
 -- Initialize messages UI
 updateMessagesUI()
 
-print("✅ Custom Chat GUI Loaded (with Second Textbox Tab)")
+print("✅ Custom Chat GUI Loaded (Mobile Multi-line Fixed)")
