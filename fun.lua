@@ -1,4 +1,4 @@
--- KBL Chat Hub (Mobile Fixed v2)
+-- KBL Chat Hub (Mobile Fixed - Complete)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -105,7 +105,7 @@ titleLabel.Size = UDim2.new(1, -60, 1, 0)
 titleLabel.Position = UDim2.new(0, 20, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = COLORS.text
-titleLabel.Text = "💬 KBL Chat Hub"
+titleLabel.Text = "KBL Chat Hub"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 16
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -116,13 +116,13 @@ collapseButton.Size = UDim2.new(0, 35, 0, 28)
 collapseButton.Position = UDim2.new(1, -45, 0.5, -14)
 collapseButton.BackgroundColor3 = COLORS.danger
 collapseButton.TextColor3 = COLORS.text
-collapseButton.Text = "✕"
+collapseButton.Text = "X"
 collapseButton.Font = Enum.Font.GothamBold
 collapseButton.TextSize = 14
 collapseButton.Parent = titleBar
 
 local collapseCorner = Instance.new("UICorner")
-collapseCorner.CornerRadius = UDim.new(0, 8)
+collapseCorner.Radius = UDim.new(0, 8)
 collapseCorner.Parent = collapseButton
 
 -- Tab Buttons Frame
@@ -149,7 +149,7 @@ for i, tabName in ipairs(tabs) do
     tabBtn.Parent = tabFrame
     
     local tabCorner = Instance.new("UICorner")
-    tabCorner.CornerRadius = UDim.new(0, 6)
+    tabCorner.Radius = UDim.new(0, 6)
     tabCorner.Parent = tabBtn
     
     tabButtons[tabName] = tabBtn
@@ -216,7 +216,7 @@ autoCapsBtn.Size = UDim2.new(0.5, -3, 1, 0)
 autoCapsBtn.Position = UDim2.new(0, 0, 0, 0)
 autoCapsBtn.BackgroundColor3 = COLORS.card
 autoCapsBtn.TextColor3 = COLORS.text
-autoCapsBtn.Text = "🔺 AUTO CAPS: OFF"
+autoCapsBtn.Text = "AUTO CAPS: OFF"
 autoCapsBtn.Font = Enum.Font.GothamBold
 autoCapsBtn.TextSize = 11
 autoCapsBtn.Parent = buttonRow1
@@ -231,7 +231,7 @@ autoLowerBtn.Size = UDim2.new(0.5, -3, 1, 0)
 autoLowerBtn.Position = UDim2.new(0.5, 3, 0, 0)
 autoLowerBtn.BackgroundColor3 = COLORS.card
 autoLowerBtn.TextColor3 = COLORS.text
-autoLowerBtn.Text = "🔻 AUTO LOWER: OFF"
+autoLowerBtn.Text = "AUTO LOWER: OFF"
 autoLowerBtn.Font = Enum.Font.GothamBold
 autoLowerBtn.TextSize = 11
 autoLowerBtn.Parent = buttonRow1
@@ -253,7 +253,7 @@ sendBtn.Size = UDim2.new(0.5, -3, 1, 0)
 sendBtn.Position = UDim2.new(0, 0, 0, 0)
 sendBtn.BackgroundColor3 = COLORS.accent
 sendBtn.TextColor3 = COLORS.text
-sendBtn.Text = "📤 SEND"
+sendBtn.Text = "SEND"
 sendBtn.Font = Enum.Font.GothamBold
 sendBtn.TextSize = 12
 sendBtn.Parent = buttonRow2
@@ -268,7 +268,7 @@ clearBtn.Size = UDim2.new(0.5, -3, 1, 0)
 clearBtn.Position = UDim2.new(0.5, 3, 0, 0)
 clearBtn.BackgroundColor3 = COLORS.danger
 clearBtn.TextColor3 = COLORS.text
-clearBtn.Text = "🗑️ CLEAR"
+clearBtn.Text = "CLEAR"
 clearBtn.Font = Enum.Font.GothamBold
 clearBtn.TextSize = 12
 clearBtn.Parent = buttonRow2
@@ -290,7 +290,7 @@ quickLabel.TextXAlignment = Enum.TextXAlignment.Left
 quickLabel.Parent = mainSection
 
 -- Quick Messages
-local quickMsgs = {"GG", "Hello!", "Nice!", "LOL", "WTF", "Bye", "EZ", "Good game", "Noob", "Ty", " "acker", "Lag"}
+local quickMsgs = {"GG", "Hello!", "Nice!", "LOL", "WTF", "Bye", "EZ", "Good game", "Noob", "Ty", "Hacker", "Lag"}
 local quickButtons = {}
 
 for i, msg in ipairs(quickMsgs) do
@@ -327,7 +327,7 @@ local antiAFKBtn = Instance.new("TextButton")
 antiAFKBtn.Size = UDim2.new(0.5, -3, 0, 40)
 antiAFKBtn.BackgroundColor3 = COLORS.card
 antiAFKBtn.TextColor3 = COLORS.text
-antiAFKBtn.Text = "💤 ANTI-AFK: OFF"
+antiAFKBtn.Text = "ANTI-AFK: OFF"
 antiAFKBtn.Font = Enum.Font.GothamBold
 antiAFKBtn.TextSize = 10
 antiAFKBtn.Parent = toolsSection
@@ -406,7 +406,7 @@ repeatBtn.Size = UDim2.new(0.5, -3, 0, 40)
 repeatBtn.Position = UDim2.new(0, 0, 0, 85)
 repeatBtn.BackgroundColor3 = COLORS.card
 repeatBtn.TextColor3 = COLORS.text
-repeatBtn.Text = "🔁 REPEAT: OFF"
+repeatBtn.Text = "REPEAT: OFF"
 repeatBtn.Font = Enum.Font.GothamBold
 repeatBtn.TextSize = 10
 repeatBtn.Parent = toolsSection
@@ -481,7 +481,7 @@ spamToggle.Size = UDim2.new(0.5, -3, 0, 45)
 spamToggle.Position = UDim2.new(0, 0, 0, 55)
 spamToggle.BackgroundColor3 = COLORS.danger
 spamToggle.TextColor3 = COLORS.text
-spamToggle.Text = "🔁 SPAM: OFF"
+spamToggle.Text = "SPAM: OFF"
 spamToggle.Font = Enum.Font.GothamBold
 spamToggle.TextSize = 14
 spamToggle.Parent = spamSection
@@ -563,7 +563,7 @@ warningLabel.Size = UDim2.new(1, 0, 0, 40)
 warningLabel.Position = UDim2.new(0, 0, 0, 165)
 warningLabel.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
 warningLabel.TextColor3 = COLORS.text
-warningLabel.Text = "⚠️ WARNING: Spam may get you kicked!"
+warningLabel.Text = "WARNING: Spam may get you kicked!"
 warningLabel.Font = Enum.Font.Gotham
 warningLabel.TextSize = 11
 warningLabel.TextWrapped = true
@@ -624,7 +624,7 @@ local historyLayout = Instance.new("UIListLayout")
 historyLayout.Padding = UDim.new(0, 3)
 historyLayout.Parent = historyScroll
 
--- ========== DRAGGING FOR HUB BUTTON (SAME AS YOUR WORKING SCRIPT) ==========
+-- ========== DRAGGING FOR HUB BUTTON ==========
 
 local dragging = false
 local dragInput, dragStart, startPos
@@ -688,7 +688,7 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ========== TOGGLE HUB (SAME AS YOUR WORKING SCRIPT) ==========
+-- ========== TOGGLE HUB ==========
 
 hubButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -715,6 +715,15 @@ local function switchTab(tabName)
     historySection.Visible = tabName == "History"
     
     for name, btn in pairs(tabButtons) do
+        if name == tabName then
+            btn.BackgroundColor3 = COLORS.accent
+        else
+            btn.BackgroundColor3 = COLORS.card
+        end
+    end
+end
+
+for name, btn in pairs(tabButtons) do
     btn.MouseButton1Click:Connect(function()
         switchTab(name)
     end)
@@ -724,7 +733,7 @@ end
 
 local function sendMessage(msg)
     local message = msg or chatInput.Text
-    message = message:gsub("^%s+", ""):gsub("%s+$", ""):gsub("\n", " ")
+    message = message:gsub("^%s+", ""):gsub("%s+\$", ""):gsub("\n", " ")
     
     if message == "" then return false end
     
@@ -741,12 +750,40 @@ local function sendMessage(msg)
     if #lastMessages > maxHistory then
         table.remove(lastMessages)
     end
-    updateHistoryUI()
+    
+    -- Update history UI
+    for _, child in pairs(historyScroll:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    for i, m in ipairs(lastMessages) do
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, -6, 0, 28)
+        btn.BackgroundColor3 = COLORS.background
+        btn.TextColor3 = COLORS.text
+        btn.Text = string.sub(m, 1, 45) .. (#m > 45 and "..." or "")
+        btn.Font = Enum.Font.Gotham
+        btn.TextSize = 10
+        btn.TextXAlignment = Enum.TextXAlignment.Left
+        btn.Parent = historyScroll
+        
+        local btnCorner = Instance.new("UICorner")
+        btnCorner.Radius = UDim.new(0, 4)
+        btnCorner.Parent = btn
+        
+        btn.MouseButton1Click:Connect(function()
+            chatInput.Text = m
+        end)
+    end
+    
+    historyScroll.CanvasSize = UDim2.new(0, 0, 0, #lastMessages * 31)
     
     -- Try TextChatService first
-    local TextChatService = game:GetService("TextChatService")
-    if TextChatService then
-        local channel = TextChatService:FindFirstChild("TextChannels")
+    local TCS = game:GetService("TextChatService")
+    if TCS then
+        local channel = TCS:FindFirstChild("TextChannels")
         if channel then
             local rbxGeneral = channel:FindFirstChild("RBXGeneral")
             if rbxGeneral then
@@ -797,39 +834,7 @@ local function processMessage(message, mode)
     return message
 end
 
--- ========== UPDATE HISTORY UI ==========
-
-function updateHistoryUI()
-    for _, child in pairs(historyScroll:GetChildren()) do
-        if child:IsA("TextButton") then
-            child:Destroy()
-        end
-    end
-    
-    for i, msg in ipairs(lastMessages) do
-        local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1, -6, 0, 28)
-        btn.BackgroundColor3 = COLORS.background
-        btn.TextColor3 = COLORS.text
-        btn.Text = string.sub(msg, 1, 45) .. (#msg > 45 and "..." or "")
-        btn.Font = Enum.Font.Gotham
-        btn.TextSize = 10
-        btn.TextXAlignment = Enum.TextXAlignment.Left
-        btn.Parent = historyScroll
-        
-        local btnCorner = Instance.new("UICorner")
-        btnCorner.Radius = UDim.new(0, 4)
-        btnCorner.Parent = btn
-        
-        btn.MouseButton1Click:Connect(function()
-            chatInput.Text = msg
-        end)
-    end
-    
-    historyScroll.CanvasSize = UDim2.new(0, 0, 0, #lastMessages * 31)
-end
-
--- ========== TOGGLE BUTTON ==========
+-- ========== TOGGLE BUTTON HELPER ==========
 
 local function toggleBtn(btn, state, onText, offText)
     btn.Text = state and onText or offText
@@ -838,25 +843,22 @@ end
 
 -- ========== BUTTON FUNCTIONS ==========
 
--- Auto Caps
 autoCapsBtn.MouseButton1Click:Connect(function()
     states.autoCaps = not states.autoCaps
     if states.autoCaps then states.autoLower = false end
-    toggleBtn(autoCapsBtn, states.autoCaps, "🔺 AUTO CAPS: ON", "🔺 AUTO CAPS: OFF")
-    toggleBtn(autoLowerBtn, states.autoLower, "🔻 AUTO LOWER: ON", "🔻 AUTO LOWER: OFF")
+    toggleBtn(autoCapsBtn, states.autoCaps, "AUTO CAPS: ON", "AUTO CAPS: OFF")
+    toggleBtn(autoLowerBtn, states.autoLower, "AUTO LOWER: ON", "AUTO LOWER: OFF")
     statusLabel.Text = states.autoCaps and "Mode: ALL CAPS" or (states.autoLower and "Mode: all lower" or "Mode: Normal")
 end)
 
--- Auto Lower
 autoLowerBtn.MouseButton1Click:Connect(function()
     states.autoLower = not states.autoLower
     if states.autoLower then states.autoCaps = false end
-    toggleBtn(autoLowerBtn, states.autoLower, "🔻 AUTO LOWER: ON", "🔻 AUTO LOWER: OFF")
-    toggleBtn(autoCapsBtn, states.autoCaps, "🔺 AUTO CAPS: ON", "🔺 AUTO CAPS: OFF")
+    toggleBtn(autoLowerBtn, states.autoLower, "AUTO LOWER: ON", "AUTO LOWER: OFF")
+    toggleBtn(autoCapsBtn, states.autoCaps, "AUTO CAPS: ON", "AUTO CAPS: OFF")
     statusLabel.Text = states.autoLower and "Mode: all lower" or (states.autoCaps and "Mode: ALL CAPS" or "Mode: Normal")
 end)
 
--- Send Button
 sendBtn.MouseButton1Click:Connect(function()
     local msg = chatInput.Text
     if msg ~= "" then
@@ -870,16 +872,14 @@ sendBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Clear Button
 clearBtn.MouseButton1Click:Connect(function()
     chatInput.Text = ""
 end)
 
--- Enter key to send
 chatInput.FocusLost:Connect(function(enterPressed)
     if enterPressed and chatInput.Text ~= "" then
         local msg = chatInput.Text
-        if states.autoCaps then
+            if states.autoCaps then
             msg = msg:upper()
         elseif states.autoLower then
             msg = msg:lower()
@@ -889,7 +889,6 @@ chatInput.FocusLost:Connect(function(enterPressed)
     end
 end)
 
--- Quick Messages
 for btn, msg in pairs(quickButtons) do
     btn.MouseButton1Click:Connect(function()
         local finalMsg = msg
@@ -902,10 +901,9 @@ for btn, msg in pairs(quickButtons) do
     end)
 end
 
--- Anti-AFK Chat
 antiAFKBtn.MouseButton1Click:Connect(function()
     states.antiAFK = not states.antiAFK
-    toggleBtn(antiAFKBtn, states.antiAFK, "💤 ANTI-AFK: ON", "💤 ANTI-AFK: OFF")
+    toggleBtn(antiAFKBtn, states.antiAFK, "ANTI-AFK: ON", "ANTI-AFK: OFF")
     
     if states.antiAFK then
         local delay = tonumber(antiAFKDelayInput.Text) or 60
@@ -922,7 +920,6 @@ antiAFKBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Repeat Last Message
 local repeatState = false
 
 repeatBtn.MouseButton1Click:Connect(function()
@@ -932,7 +929,7 @@ repeatBtn.MouseButton1Click:Connect(function()
     end
     
     repeatState = not repeatState
-    toggleBtn(repeatBtn, repeatState, "🔁 REPEAT: ON", "🔁 REPEAT: OFF")
+    toggleBtn(repeatBtn, repeatState, "REPEAT: ON", "REPEAT: OFF")
     
     if repeatState then
         local count = tonumber(repeatCountInput.Text) or 5
@@ -943,15 +940,14 @@ repeatBtn.MouseButton1Click:Connect(function()
                 wait(0.5)
             end
             repeatState = false
-            toggleBtn(repeatBtn, false, "🔁 REPEAT: ON", "🔁 REPEAT: OFF")
+            toggleBtn(repeatBtn, false, "REPEAT: ON", "REPEAT: OFF")
         end)
     end
 end)
 
--- Spam Toggle
 spamToggle.MouseButton1Click:Connect(function()
     states.spam = not states.spam
-    spamToggle.Text = states.spam and "🔁 SPAM: ON" or "🔁 SPAM: OFF"
+    spamToggle.Text = states.spam and "SPAM: ON" or "SPAM: OFF"
     spamToggle.BackgroundColor3 = states.spam and COLORS.success or COLORS.danger
     
     if states.spam then
@@ -969,13 +965,12 @@ spamToggle.MouseButton1Click:Connect(function()
             end)
         else
             states.spam = false
-            spamToggle.Text = "🔁 SPAM: OFF"
+            spamToggle.Text = "SPAM: OFF"
             spamToggle.BackgroundColor3 = COLORS.danger
         end
     end
 end)
 
--- Spam Mode Buttons
 for mode, btn in pairs(spamModeBtns) do
     btn.MouseButton1Click:Connect(function()
         currentSpamMode = mode
@@ -985,7 +980,6 @@ for mode, btn in pairs(spamModeBtns) do
     end)
 end
 
--- Clear History
 clearHistoryBtn.MouseButton1Click:Connect(function()
     lastMessages = {}
     for _, child in pairs(historyScroll:GetChildren()) do
@@ -994,8 +988,6 @@ clearHistoryBtn.MouseButton1Click:Connect(function()
         end
     end
 end)
-
--- ========== TOGGLE WITH RIGHT CONTROL ==========
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.RightControl then
@@ -1008,6 +1000,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- ========== INITIALIZE ==========
-
-print("✅ KBL Chat Hub Loaded - Tap the K button to open!")
+print("KBL Chat Hub Loaded - Tap the K button to open!")
