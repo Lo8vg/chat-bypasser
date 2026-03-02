@@ -1,4 +1,4 @@
--- KBL Chat Hub (Fixed)
+-- KBL Chat Hub (Mobile Fixed)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,8 +13,7 @@ local states = {
     autoCaps = false,
     autoLower = false,
     spam = false,
-    antiAFK = false,
-    fakeBubble = false
+    antiAFK = false
 }
 
 local spamDelay = 1
@@ -22,8 +21,7 @@ local antiAFKDelay = 60
 local antiAFKMessage = "afk"
 local lastMessages = {}
 local maxHistory = 20
-local spamConnection = nil
-local antiAFKConnection = nil
+local lastSentMessage = ""
 
 -- Colors
 local COLORS = {
@@ -31,7 +29,6 @@ local COLORS = {
     header = Color3.fromRGB(25, 25, 35),
     card = Color3.fromRGB(30, 30, 40),
     accent = Color3.fromRGB(255, 60, 100),
-    accent2 = Color3.fromRGB(255, 120, 50),
     text = Color3.fromRGB(255, 255, 255),
     textMuted = Color3.fromRGB(150, 150, 160),
     success = Color3.fromRGB(80, 200, 120),
@@ -73,7 +70,7 @@ hubButtonIcon.Font = Enum.Font.GothamBold
 hubButtonIcon.TextSize = 28
 hubButtonIcon.Parent = hubButton
 
--- ========== HUB FRAME (WIDE NOT TALL) ==========
+-- ========== HUB FRAME ==========
 
 local hubFrame = Instance.new("Frame")
 hubFrame.Name = "HubFrame"
@@ -109,13 +106,6 @@ titleBarFix.Size = UDim2.new(1, 0, 0, 16)
 titleBarFix.Position = UDim2.new(0, 0, 1, -16)
 titleBarFix.BackgroundColor3 = COLORS.header
 titleBarFix.BorderSizePixel = 0
-titleBarFix.Parent = titleBar
-
-local titleGradient = Instance.new("Frame")
-titleGradient.Size = UDim2.new(1, 0, 0, 3)
-titleGradient.Position = UDim2.new(0, 0, 1, -3)
-titleGradient.BackgroundColor3 = COLORS.accent
-titleGradient.BorderSizePixel = 0
 titleBarFix.Parent = titleBar
 
 local titleLabel = Instance.new("TextLabel")
@@ -308,6 +298,8 @@ quickLabel.Parent = mainSection
 
 -- Quick Messages
 local quickMsgs = {"GG", "Hello!", "Nice!", "LOL", "WTF", "Bye", "EZ", "Good game", "Noob", "Ty", "Hacker", "Lag"}
+local quickButtons = {}
+
 for i, msg in ipairs(quickMsgs) do
     local row = math.floor((i-1)/6)
     local col = (i-1) % 6
@@ -323,8 +315,10 @@ for i, msg in ipairs(quickMsgs) do
     btn.Parent = mainSection
     
     local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 4)
+    btnCorner.Radius = UDim.new(0, 4)
     btnCorner.Parent = btn
+    
+    quickButtons[btn] = msg
 end
 
 -- ========== TOOLS SECTION ==========
@@ -340,7 +334,7 @@ local antiAFKBtn = Instance.new("TextButton")
 antiAFKBtn.Size = UDim2.new(0.5, -3, 0, 40)
 antiAFKBtn.BackgroundColor3 = COLORS.card
 antiAFKBtn.TextColor3 = COLORS.text
-antiAFKBtn.Text = "💤 ANTI-AFK CHAT: OFF"
+antiAFKBtn.Text = "💤 ANTI-AFK: OFF"
 antiAFKBtn.Font = Enum.Font.GothamBold
 antiAFKBtn.TextSize = 10
 antiAFKBtn.Parent = toolsSection
@@ -377,18 +371,8 @@ antiAFKDelayInput.TextSize = 11
 antiAFKDelayInput.Parent = antiAFKDelayRow
 
 local antiAFKDelayCorner = Instance.new("UICorner")
-antiAFKDelayCorner.CornerRadius = UDim.new(0, 6)
+antiAFKDelayCorner.Radius = UDim.new(0, 6)
 antiAFKDelayCorner.Parent = antiAFKDelayInput
-
-local antiAFKDelaySec = Instance.new("TextLabel")
-antiAFKDelaySec.Size = UDim2.new(0, 30, 1, 0)
-antiAFKDelaySec.Position = UDim2.new(0, 105, 0, 0)
-antiAFKDelaySec.BackgroundTransparency = 1
-antiAFKDelaySec.TextColor3 = COLORS.textMuted
-antiAFKDelaySec.Text = "sec"
-antiAFKDelaySec.Font = Enum.Font.Gotham
-antiAFKDelaySec.TextSize = 11
-antiAFKDelaySec.Parent = antiAFKDelayRow
 
 -- Anti AFK Message
 local antiAFKMsgRow = Instance.new("Frame")
@@ -418,58 +402,28 @@ antiAFKMsgInput.TextSize = 11
 antiAFKMsgInput.Parent = antiAFKMsgRow
 
 local antiAFKMsgCorner = Instance.new("UICorner")
-antiAFKMsgCorner.CornerRadius = UDim.new(0, 6)
+antiAFKMsgCorner.Radius = UDim.new(0, 6)
 antiAFKMsgCorner.Parent = antiAFKMsgInput
 
--- Fake Bubble
-local fakeBubbleBtn = Instance.new("TextButton")
-fakeBubbleBtn.Size = UDim2.new(0.5, -3, 0, 40)
-fakeBubbleBtn.Position = UDim2.new(0, 0, 0, 85)
-fakeBubbleBtn.BackgroundColor3 = COLORS.card
-fakeBubbleBtn.TextColor3 = COLORS.text
-fakeBubbleBtn.Text = "💬 FAKE BUBBLE: OFF"
-fakeBubbleBtn.Font = Enum.Font.GothamBold
-fakeBubbleBtn.TextSize = 10
-fakeBubbleBtn.Parent = toolsSection
-
-local fakeBubbleCorner = Instance.new("UICorner")
-fakeBubbleCorner.CornerRadius = UDim.new(0, 6)
-fakeBubbleCorner.Parent = fakeBubbleBtn
-
--- Fake Bubble Input
-local fakeBubbleInput = Instance.new("TextBox")
-fakeBubbleInput.Size = UDim2.new(0.5, -3, 0, 40)
-fakeBubbleInput.Position = UDim2.new(0.5, 3, 0, 85)
-fakeBubbleInput.BackgroundColor3 = COLORS.card
-fakeBubbleInput.TextColor3 = COLORS.text
-fakeBubbleInput.Text = "Fake message!"
-fakeBubbleInput.Font = Enum.Font.Gotham
-fakeBubbleInput.TextSize = 11
-fakeBubbleInput.Parent = toolsSection
-
-local fakeBubbleInputCorner = Instance.new("UICorner")
-fakeBubbleInputCorner.CornerRadius = UDim.new(0, 6)
-fakeBubbleInputCorner.Parent = fakeBubbleInput
-
--- Repeated Message
+-- Repeat Last
 local repeatBtn = Instance.new("TextButton")
 repeatBtn.Size = UDim2.new(0.5, -3, 0, 40)
-repeatBtn.Position = UDim2.new(0, 0, 0, 130)
+repeatBtn.Position = UDim2.new(0, 0, 0, 85)
 repeatBtn.BackgroundColor3 = COLORS.card
 repeatBtn.TextColor3 = COLORS.text
-repeatBtn.Text = "🔁 REPEAT LAST: OFF"
+repeatBtn.Text = "🔁 REPEAT: OFF"
 repeatBtn.Font = Enum.Font.GothamBold
 repeatBtn.TextSize = 10
 repeatBtn.Parent = toolsSection
 
 local repeatCorner = Instance.new("UICorner")
-repeatCorner.CornerRadius = UDim.new(0, 6)
+repeatCorner.Radius = UDim.new(0, 6)
 repeatCorner.Parent = repeatBtn
 
 -- Repeat Count
 local repeatCountRow = Instance.new("Frame")
 repeatCountRow.Size = UDim2.new(0.5, -3, 0, 40)
-repeatCountRow.Position = UDim2.new(0.5, 3, 0, 130)
+repeatCountRow.Position = UDim2.new(0.5, 3, 0, 85)
 repeatCountRow.BackgroundTransparency = 1
 repeatCountRow.Parent = toolsSection
 
@@ -494,21 +448,8 @@ repeatCountInput.TextSize = 11
 repeatCountInput.Parent = repeatCountRow
 
 local repeatCountCorner = Instance.new("UICorner")
-repeatCountCorner.CornerRadius = UDim.new(0, 6)
+repeatCountCorner.Radius = UDim.new(0, 6)
 repeatCountCorner.Parent = repeatCountInput
-
--- Help Text
-local helpLabel = Instance.new("TextLabel")
-helpLabel.Size = UDim2.new(1, 0, 0, 50)
-helpLabel.Position = UDim2.new(0, 0, 0, 180)
-helpLabel.BackgroundTransparency = 1
-helpLabel.TextColor3 = COLORS.textMuted
-helpLabel.Text = "💡 Tips:\n• Auto Caps/Lower applies when sending\n• Fake Bubble shows above your head (only you see)\n• Repeat Last sends your last message multiple times"
-helpLabel.Font = Enum.Font.Gotham
-helpLabel.TextSize = 10
-helpLabel.TextXAlignment = Enum.TextXAlignment.Left
-helpLabel.TextYAlignment = Enum.TextYAlignment.Top
-helpLabel.Parent = toolsSection
 
 -- ========== SPAM SECTION ==========
 
@@ -534,7 +475,7 @@ spamInput.TextWrapped = true
 spamInput.Parent = spamSection
 
 local spamInputCorner = Instance.new("UICorner")
-spamInputCorner.CornerRadius = UDim.new(0, 8)
+spamInputCorner.Radius = UDim.new(0, 8)
 spamInputCorner.Parent = spamInput
 
 -- Spam Toggle
@@ -549,7 +490,7 @@ spamToggle.TextSize = 14
 spamToggle.Parent = spamSection
 
 local spamToggleCorner = Instance.new("UICorner")
-spamToggleCorner.CornerRadius = UDim.new(0, 6)
+spamToggleCorner.Radius = UDim.new(0, 6)
 spamToggleCorner.Parent = spamToggle
 
 -- Spam Delay
@@ -580,18 +521,8 @@ spamDelayInput.TextSize = 12
 spamDelayInput.Parent = spamDelayRow
 
 local spamDelayCorner = Instance.new("UICorner")
-spamDelayCorner.CornerRadius = UDim.new(0, 6)
+spamDelayCorner.Radius = UDim.new(0, 6)
 spamDelayCorner.Parent = spamDelayInput
-
-local spamDelaySec = Instance.new("TextLabel")
-spamDelaySec.Size = UDim2.new(0, 30, 1, 0)
-spamDelaySec.Position = UDim2.new(0, 105, 0, 0)
-spamDelaySec.BackgroundTransparency = 1
-spamDelaySec.TextColor3 = COLORS.textMuted
-spamDelaySec.Text = "sec"
-spamDelaySec.Font = Enum.Font.Gotham
-spamDelaySec.TextSize = 12
-spamDelaySec.Parent = spamDelayRow
 
 -- Spam Mode Label
 local spamModeLabel = Instance.new("TextLabel")
@@ -606,7 +537,7 @@ spamModeLabel.TextXAlignment = Enum.TextXAlignment.Left
 spamModeLabel.Parent = spamSection
 
 -- Spam Mode Buttons
-local spamModes = {"Normal", "CAPS", "lower", "AlTeRnAtE"}
+local spamModes = {"Normal", "CAPS", "lower", "AlTeRn"}
 local spamModeBtns = {}
 local currentSpamMode = "Normal"
 
@@ -634,9 +565,9 @@ warningLabel.Size = UDim2.new(1, 0, 0, 40)
 warningLabel.Position = UDim2.new(0, 0, 0, 165)
 warningLabel.BackgroundColor3 = Color3.fromRGB(60, 30, 30)
 warningLabel.TextColor3 = COLORS.text
-warningLabel.Text = "⚠️ WARNING: Spam may get you kicked or banned!\nUse responsibly."
+warningLabel.Text = "⚠️ WARNING: Spam may get you kicked!"
 warningLabel.Font = Enum.Font.Gotham
-warningLabel.TextSize = 10
+warningLabel.TextSize = 11
 warningLabel.TextWrapped = true
 warningLabel.Parent = spamSection
 
@@ -657,7 +588,7 @@ local historyLabel = Instance.new("TextLabel")
 historyLabel.Size = UDim2.new(1, 0, 0, 18)
 historyLabel.BackgroundTransparency = 1
 historyLabel.TextColor3 = COLORS.textMuted
-historyLabel.Text = "Recent Messages (Click to resend):"
+historyLabel.Text = "Recent Messages (Tap to resend):"
 historyLabel.Font = Enum.Font.GothamBold
 historyLabel.TextSize = 11
 historyLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -759,12 +690,12 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ========== TOGGLE HUB ==========
+-- ========== TOGGLE HUB (MOBILE FIX) ==========
 
-hubButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        wait(0.1)
-        if not dragging then
+hubButton.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local dragDistance = (input.Position - dragStart).Magnitude
+        if dragDistance < 10 then
             hubButton.Visible = false
             hubFrame.Visible = true
         end
@@ -774,19 +705,6 @@ end)
 collapseButton.MouseButton1Click:Connect(function()
     hubFrame.Visible = false
     hubButton.Visible = true
-end)
-
--- ========== TOGGLE WITH KEY ==========
-
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if input.KeyCode == Enum.KeyCode.RightControl then
-        if hubFrame.Visible then
-            hubFrame.Visible = false
-            hubButton.Visible = true
-        else
-            hubButton.Visible = not hubButton.Visible
-        end
-    end
 end)
 
 -- ========== TAB SWITCHING ==========
@@ -815,15 +733,12 @@ end
 
 -- ========== SEND MESSAGE FUNCTION ==========
 
-local lastSentMessage = ""
-
 local function sendMessage(msg)
     local message = msg or chatInput.Text
-    message = message:gsub("^%s+", ""):gsub("%s+$", ""):gsub("\n", " ")
+    message = message:gsub("^%s+", ""):gsub("%s+\$", ""):gsub("\n", " ")
     
     if message == "" then return false end
     
-    -- Store for history
     lastSentMessage = message
     
     -- Add to history
@@ -839,7 +754,7 @@ local function sendMessage(msg)
     end
     updateHistoryUI()
     
-    -- Try TextChatService first (new chat)
+    -- Try TextChatService first
     local TextChatService = game:GetService("TextChatService")
     if TextChatService then
         local channel = TextChatService:FindFirstChild("TextChannels")
@@ -852,7 +767,7 @@ local function sendMessage(msg)
         end
     end
     
-    -- Try DefaultChatSystem (old chat)
+    -- Try DefaultChatSystem
     local chatRemote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
     if chatRemote then
         local sayMessage = chatRemote:FindFirstChild("SayMessageRequest")
@@ -879,7 +794,7 @@ local function processMessage(message, mode)
         return message:upper()
     elseif mode == "lower" then
         return message:lower()
-    elseif mode == "AlTeRnAtE" then
+    elseif mode == "AlTeRn" then
         local result = ""
         for i = 1, #message do
             if i % 2 == 0 then
@@ -925,7 +840,7 @@ function updateHistoryUI()
     historyScroll.CanvasSize = UDim2.new(0, 0, 0, #lastMessages * 31)
 end
 
--- ========== TOGGLE BUTTON VISUAL ==========
+-- ========== TOGGLE BUTTON ==========
 
 local function toggleBtn(btn, state, onText, offText)
     btn.Text = state and onText or offText
@@ -985,29 +900,23 @@ chatInput.FocusLost:Connect(function(enterPressed)
     end
 end)
 
--- Quick Messages (reconnect after UI is built)
-spawn(function()
-    wait(0.3)
-    for _, child in pairs(mainSection:GetChildren()) do
-        if child:IsA("TextButton") and child.Text ~= "🔺 AUTO CAPS: OFF" and child.Text ~= "🔻 AUTO LOWER: OFF" and child.Text ~= "📤 SEND" and child.Text ~= "🗑️ CLEAR" then
-            local msgText = child.Text
-            child.MouseButton1Click:Connect(function()
-                local finalMsg = msgText
-                if states.autoCaps then
-                    finalMsg = finalMsg:upper()
-                elseif states.autoLower then
-                    finalMsg = finalMsg:lower()
-                end
-                sendMessage(finalMsg)
-            end)
+-- Quick Messages
+for btn, msg in pairs(quickButtons) do
+    btn.MouseButton1Click:Connect(function()
+        local finalMsg = msg
+        if states.autoCaps then
+            finalMsg = finalMsg:upper()
+        elseif states.autoLower then
+            finalMsg = finalMsg:lower()
         end
-    end
-end)
+        sendMessage(finalMsg)
+    end)
+end
 
 -- Anti-AFK Chat
 antiAFKBtn.MouseButton1Click:Connect(function()
     states.antiAFK = not states.antiAFK
-    toggleBtn(antiAFKBtn, states.antiAFK, "💤 ANTI-AFK CHAT: ON", "💤 ANTI-AFK CHAT: OFF")
+    toggleBtn(antiAFKBtn, states.antiAFK, "💤 ANTI-AFK: ON", "💤 ANTI-AFK: OFF")
     
     if states.antiAFK then
         local delay = tonumber(antiAFKDelayInput.Text) or 60
@@ -1024,65 +933,16 @@ antiAFKBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Fake Bubble
-fakeBubbleBtn.MouseButton1Click:Connect(function()
-    local msg = fakeBubbleInput.Text ~= "" and fakeBubbleInput.Text or "Fake message!"
-    
-    local character = player.Character
-    if not character then return end
-    
-    local head = character:FindFirstChild("Head")
-    if not head then return end
-    
-    local bubble = Instance.new("BillboardGui")
-    bubble.Name = "FakeBubble"
-    bubble.Size = UDim2.new(0, 200, 0, 50)
-    bubble.StudsOffset = Vector3.new(0, 3, 0)
-    bubble.Adornee = head
-    bubble.Parent = playerGui
-    
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    frame.BackgroundTransparency = 0.2
-    frame.Parent = bubble
-    
-    local frameCorner = Instance.new("UICorner")
-    frameCorner.Radius = UDim.new(0, 8)
-    frameCorner.Parent = frame
-    
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(200, 200, 200)
-    stroke.Thickness = 1
-    stroke.Parent = frame
-    
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -10, 1, 0)
-    label.Position = UDim2.new(0, 5, 0, 0)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(0, 0, 0)
-    label.Text = msg
-    label.Font = Enum.Font.GothamSemibold
-    label.TextSize = 14
-    label.TextWrapped = true
-    label.TextScaled = true
-    label.Parent = frame
-    
-    spawn(function()
-        wait(5)
-        bubble:Destroy()
-    end)
-end)
-
 -- Repeat Last Message
 local repeatState = false
-local repeatConnection = nil
 
 repeatBtn.MouseButton1Click:Connect(function()
-    repeatState = not repeatState
-    toggleBtn(repeatBtn, repeatState, "🔁 REPEAT LAST: ON", "🔁 REPEAT LAST: OFF")
+    if lastSentMessage == "" then return end
     
-    if repeatState and lastSentMessage ~= "" then
+    repeatState = not repeatState
+    toggleBtn(repeatBtn, repeatState, "🔁 REPEAT: ON", "🔁 REPEAT: OFF")
+    
+    if repeatState then
         local count = tonumber(repeatCountInput.Text) or 5
         spawn(function()
             for i = 1, count do
@@ -1091,7 +951,7 @@ repeatBtn.MouseButton1Click:Connect(function()
                 wait(0.5)
             end
             repeatState = false
-            toggleBtn(repeatBtn, false, "🔁 REPEAT LAST: ON", "🔁 REPEAT LAST: OFF")
+            toggleBtn(repeatBtn, false, "🔁 REPEAT: ON", "🔁 REPEAT: OFF")
         end)
     end
 end)
@@ -1145,4 +1005,4 @@ end)
 
 -- ========== INITIALIZE ==========
 
-print("✅ KBL Chat Hub Loaded - Press RightControl to toggle")
+print("✅ KBL Chat Hub Loaded - Tap the K button to open")
