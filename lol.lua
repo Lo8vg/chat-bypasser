@@ -1,5 +1,5 @@
--- BodyMover Fling Script (Rewritten)
--- Fixed for moving targets + added modes
+-- BodyMover Fling Script
+-- Uses actual physics constraints (BodyAngularVelocity + BodyVelocity)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -12,12 +12,6 @@ local playerGui = player:WaitForChild("PlayerGui")
 local flingEnabled = false
 local targetPlayer = nil
 local flingLoop = nil
-local flingCount = 0
-local killCount = 0
-local lastTargetHealth = 100
-
--- Fling Modes: "Normal", "Orbit", "Chase", "Vertical"
-local currentMode = "Normal"
 
 -- Colors
 local COLORS = {
@@ -26,7 +20,6 @@ local COLORS = {
     buttonPrimary = Color3.fromRGB(0, 120, 215),
     buttonDanger = Color3.fromRGB(220, 53, 69),
     buttonSuccess = Color3.fromRGB(40, 167, 69),
-    buttonWarning = Color3.fromRGB(255, 193, 7),
     textDark = Color3.fromRGB(33, 37, 41),
     textLight = Color3.fromRGB(255, 255, 255),
     textMuted = Color3.fromRGB(134, 142, 150),
@@ -74,8 +67,8 @@ hubButtonIcon.Parent = hubButton
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 450, 0, 320)
-mainFrame.Position = UDim2.new(0.5, -225, 0.5, -160)
+mainFrame.Size = UDim2.new(0, 400, 0, 250)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -125)
 mainFrame.BackgroundColor3 = COLORS.background
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -113,7 +106,7 @@ titleLabel.Size = UDim2.new(1, -50, 1, 0)
 titleLabel.Position = UDim2.new(0, 15, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = COLORS.textDark
-titleLabel.Text = "🌀 BodyMover Fling v2"
+titleLabel.Text = "🌀 BodyMover Fling"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 14
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -136,57 +129,15 @@ collapseCorner.Parent = collapseButton
 -- ========== LEFT FRAME ==========
 
 local leftFrame = Instance.new("Frame")
-leftFrame.Size = UDim2.new(0.55, -15, 1, -50)
+leftFrame.Size = UDim2.new(0.5, -15, 1, -50)
 leftFrame.Position = UDim2.new(0, 10, 0, 40)
 leftFrame.BackgroundTransparency = 1
 leftFrame.Parent = mainFrame
 
--- Target Input Row
-local targetInputRow = Instance.new("Frame")
-targetInputRow.Size = UDim2.new(1, 0, 0, 24)
-targetInputRow.Position = UDim2.new(0, 0, 0, 0)
-targetInputRow.BackgroundTransparency = 1
-targetInputRow.Parent = leftFrame
-
-local targetInput = Instance.new("TextBox")
-targetInput.Size = UDim2.new(1, -75, 1, 0)
-targetInput.BackgroundColor3 = COLORS.inputBg
-targetInput.TextColor3 = COLORS.textDark
-targetInput.Text = ""
-targetInput.PlaceholderText = "Enter player name..."
-targetInput.PlaceholderColor3 = COLORS.textMuted
-targetInput.Font = Enum.Font.Gotham
-targetInput.TextSize = 10
-targetInput.ClearTextOnFocus = false
-targetInput.Parent = targetInputRow
-
-local targetInputCorner = Instance.new("UICorner")
-targetInputCorner.Radius = UDim.new(0, 5)
-targetInputCorner.Parent = targetInput
-
-local targetInputStroke = Instance.new("UIStroke")
-targetInputStroke.Color = COLORS.border
-targetInputStroke.Thickness = 1
-targetInputStroke.Parent = targetInput
-
-local nearestBtn = Instance.new("TextButton")
-nearestBtn.Size = UDim2.new(0, 65, 1, 0)
-nearestBtn.Position = UDim2.new(1, -70, 0, 0)
-nearestBtn.BackgroundColor3 = COLORS.buttonWarning
-nearestBtn.TextColor3 = COLORS.textDark
-nearestBtn.Text = "Nearest"
-nearestBtn.Font = Enum.Font.GothamBold
-nearestBtn.TextSize = 9
-nearestBtn.Parent = targetInputRow
-
-local nearestCorner = Instance.new("UICorner")
-nearestCorner.Radius = UDim.new(0, 5)
-nearestCorner.Parent = nearestBtn
-
 -- Toggle Button
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.new(1, 0, 0, 35)
-toggleButton.Position = UDim2.new(0, 0, 0, 28)
+toggleButton.Position = UDim2.new(0, 0, 0, 0)
 toggleButton.BackgroundColor3 = COLORS.buttonDanger
 toggleButton.TextColor3 = COLORS.textLight
 toggleButton.Text = "FLING: OFF"
@@ -198,41 +149,24 @@ local toggleCorner = Instance.new("UICorner")
 toggleCorner.Radius = UDim.new(0, 8)
 toggleCorner.Parent = toggleButton
 
--- Counters Row
-local counterRow = Instance.new("Frame")
-counterRow.Size = UDim2.new(1, 0, 0, 18)
-counterRow.Position = UDim2.new(0, 0, 0, 68)
-counterRow.BackgroundTransparency = 1
-counterRow.Parent = leftFrame
-
+-- Fling Counter
 local flingCounter = Instance.new("TextLabel")
-flingCounter.Size = UDim2.new(0.5, 0, 1, 0)
+flingCounter.Size = UDim2.new(1, 0, 0, 18)
+flingCounter.Position = UDim2.new(0, 0, 0, 40)
 flingCounter.BackgroundTransparency = 1
 flingCounter.TextColor3 = COLORS.buttonSuccess
 flingCounter.Text = "Flings: 0"
 flingCounter.Font = Enum.Font.GothamBold
-flingCounter.TextSize = 10
-flingCounter.TextXAlignment = Enum.TextXAlignment.Left
-flingCounter.Parent = counterRow
-
-local killCounter = Instance.new("TextLabel")
-killCounter.Size = UDim2.new(0.5, 0, 1, 0)
-killCounter.Position = UDim2.new(0.5, 0, 0, 0)
-killCounter.BackgroundTransparency = 1
-killCounter.TextColor3 = COLORS.buttonDanger
-killCounter.Text = "Kills: 0"
-killCounter.Font = Enum.Font.GothamBold
-killCounter.TextSize = 10
-killCounter.TextXAlignment = Enum.TextXAlignment.Right
-killCounter.Parent = counterRow
+flingCounter.TextSize = 11
+flingCounter.Parent = leftFrame
 
 -- Target Label
 local targetLabel = Instance.new("TextLabel")
 targetLabel.Size = UDim2.new(1, 0, 0, 16)
-targetLabel.Position = UDim2.new(0, 0, 0, 88)
+targetLabel.Position = UDim2.new(0, 0, 0, 58)
 targetLabel.BackgroundTransparency = 1
 targetLabel.TextColor3 = COLORS.textDark
-targetLabel.Text = "Or select from list:"
+targetLabel.Text = "Select Target:"
 targetLabel.Font = Enum.Font.GothamBold
 targetLabel.TextSize = 10
 targetLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -240,8 +174,8 @@ targetLabel.Parent = leftFrame
 
 -- Player List
 local playerScroll = Instance.new("ScrollingFrame")
-playerScroll.Size = UDim2.new(1, 0, 0, 100)
-playerScroll.Position = UDim2.new(0, 0, 0, 106)
+playerScroll.Size = UDim2.new(1, 0, 0, 80)
+playerScroll.Position = UDim2.new(0, 0, 0, 76)
 playerScroll.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
 playerScroll.ScrollBarThickness = 4
 playerScroll.Parent = leftFrame
@@ -257,7 +191,7 @@ playerLayout.Parent = playerScroll
 -- Status Label
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, 0, 0, 18)
-statusLabel.Position = UDim2.new(0, 0, 0, 210)
+statusLabel.Position = UDim2.new(0, 0, 0, 160)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = COLORS.textMuted
 statusLabel.Text = "No target selected"
@@ -266,57 +200,23 @@ statusLabel.TextSize = 10
 statusLabel.TextWrapped = true
 statusLabel.Parent = leftFrame
 
--- Mode Buttons Label
-local modeLabel = Instance.new("TextLabel")
-modeLabel.Size = UDim2.new(1, 0, 0, 16)
-modeLabel.Position = UDim2.new(0, 0, 0, 232)
-modeLabel.BackgroundTransparency = 1
-modeLabel.TextColor3 = COLORS.textDark
-modeLabel.Text = "Fling Mode:"
-modeLabel.Font = Enum.Font.GothamBold
-modeLabel.TextSize = 10
-modeLabel.TextXAlignment = Enum.TextXAlignment.Left
-modeLabel.Parent = leftFrame
-
--- Mode Buttons
-local modes = {"Normal", "Chase", "Orbit", "Vertical"}
-local modeButtons = {}
-
-for i, mode in ipairs(modes) do
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1/#modes, -3, 0, 24)
-    btn.Position = UDim2.new((i-1)/#modes + (i-1)*(3/200), 0, 0, 250)
-    btn.BackgroundColor3 = i == 1 and COLORS.buttonPrimary or Color3.fromRGB(240, 240, 240)
-    btn.TextColor3 = i == 1 and COLORS.textLight or COLORS.textDark
-    btn.Text = mode
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 9
-    btn.Parent = leftFrame
-    
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.Radius = UDim.new(0, 5)
-    btnCorner.Parent = btn
-    
-    modeButtons[mode] = btn
-end
-
 -- ========== RIGHT FRAME ==========
 
 local rightFrame = Instance.new("Frame")
-rightFrame.Size = UDim2.new(0.45, -15, 1, -50)
-rightFrame.Position = UDim2.new(0.55, 5, 0, 40)
+rightFrame.Size = UDim2.new(0.5, -15, 1, -50)
+rightFrame.Position = UDim2.new(0.5, 5, 0, 40)
 rightFrame.BackgroundTransparency = 1
 rightFrame.Parent = mainFrame
 
 -- Spin Power
 local spinRow = Instance.new("Frame")
-spinRow.Size = UDim2.new(1, 0, 0, 24)
+spinRow.Size = UDim2.new(1, 0, 0, 22)
 spinRow.Position = UDim2.new(0, 0, 0, 0)
 spinRow.BackgroundTransparency = 1
 spinRow.Parent = rightFrame
 
 local spinLabel = Instance.new("TextLabel")
-spinLabel.Size = UDim2.new(0, 90, 1, 0)
+spinLabel.Size = UDim2.new(0, 100, 1, 0)
 spinLabel.BackgroundTransparency = 1
 spinLabel.TextColor3 = COLORS.textDark
 spinLabel.Text = "Spin Power:"
@@ -327,7 +227,7 @@ spinLabel.Parent = spinRow
 
 local spinInput = Instance.new("TextBox")
 spinInput.Size = UDim2.new(0, 80, 1, 0)
-spinInput.Position = UDim2.new(0, 95, 0, 0)
+spinInput.Position = UDim2.new(0, 105, 0, 0)
 spinInput.BackgroundColor3 = COLORS.inputBg
 spinInput.TextColor3 = COLORS.textDark
 spinInput.Text = "999999"
@@ -347,13 +247,13 @@ spinStroke.Parent = spinInput
 
 -- Launch Power
 local launchRow = Instance.new("Frame")
-launchRow.Size = UDim2.new(1, 0, 0, 24)
-launchRow.Position = UDim2.new(0, 0, 0, 28)
+launchRow.Size = UDim2.new(1, 0, 0, 22)
+launchRow.Position = UDim2.new(0, 0, 0, 26)
 launchRow.BackgroundTransparency = 1
 launchRow.Parent = rightFrame
 
 local launchLabel = Instance.new("TextLabel")
-launchLabel.Size = UDim2.new(0, 90, 1, 0)
+launchLabel.Size = UDim2.new(0, 100, 1, 0)
 launchLabel.BackgroundTransparency = 1
 launchLabel.TextColor3 = COLORS.textDark
 launchLabel.Text = "Launch Power:"
@@ -364,7 +264,7 @@ launchLabel.Parent = launchRow
 
 local launchInput = Instance.new("TextBox")
 launchInput.Size = UDim2.new(0, 80, 1, 0)
-launchInput.Position = UDim2.new(0, 95, 0, 0)
+launchInput.Position = UDim2.new(0, 105, 0, 0)
 launchInput.BackgroundColor3 = COLORS.inputBg
 launchInput.TextColor3 = COLORS.textDark
 launchInput.Text = "999999"
@@ -382,15 +282,15 @@ launchStroke.Color = COLORS.border
 launchStroke.Thickness = 1
 launchStroke.Parent = launchInput
 
--- Prediction
+-- Prediction (NEW)
 local predRow = Instance.new("Frame")
-predRow.Size = UDim2.new(1, 0, 0, 24)
-predRow.Position = UDim2.new(0, 0, 0, 56)
+predRow.Size = UDim2.new(1, 0, 0, 22)
+predRow.Position = UDim2.new(0, 0, 0, 52)
 predRow.BackgroundTransparency = 1
 predRow.Parent = rightFrame
 
 local predLabel = Instance.new("TextLabel")
-predLabel.Size = UDim2.new(0, 90, 1, 0)
+predLabel.Size = UDim2.new(0, 100, 1, 0)
 predLabel.BackgroundTransparency = 1
 predLabel.TextColor3 = COLORS.textDark
 predLabel.Text = "Prediction:"
@@ -401,7 +301,7 @@ predLabel.Parent = predRow
 
 local predInput = Instance.new("TextBox")
 predInput.Size = UDim2.new(0, 80, 1, 0)
-predInput.Position = UDim2.new(0, 95, 0, 0)
+predInput.Position = UDim2.new(0, 105, 0, 0)
 predInput.BackgroundColor3 = COLORS.inputBg
 predInput.TextColor3 = COLORS.textDark
 predInput.Text = "0.15"
@@ -421,11 +321,11 @@ predStroke.Parent = predInput
 
 -- Info
 local infoLabel = Instance.new("TextLabel")
-infoLabel.Size = UDim2.new(1, 0, 0, 100)
-infoLabel.Position = UDim2.new(0, 0, 0, 90)
+infoLabel.Size = UDim2.new(1, 0, 0, 70)
+infoLabel.Position = UDim2.new(0, 0, 0, 80)
 infoLabel.BackgroundTransparency = 1
 infoLabel.TextColor3 = COLORS.textMuted
-infoLabel.Text = "MODES:\n• Normal - Standard fling\n• Chase - Aggressive tracking\n• Orbit - Spin around target\n• Vertical - Launch upward\n\nHigher prediction = better for\nfast-moving targets"
+infoLabel.Text = "Uses BodyAngularVelocity +\nBodyVelocity (real physics).\nYou will SPIN visibly.\nPrediction helps hit moving targets."
 infoLabel.Font = Enum.Font.Gotham
 infoLabel.TextSize = 9
 infoLabel.TextWrapped = true
@@ -514,6 +414,7 @@ end)
 -- ========== PLAYER LIST ==========
 
 local playerButtons = {}
+local flingCount = 0
 
 local function updatePlayerList()
     for _, btn in pairs(playerButtons) do
@@ -538,7 +439,6 @@ local function updatePlayerList()
             
             btn.MouseButton1Click:Connect(function()
                 targetPlayer = plr
-                targetInput.Text = plr.Name
                 statusLabel.Text = "Target: " .. plr.Name
                 updatePlayerList()
             end)
@@ -558,41 +458,14 @@ end)
 
 updatePlayerList()
 
--- ========== HELPER FUNCTIONS ==========
+-- ========== FLING FUNCTION ==========
 
 local function getRoot(char)
     return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
 end
 
-local function getNearestPlayer()
-    local myChar = player.Character
-    if not myChar then return nil end
-    
-    local myRoot = getRoot(myChar)
-    if not myRoot then return nil end
-    
-    local nearest = nil
-    local nearestDist = math.huge
-    
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= player and plr.Character then
-            local root = getRoot(plr.Character)
-            if root then
-                local dist = (root.Position - myRoot.Position).Magnitude
-                if dist < nearestDist then
-                    nearestDist = dist
-                    nearest = plr
-                end
-            end
-        end
-    end
-    
-    return nearest
-end
-
 local bodyAngularVel = nil
 local bodyVel = nil
-local orbitAngle = 0
 
 local function stopFling()
     if flingLoop then
@@ -600,6 +473,7 @@ local function stopFling()
         flingLoop = nil
     end
     
+    -- Remove body movers
     if bodyAngularVel then
         bodyAngularVel:Destroy()
         bodyAngularVel = nil
@@ -639,11 +513,12 @@ local function startFling()
     
     if not myRoot then return end
     
+    -- Get power values
     local spinPower = tonumber(spinInput.Text) or 999999
     local launchPower = tonumber(launchInput.Text) or 999999
     local prediction = tonumber(predInput.Text) or 0.15
     
-    -- Create BodyAngularVelocity
+    -- Create BodyAngularVelocity (this creates VISIBLE SPIN)
     if bodyAngularVel then bodyAngularVel:Destroy() end
     bodyAngularVel = Instance.new("BodyAngularVelocity")
     bodyAngularVel.Name = "FlingSpin"
@@ -652,7 +527,7 @@ local function startFling()
     bodyAngularVel.P = math.huge
     bodyAngularVel.Parent = myRoot
     
-    -- Create BodyVelocity
+    -- Create BodyVelocity (this creates LAUNCH force)
     if bodyVel then bodyVel:Destroy() end
     bodyVel = Instance.new("BodyVelocity")
     bodyVel.Name = "FlingLaunch"
@@ -661,13 +536,12 @@ local function startFling()
     bodyVel.P = math.huge
     bodyVel.Parent = myRoot
     
+    -- PlatformStand to let physics take over
     if myHumanoid then
         myHumanoid.PlatformStand = true
     end
     
-    orbitAngle = 0
-    
-    -- Use RenderStepped for faster updates
+    -- Teleport loop (CHANGED TO RenderStepped + Prediction)
     flingLoop = RunService.RenderStepped:Connect(function()
         if not flingEnabled then return end
         
@@ -684,48 +558,14 @@ local function startFling()
         local targetRoot = getRoot(targetPlayer.Character)
         if not targetRoot then return end
         
-        local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
-        
-        -- Track kills
-        if targetHumanoid then
-            local currentHealth = targetHumanoid.Health
-            if lastTargetHealth > 0 and currentHealth <= 0 then
-                killCount = killCount + 1
-                killCounter.Text = "Kills: " .. killCount
-            end
-            lastTargetHealth = currentHealth
-        end
-        
-        -- Get target velocity for prediction
+        -- VELOCITY PREDICTION (NEW)
         local targetVel = targetRoot.AssemblyLinearVelocity or Vector3.new(0, 0, 0)
         local predictedPos = targetRoot.Position + (targetVel * prediction)
         
-        if currentMode == "Normal" then
-            -- Standard fling with prediction
-            root.CFrame = CFrame.new(predictedPos) * targetRoot.CFrame.Rotation
-            
-        elseif currentMode == "Chase" then
-            -- Aggressive tracking - higher prediction
-            local chasePred = targetVel * (prediction * 2)
-            local chasePos = targetRoot.Position + chasePred
-            root.CFrame = CFrame.new(chasePos) * targetRoot.CFrame.Rotation
-            
-        elseif currentMode == "Orbit" then
-            -- Spin around target
-            orbitAngle = orbitAngle + 0.3
-            local orbitDist = 3
-            local offsetX = math.cos(orbitAngle) * orbitDist
-            local offsetZ = math.sin(orbitAngle) * orbitDist
-            local orbitPos = predictedPos + Vector3.new(offsetX, 0, offsetZ)
-            root.CFrame = CFrame.new(orbitPos, predictedPos)
-            
-        elseif currentMode == "Vertical" then
-            -- Launch straight up while tracking
-            root.CFrame = CFrame.new(predictedPos + Vector3.new(0, 5, 0))
-            bodyVel.Velocity = Vector3.new(0, launchPower * 2, 0)
-        end
+        -- Teleport to predicted position
+        root.CFrame = CFrame.new(predictedPos) * targetRoot.CFrame.Rotation
         
-        -- Re-apply body movers if removed
+        -- Re-apply body movers (they might get removed)
         if not root:FindFirstChild("FlingSpin") then
             bodyAngularVel = Instance.new("BodyAngularVelocity")
             bodyAngularVel.Name = "FlingSpin"
@@ -746,70 +586,15 @@ local function startFling()
     end)
 end
 
--- ========== MODE BUTTONS ==========
-
-for mode, btn in pairs(modeButtons) do
-    btn.MouseButton1Click:Connect(function()
-        currentMode = mode
-        for m, b in pairs(modeButtons) do
-            if m == mode then
-                b.BackgroundColor3 = COLORS.buttonPrimary
-                b.TextColor3 = COLORS.textLight
-            else
-                b.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
-                b.TextColor3 = COLORS.textDark
-            end
-        end
-    end)
-end
-
--- ========== NEAREST BUTTON ==========
-
-nearestBtn.MouseButton1Click:Connect(function()
-    local nearest = getNearestPlayer()
-    if nearest then
-        targetPlayer = nearest
-        targetInput.Text = nearest.Name
-        statusLabel.Text = "Target: " .. nearest.Name
-        updatePlayerList()
-    else
-        statusLabel.Text = "No players nearby"
-    end
-end)
-
--- ========== TARGET INPUT ==========
-
-targetInput.FocusLost:Connect(function(enterPressed)
-    if enterPressed or true then
-        local name = targetInput.Text:lower()
-        for _, plr in pairs(Players:GetPlayers()) do
-            if plr ~= player and plr.Name:lower():sub(1, #name) == name then
-                targetPlayer = plr
-                statusLabel.Text = "Target: " .. plr.Name
-                updatePlayerList()
-                return
-            end
-        end
-        statusLabel.Text = "Player not found"
-    end
-end)
-
 -- ========== FLING TOGGLE ==========
 
 toggleButton.MouseButton1Click:Connect(function()
     flingEnabled = not flingEnabled
     
     if flingEnabled then
-        if not targetPlayer then
-            statusLabel.Text = "Select a target first!"
-            flingEnabled = false
-            return
-        end
-        
         toggleButton.Text = "FLING: ON"
         toggleButton.BackgroundColor3 = COLORS.buttonSuccess
-        statusLabel.Text = "Flinging: " .. targetPlayer.Name .. " (" .. currentMode .. ")"
-        lastTargetHealth = 100
+        statusLabel.Text = targetPlayer and ("Flinging: " .. targetPlayer.Name) or "No target selected"
         
         startFling()
         
@@ -850,6 +635,6 @@ player.CharacterRemoving:Connect(function()
     stopFling()
 end)
 
-print("✅ BodyMover Fling v2 Loaded")
-print("   Modes: Normal, Chase, Orbit, Vertical")
-print("   Fixed for moving targets with velocity prediction")
+print("✅ BodyMover Fling Loaded")
+print("   Uses BodyAngularVelocity + BodyVelocity")
+print("   Prediction added for moving targets")
