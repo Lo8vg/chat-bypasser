@@ -1,4 +1,5 @@
--- BodyMover Fling Hub (Mobile Fixed - Same Structure as Working Chat Hub)
+-- BodyMover Fling Script (Mobile Fixed)
+-- Uses actual physics constraints (BodyAngularVelocity + BodyVelocity)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -11,181 +12,224 @@ local playerGui = player:WaitForChild("PlayerGui")
 local flingEnabled = false
 local targetPlayer = nil
 local flingLoop = nil
-local flingCount = 0
+
+-- Colors
+local COLORS = {
+    background = Color3.fromRGB(245, 245, 245),
+    header = Color3.fromRGB(255, 255, 255),
+    buttonPrimary = Color3.fromRGB(0, 120, 215),
+    buttonDanger = Color3.fromRGB(220, 53, 69),
+    buttonSuccess = Color3.fromRGB(40, 167, 69),
+    textDark = Color3.fromRGB(33, 37, 41),
+    textLight = Color3.fromRGB(255, 255, 255),
+    textMuted = Color3.fromRGB(134, 142, 150),
+    inputBg = Color3.fromRGB(255, 255, 255),
+    border = Color3.fromRGB(222, 226, 230),
+    cardBg = Color3.fromRGB(255, 255, 255)
+}
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "FlingHub"
+screenGui.Name = "FlingGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- ========== HUB BUTTON (Collapsed State) ==========
+-- ========== HUB BUTTON ==========
+
 local hubButton = Instance.new("Frame")
 hubButton.Name = "HubButton"
 hubButton.Size = UDim2.new(0, 50, 0, 50)
 hubButton.Position = UDim2.new(0, 20, 0.5, -25)
-hubButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-hubButton.BorderSizePixel = 2
-hubButton.BorderColor3 = Color3.fromRGB(60, 60, 60)
+hubButton.BackgroundColor3 = COLORS.cardBg
+hubButton.BorderSizePixel = 0
+hubButton.Visible = true
 hubButton.Parent = screenGui
 
-local hubCorner = Instance.new("UICorner")
-hubCorner.CornerRadius = UDim.new(0, 8)
-hubCorner.Parent = hubButton
+local hubButtonCorner = Instance.new("UICorner")
+hubButtonCorner.CornerRadius = UDim.new(0, 10)
+hubButtonCorner.Parent = hubButton
 
-local hubIcon = Instance.new("TextLabel")
-hubIcon.Size = UDim2.new(1, 0, 1, 0)
-hubIcon.BackgroundTransparency = 1
-hubIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
-hubIcon.Text = "🌀"
-hubIcon.Font = Enum.Font.GothamBold
-hubIcon.TextSize = 22
-hubIcon.Parent = hubButton
+local hubButtonShadow = Instance.new("UIStroke")
+hubButtonShadow.Color = COLORS.border
+hubButtonShadow.Thickness = 1
+hubButtonShadow.Parent = hubButton
 
--- ========== MAIN FRAME (Expanded State) ==========
+local hubButtonIcon = Instance.new("TextLabel")
+hubButtonIcon.Size = UDim2.new(1, 0, 1, 0)
+hubButtonIcon.BackgroundTransparency = 1
+hubButtonIcon.TextColor3 = COLORS.textDark
+hubButtonIcon.Text = "🌀"
+hubButtonIcon.Font = Enum.Font.GothamBold
+hubButtonIcon.TextSize = 22
+hubButtonIcon.Parent = hubButton
+
+-- ========== MAIN FRAME ==========
+
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 220, 0, 300)
-mainFrame.Position = UDim2.new(0, 20, 0.5, -150)
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-mainFrame.BorderSizePixel = 2
-mainFrame.BorderColor3 = Color3.fromRGB(60, 60, 60)
+mainFrame.Size = UDim2.new(0, 400, 0, 250)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -125)
+mainFrame.BackgroundColor3 = COLORS.background
+mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
 mainFrame.Parent = screenGui
 
-local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(0, 8)
-mainCorner.Parent = mainFrame
+local mainFrameCorner = Instance.new("UICorner")
+mainFrameCorner.CornerRadius = UDim.new(0, 14)
+mainFrameCorner.Parent = mainFrame
+
+local mainFrameShadow = Instance.new("UIStroke")
+mainFrameShadow.Color = Color3.fromRGB(180, 180, 180)
+mainFrameShadow.Thickness = 1
+mainFrameShadow.Parent = mainFrame
 
 -- Title Bar
 local titleBar = Instance.new("Frame")
-titleBar.Name = "TitleBar"
-titleBar.Size = UDim2.new(1, 0, 0, 28)
-titleBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+titleBar.Size = UDim2.new(1, 0, 0, 35)
+titleBar.BackgroundColor3 = COLORS.header
 titleBar.BorderSizePixel = 0
 titleBar.Parent = mainFrame
 
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 8)
-titleCorner.Parent = titleBar
+local titleBarCorner = Instance.new("UICorner")
+titleBarCorner.CornerRadius = UDim.new(0, 14)
+titleBarCorner.Parent = titleBar
 
-local titleFix = Instance.new("Frame")
-titleFix.Size = UDim2.new(1, 0, 0, 10)
-titleFix.Position = UDim2.new(0, 0, 1, -10)
-titleFix.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-titleFix.BorderSizePixel = 0
-titleFix.Parent = titleBar
+local titleBarFix = Instance.new("Frame")
+titleBarFix.Size = UDim2.new(1, 0, 0, 14)
+titleBarFix.Position = UDim2.new(0, 0, 1, -14)
+titleBarFix.BackgroundColor3 = COLORS.header
+titleBarFix.BorderSizePixel = 0
+titleBarFix.Parent = titleBar
 
 local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, -40, 1, 0)
-titleLabel.Position = UDim2.new(0, 10, 0, 0)
+titleLabel.Size = UDim2.new(1, -50, 1, 0)
+titleLabel.Position = UDim2.new(0, 15, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.Text = "🌀 Fling Hub"
+titleLabel.TextColor3 = COLORS.textDark
+titleLabel.Text = "🌀 BodyMover Fling"
 titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextSize = 13
+titleLabel.TextSize = 14
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = titleBar
 
--- Collapse Button
-local collapseBtn = Instance.new("TextButton")
-collapseBtn.Size = UDim2.new(0, 28, 0, 22)
-collapseBtn.Position = UDim2.new(1, -32, 0.5, -11)
-collapseBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-collapseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-collapseBtn.Text = "×"
-collapseBtn.Font = Enum.Font.GothamBold
-collapseBtn.TextSize = 14
-collapseBtn.Parent = titleBar
+local collapseButton = Instance.new("TextButton")
+collapseButton.Size = UDim2.new(0, 28, 0, 22)
+collapseButton.Position = UDim2.new(1, -35, 0.5, -11)
+collapseButton.BackgroundColor3 = COLORS.buttonDanger
+collapseButton.TextColor3 = COLORS.textLight
+collapseButton.Text = "✕"
+collapseButton.Font = Enum.Font.GothamBold
+collapseButton.TextSize = 11
+collapseButton.Parent = titleBar
 
 local collapseCorner = Instance.new("UICorner")
 collapseCorner.Radius = UDim.new(0, 6)
-collapseCorner.Parent = collapseBtn
+collapseCorner.Parent = collapseButton
 
--- Content Frame
-local contentFrame = Instance.new("Frame")
-contentFrame.Size = UDim2.new(1, 0, 1, -28)
-contentFrame.Position = UDim2.new(0, 0, 0, 28)
-contentFrame.BackgroundTransparency = 1
-contentFrame.Parent = mainFrame
+-- ========== LEFT FRAME ==========
+
+local leftFrame = Instance.new("Frame")
+leftFrame.Size = UDim2.new(0.5, -15, 1, -50)
+leftFrame.Position = UDim2.new(0, 10, 0, 40)
+leftFrame.BackgroundTransparency = 1
+leftFrame.Parent = mainFrame
 
 -- Toggle Button
-local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(1, -20, 0, 32)
-toggleBtn.Position = UDim2.new(0, 10, 0, 8)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleBtn.Text = "FLING: OFF"
-toggleBtn.Font = Enum.Font.GothamBold
-toggleBtn.TextSize = 13
-toggleBtn.Parent = contentFrame
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(1, 0, 0, 35)
+toggleButton.Position = UDim2.new(0, 0, 0, 0)
+toggleButton.BackgroundColor3 = COLORS.buttonDanger
+toggleButton.TextColor3 = COLORS.textLight
+toggleButton.Text = "FLING: OFF"
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.TextSize = 14
+toggleButton.Parent = leftFrame
 
 local toggleCorner = Instance.new("UICorner")
-toggleCorner.Radius = UDim.new(0, 6)
-toggleCorner.Parent = toggleBtn
+toggleCorner.Radius = UDim.new(0, 8)
+toggleCorner.Parent = toggleButton
 
--- Counter Label
-local counterLabel = Instance.new("TextLabel")
-counterLabel.Size = UDim2.new(1, -20, 0, 16)
-counterLabel.Position = UDim2.new(0, 10, 0, 44)
-counterLabel.BackgroundTransparency = 1
-counterLabel.TextColor3 = Color3.fromRGB(100, 200, 100)
-counterLabel.Text = "Flings: 0"
-counterLabel.Font = Enum.Font.GothamBold
-counterLabel.TextSize = 11
-counterLabel.TextXAlignment = Enum.TextXAlignment.Left
-counterLabel.Parent = contentFrame
+-- Fling Counter
+local flingCounter = Instance.new("TextLabel")
+flingCounter.Size = UDim2.new(1, 0, 0, 18)
+flingCounter.Position = UDim2.new(0, 0, 0, 40)
+flingCounter.BackgroundTransparency = 1
+flingCounter.TextColor3 = COLORS.buttonSuccess
+flingCounter.Text = "Flings: 0"
+flingCounter.Font = Enum.Font.GothamBold
+flingCounter.TextSize = 11
+flingCounter.Parent = leftFrame
 
 -- Target Label
 local targetLabel = Instance.new("TextLabel")
-targetLabel.Size = UDim2.new(1, -20, 0, 16)
-targetLabel.Position = UDim2.new(0, 10, 0, 62)
+targetLabel.Size = UDim2.new(1, 0, 0, 16)
+targetLabel.Position = UDim2.new(0, 0, 0, 58)
 targetLabel.BackgroundTransparency = 1
-targetLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+targetLabel.TextColor3 = COLORS.textDark
 targetLabel.Text = "Select Target:"
-targetLabel.Font = Enum.Font.Gotham
+targetLabel.Font = Enum.Font.GothamBold
 targetLabel.TextSize = 10
 targetLabel.TextXAlignment = Enum.TextXAlignment.Left
-targetLabel.Parent = contentFrame
+targetLabel.Parent = leftFrame
 
 -- Player List
 local playerScroll = Instance.new("ScrollingFrame")
-playerScroll.Size = UDim2.new(1, -20, 0, 80)
-playerScroll.Position = UDim2.new(0, 10, 0, 80)
-playerScroll.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+playerScroll.Size = UDim2.new(1, 0, 0, 80)
+playerScroll.Position = UDim2.new(0, 0, 0, 76)
+playerScroll.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
 playerScroll.ScrollBarThickness = 4
-playerScroll.Parent = contentFrame
+playerScroll.Parent = leftFrame
 
-local scrollCorner = Instance.new("UICorner")
-scrollCorner.Radius = UDim.new(0, 6)
-scrollCorner.Parent = playerScroll
+local playerScrollCorner = Instance.new("UICorner")
+playerScrollCorner.Radius = UDim.new(0, 6)
+playerScrollCorner.Parent = playerScroll
 
 local playerLayout = Instance.new("UIListLayout")
 playerLayout.Padding = UDim.new(0, 2)
 playerLayout.Parent = playerScroll
 
--- Spin Power Row
+-- Status Label
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, 0, 0, 18)
+statusLabel.Position = UDim2.new(0, 0, 0, 160)
+statusLabel.BackgroundTransparency = 1
+statusLabel.TextColor3 = COLORS.textMuted
+statusLabel.Text = "No target selected"
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextSize = 10
+statusLabel.TextWrapped = true
+statusLabel.Parent = leftFrame
+
+-- ========== RIGHT FRAME ==========
+
+local rightFrame = Instance.new("Frame")
+rightFrame.Size = UDim2.new(0.5, -15, 1, -50)
+rightFrame.Position = UDim2.new(0.5, 5, 0, 40)
+rightFrame.BackgroundTransparency = 1
+rightFrame.Parent = mainFrame
+
+-- Spin Power
 local spinRow = Instance.new("Frame")
-spinRow.Size = UDim2.new(1, -20, 0, 24)
-spinRow.Position = UDim2.new(0, 10, 0, 166)
+spinRow.Size = UDim2.new(1, 0, 0, 22)
+spinRow.Position = UDim2.new(0, 0, 0, 0)
 spinRow.BackgroundTransparency = 1
-spinRow.Parent = contentFrame
+spinRow.Parent = rightFrame
 
 local spinLabel = Instance.new("TextLabel")
-spinLabel.Size = UDim2.new(0, 80, 1, 0)
+spinLabel.Size = UDim2.new(0, 100, 1, 0)
 spinLabel.BackgroundTransparency = 1
-spinLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-spinLabel.Text = "Spin:"
+spinLabel.TextColor3 = COLORS.textDark
+spinLabel.Text = "Spin Power:"
 spinLabel.Font = Enum.Font.Gotham
 spinLabel.TextSize = 10
 spinLabel.TextXAlignment = Enum.TextXAlignment.Left
 spinLabel.Parent = spinRow
 
 local spinInput = Instance.new("TextBox")
-spinInput.Size = UDim2.new(0, 60, 1, 0)
-spinInput.Position = UDim2.new(0, 85, 0, 0)
-spinInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-spinInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+spinInput.Size = UDim2.new(0, 80, 1, 0)
+spinInput.Position = UDim2.new(0, 105, 0, 0)
+spinInput.BackgroundColor3 = COLORS.inputBg
+spinInput.TextColor3 = COLORS.textDark
 spinInput.Text = "999999"
 spinInput.Font = Enum.Font.Gotham
 spinInput.TextSize = 10
@@ -193,31 +237,36 @@ spinInput.ClearTextOnFocus = false
 spinInput.Parent = spinRow
 
 local spinCorner = Instance.new("UICorner")
-spinCorner.Radius = UDim.new(0, 6)
+spinCorner.Radius = UDim.new(0, 5)
 spinCorner.Parent = spinInput
 
--- Launch Power Row
+local spinStroke = Instance.new("UIStroke")
+spinStroke.Color = COLORS.border
+spinStroke.Thickness = 1
+spinStroke.Parent = spinInput
+
+-- Launch Power
 local launchRow = Instance.new("Frame")
-launchRow.Size = UDim2.new(1, -20, 0, 24)
-launchRow.Position = UDim2.new(0, 10, 0, 194)
+launchRow.Size = UDim2.new(1, 0, 0, 22)
+launchRow.Position = UDim2.new(0, 0, 0, 26)
 launchRow.BackgroundTransparency = 1
-launchRow.Parent = contentFrame
+launchRow.Parent = rightFrame
 
 local launchLabel = Instance.new("TextLabel")
-launchLabel.Size = UDim2.new(0, 80, 1, 0)
+launchLabel.Size = UDim2.new(0, 100, 1, 0)
 launchLabel.BackgroundTransparency = 1
-launchLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-launchLabel.Text = "Launch:"
+launchLabel.TextColor3 = COLORS.textDark
+launchLabel.Text = "Launch Power:"
 launchLabel.Font = Enum.Font.Gotham
 launchLabel.TextSize = 10
 launchLabel.TextXAlignment = Enum.TextXAlignment.Left
 launchLabel.Parent = launchRow
 
 local launchInput = Instance.new("TextBox")
-launchInput.Size = UDim2.new(0, 60, 1, 0)
-launchInput.Position = UDim2.new(0, 85, 0, 0)
-launchInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-launchInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+launchInput.Size = UDim2.new(0, 80, 1, 0)
+launchInput.Position = UDim2.new(0, 105, 0, 0)
+launchInput.BackgroundColor3 = COLORS.inputBg
+launchInput.TextColor3 = COLORS.textDark
 launchInput.Text = "999999"
 launchInput.Font = Enum.Font.Gotham
 launchInput.TextSize = 10
@@ -225,20 +274,25 @@ launchInput.ClearTextOnFocus = false
 launchInput.Parent = launchRow
 
 local launchCorner = Instance.new("UICorner")
-launchCorner.Radius = UDim.new(0, 6)
+launchCorner.Radius = UDim.new(0, 5)
 launchCorner.Parent = launchInput
 
--- Prediction Row
+local launchStroke = Instance.new("UIStroke")
+launchStroke.Color = COLORS.border
+launchStroke.Thickness = 1
+launchStroke.Parent = launchInput
+
+-- Prediction (NEW)
 local predRow = Instance.new("Frame")
-predRow.Size = UDim2.new(1, -20, 0, 24)
-predRow.Position = UDim2.new(0, 10, 0, 222)
+predRow.Size = UDim2.new(1, 0, 0, 22)
+predRow.Position = UDim2.new(0, 0, 0, 52)
 predRow.BackgroundTransparency = 1
-predRow.Parent = contentFrame
+predRow.Parent = rightFrame
 
 local predLabel = Instance.new("TextLabel")
-predLabel.Size = UDim2.new(0, 80, 1, 0)
+predLabel.Size = UDim2.new(0, 100, 1, 0)
 predLabel.BackgroundTransparency = 1
-predLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+predLabel.TextColor3 = COLORS.textDark
 predLabel.Text = "Prediction:"
 predLabel.Font = Enum.Font.Gotham
 predLabel.TextSize = 10
@@ -246,10 +300,10 @@ predLabel.TextXAlignment = Enum.TextXAlignment.Left
 predLabel.Parent = predRow
 
 local predInput = Instance.new("TextBox")
-predInput.Size = UDim2.new(0, 60, 1, 0)
-predInput.Position = UDim2.new(0, 85, 0, 0)
-predInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-predInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+predInput.Size = UDim2.new(0, 80, 1, 0)
+predInput.Position = UDim2.new(0, 105, 0, 0)
+predInput.BackgroundColor3 = COLORS.inputBg
+predInput.TextColor3 = COLORS.textDark
 predInput.Text = "0.15"
 predInput.Font = Enum.Font.Gotham
 predInput.TextSize = 10
@@ -257,22 +311,29 @@ predInput.ClearTextOnFocus = false
 predInput.Parent = predRow
 
 local predCorner = Instance.new("UICorner")
-predCorner.Radius = UDim.new(0, 6)
+predCorner.Radius = UDim.new(0, 5)
 predCorner.Parent = predInput
 
--- Status Label
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Size = UDim2.new(1, -20, 0, 16)
-statusLabel.Position = UDim2.new(0, 10, 0, 250)
-statusLabel.BackgroundTransparency = 1
-statusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-statusLabel.Text = "No target selected"
-statusLabel.Font = Enum.Font.Gotham
-statusLabel.TextSize = 10
-statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-statusLabel.Parent = contentFrame
+local predStroke = Instance.new("UIStroke")
+predStroke.Color = COLORS.border
+predStroke.Thickness = 1
+predStroke.Parent = predInput
 
--- ========== DRAGGING FOR HUB BUTTON (SAME AS WORKING SCRIPT) ==========
+-- Info
+local infoLabel = Instance.new("TextLabel")
+infoLabel.Size = UDim2.new(1, 0, 0, 70)
+infoLabel.Position = UDim2.new(0, 0, 0, 80)
+infoLabel.BackgroundTransparency = 1
+infoLabel.TextColor3 = COLORS.textMuted
+infoLabel.Text = "Uses BodyAngularVelocity +\nBodyVelocity (real physics).\nYou will SPIN visibly.\nPrediction helps hit moving targets."
+infoLabel.Font = Enum.Font.Gotham
+infoLabel.TextSize = 9
+infoLabel.TextWrapped = true
+infoLabel.TextXAlignment = Enum.TextXAlignment.Left
+infoLabel.Parent = rightFrame
+
+-- ========== DRAGGING ==========
+
 local dragging = false
 local dragInput, dragStart, startPos
 
@@ -303,41 +364,40 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ========== DRAGGING FOR MAIN FRAME (SAME AS WORKING SCRIPT) ==========
-local mainDragging = false
-local mainDragInput, mainDragStart, mainDragPos
+local hubDragging = false
+local hubDragInput, hubDragStart, hubDragPos
 
-mainFrame.InputBegan:Connect(function(input)
+titleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        mainDragging = true
-        mainDragStart = input.Position
-        mainDragPos = mainFrame.Position
+        hubDragging = true
+        hubDragStart = input.Position
+        hubDragPos = mainFrame.Position
         
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
-                mainDragging = false
+                hubDragging = false
             end
         end)
     end
 end)
 
-mainFrame.InputChanged:Connect(function(input)
+titleBar.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        mainDragInput = input
+        hubDragInput = input
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if input == mainDragInput and mainDragging then
-        local delta = input.Position - mainDragStart
-        mainFrame.Position = UDim2.new(mainDragPos.X.Scale, mainDragPos.X.Offset + delta.X, mainDragPos.Y.Scale, mainDragPos.Y.Offset + delta.Y)
+    if input == hubDragInput and hubDragging then
+        local delta = input.Position - hubDragStart
+        mainFrame.Position = UDim2.new(hubDragPos.X.Scale, hubDragPos.X.Offset + delta.X, hubDragPos.Y.Scale, hubDragPos.Y.Offset + delta.Y)
     end
 end)
 
--- ========== TOGGLE HUB (SAME AS WORKING SCRIPT) ==========
-hubButton.InputBegan:Connect(function(input)
+-- ========== TOGGLE HUB (FIXED - Using InputEnded, no timing) ==========
+
+hubButton.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        wait(0.1)
         if not dragging then
             hubButton.Visible = false
             mainFrame.Visible = true
@@ -345,13 +405,15 @@ hubButton.InputBegan:Connect(function(input)
     end
 end)
 
-collapseBtn.MouseButton1Click:Connect(function()
+collapseButton.MouseButton1Click:Connect(function()
     mainFrame.Visible = false
     hubButton.Visible = true
 end)
 
 -- ========== PLAYER LIST ==========
+
 local playerButtons = {}
+local flingCount = 0
 
 local function updatePlayerList()
     for _, btn in pairs(playerButtons) do
@@ -362,16 +424,16 @@ local function updatePlayerList()
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= player then
             local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, 0, 0, 20)
-            btn.BackgroundColor3 = targetPlayer == plr and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(60, 60, 60)
-            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            btn.Size = UDim2.new(1, 0, 0, 22)
+            btn.BackgroundColor3 = targetPlayer == plr and COLORS.buttonPrimary or Color3.fromRGB(240, 240, 240)
+            btn.TextColor3 = targetPlayer == plr and COLORS.textLight or COLORS.textDark
             btn.Text = plr.Name
             btn.Font = Enum.Font.Gotham
             btn.TextSize = 10
             btn.Parent = playerScroll
             
             local btnCorner = Instance.new("UICorner")
-            btnCorner.Radius = UDim.new(0, 4)
+            btnCorner.Radius = UDim.new(0, 5)
             btnCorner.Parent = btn
             
             btn.MouseButton1Click:Connect(function()
@@ -384,7 +446,7 @@ local function updatePlayerList()
         end
     end
     
-    playerScroll.CanvasSize = UDim2.new(0, 0, 0, #playerButtons * 22)
+    playerScroll.CanvasSize = UDim2.new(0, 0, 0, #playerButtons * 24)
 end
 
 Players.PlayerAdded:Connect(updatePlayerList)
@@ -396,6 +458,7 @@ end)
 updatePlayerList()
 
 -- ========== FLING FUNCTION ==========
+
 local function getRoot(char)
     return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
 end
@@ -472,7 +535,8 @@ local function startFling()
         myHumanoid.PlatformStand = true
     end
     
-    flingLoop = RunService.RenderStepped:Connect(function()
+    -- USING HEARTBEAT (not RenderStepped)
+    flingLoop = RunService.Heartbeat:Connect(function()
         if not flingEnabled then return end
         
         local char = player.Character
@@ -488,6 +552,7 @@ local function startFling()
         local targetRoot = getRoot(targetPlayer.Character)
         if not targetRoot then return end
         
+        -- Prediction for moving targets
         local targetVel = targetRoot.AssemblyLinearVelocity or Vector3.new(0, 0, 0)
         local predictedPos = targetRoot.Position + (targetVel * prediction)
         
@@ -513,59 +578,54 @@ local function startFling()
     end)
 end
 
--- ========== TOGGLE FLING ==========
-toggleBtn.MouseButton1Click:Connect(function()
+-- ========== FLING TOGGLE ==========
+
+toggleButton.MouseButton1Click:Connect(function()
     flingEnabled = not flingEnabled
     
     if flingEnabled then
-        if not targetPlayer then
-            statusLabel.Text = "Select a target first!"
-            flingEnabled = false
-            return
-        end
-        
-        toggleBtn.Text = "FLING: ON"
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(40, 167, 69)
-        statusLabel.Text = "Flinging: " .. targetPlayer.Name
+        toggleButton.Text = "FLING: ON"
+        toggleButton.BackgroundColor3 = COLORS.buttonSuccess
+        statusLabel.Text = targetPlayer and ("Flinging: " .. targetPlayer.Name) or "No target selected"
         
         startFling()
     else
-        toggleBtn.Text = "FLING: OFF"
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+        toggleButton.Text = "FLING: OFF"
+        toggleButton.BackgroundColor3 = COLORS.buttonDanger
         statusLabel.Text = targetPlayer and ("Target: " .. targetPlayer.Name) or "No target selected"
         
         stopFling()
     end
 end)
 
--- ========== TOGGLE WITH RIGHT CONTROL ==========
-local guiVisible = true
-
+-- Toggle with key
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.RightControl then
         if mainFrame.Visible then
             mainFrame.Visible = false
-            hubButton.Visible = guiVisible
+            hubButton.Visible = true
         else
-            guiVisible = not guiVisible
-            hubButton.Visible = guiVisible
+            hubButton.Visible = not hubButton.Visible
         end
     end
 end)
 
--- ========== AUTO RESTART ON RESPAWN ==========
+-- Auto-restart on respawn
 player.CharacterAdded:Connect(function(char)
     wait(0.3)
     
     if flingEnabled then
         flingCount = flingCount + 1
-        counterLabel.Text = "Flings: " .. flingCount
+        flingCounter.Text = "Flings: " .. flingCount
         startFling()
     end
 end)
 
+-- Cleanup
 player.CharacterRemoving:Connect(function()
     stopFling()
 end)
 
-print("✅ Fling Hub Loaded")
+print("✅ BodyMover Fling Loaded")
+print("   Uses BodyAngularVelocity + BodyVelocity")
+print("   Prediction added for moving targets")
