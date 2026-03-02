@@ -1,4 +1,4 @@
--- Flinger Logger (Server-Wide Scanner) - With Live View
+-- Anti-Fling Protection System
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -8,17 +8,25 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 -- Settings
-local VELOCITY_THRESHOLD = 50
-local SCAN_INTERVAL = 0.1
-local MAX_LOG_ENTRIES = 50
+local DETECTION_RANGE = 50        -- Studs to detect flinger
+local VELOCITY_THRESHOLD = 50     -- Angular velocity threshold
+local PROTECTION_RANGE = 30       -- Studs to activate protection
+local SCAN_INTERVAL = 0.05        -- How fast to scan
 
--- Threat tracking
-local suspiciousPlayers = {}
-local threatCount = 0
+-- Protection toggles
+local anchorProtection = true
+local velocityReset = true
+local massBoost = true
+local collisionDisable = true
+
+-- State
+local isProtected = false
+local lastThreat = nil
+local whitelist = {} -- Players to ignore
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "FlingerLogger"
+screenGui.Name = "AntiFling"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
@@ -41,27 +49,27 @@ local hubIcon = Instance.new("TextLabel")
 hubIcon.Size = UDim2.new(1, 0, 1, 0)
 hubIcon.BackgroundTransparency = 1
 hubIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
-hubIcon.Text = "🔍"
+hubIcon.Text = "🛡️"
 hubIcon.Font = Enum.Font.GothamBold
-hubIcon.TextSize = 26
+hubIcon.TextSize = 24
 hubIcon.Parent = hubButton
 
-local warningDot = Instance.new("Frame")
-warningDot.Size = UDim2.new(0, 12, 0, 12)
-warningDot.Position = UDim2.new(1, -8, 0, -4)
-warningDot.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-warningDot.Visible = false
-warningDot.Parent = hubButton
+-- Protection indicator on hub
+local protectDot = Instance.new("Frame")
+protectDot.Size = UDim2.new(0, 14, 0, 14)
+protectDot.Position = UDim2.new(1, -9, 0, -5)
+protectDot.BackgroundColor3 = Color3.fromRGB(100, 255, 100)
+protectDot.Parent = hubButton
 
-local warningDotCorner = Instance.new("UICorner")
-warningDotCorner.CornerRadius = UDim.new(1, 0)
-warningDotCorner.Parent = warningDot
+local protectDotCorner = Instance.new("UICorner")
+protectDotCorner.CornerRadius = UDim.new(1, 0)
+protectDotCorner.Parent = protectDot
 
 -- ========== MAIN FRAME ==========
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 400, 0, 500)
-mainFrame.Position = UDim2.new(0.5, -200, 0.5, -250)
+mainFrame.Size = UDim2.new(0, 320, 0, 420)
+mainFrame.Position = UDim2.new(0.5, -160, 0.5, -210)
 mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 mainFrame.BorderSizePixel = 2
 mainFrame.BorderColor3 = Color3.fromRGB(60, 60, 60)
@@ -95,9 +103,9 @@ titleLabel.Size = UDim2.new(1, -80, 1, 0)
 titleLabel.Position = UDim2.new(0, 12, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.Text = "🔍 Flinger Logger"
+titleLabel.Text = "🛡️ Anti-Fling Protection"
 titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextSize = 14
+titleLabel.TextSize = 13
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = titleBar
 
@@ -115,159 +123,312 @@ local collapseCorner = Instance.new("UICorner")
 collapseCorner.CornerRadius = UDim.new(0, 6)
 collapseCorner.Parent = collapseBtn
 
--- ========== STATUS BAR ==========
-local statusBar = Instance.new("Frame")
-statusBar.Size = UDim2.new(1, -20, 0, 30)
-statusBar.Position = UDim2.new(0, 10, 0, 42)
-statusBar.BackgroundTransparency = 1
-statusBar.Parent = mainFrame
+-- ========== STATUS ==========
+local statusFrame = Instance.new("Frame")
+statusFrame.Size = UDim2.new(1, -20, 0, 50)
+statusFrame.Position = UDim2.new(0, 10, 0, 42)
+statusFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+statusFrame.Parent = mainFrame
+
+local statusCorner = Instance.new("UICorner")
+statusCorner.CornerRadius = UDim.new(0, 6)
+statusCorner.Parent = statusFrame
 
 local statusLabel = Instance.new("TextLabel")
-statusLabel.Size = UDim2.new(1, 0, 1, 0)
+statusLabel.Size = UDim2.new(1, -16, 0, 20)
+statusLabel.Position = UDim2.new(0, 8, 0, 6)
 statusLabel.BackgroundTransparency = 1
-statusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-statusLabel.Text = "Scanning 0 players..."
-statusLabel.Font = Enum.Font.Gotham
-statusLabel.TextSize = 11
+statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+statusLabel.Text = "✓ PROTECTION ACTIVE"
+statusLabel.Font = Enum.Font.GothamBold
+statusLabel.TextSize = 14
 statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-statusLabel.Parent = statusBar
+statusLabel.Parent = statusFrame
 
 local threatLabel = Instance.new("TextLabel")
-threatLabel.Size = UDim2.new(0, 100, 1, 0)
-threatLabel.Position = UDim2.new(1, -100, 0, 0)
+threatLabel.Size = UDim2.new(1, -16, 0, 18)
+threatLabel.Position = UDim2.new(0, 8, 0, 28)
 threatLabel.BackgroundTransparency = 1
-threatLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-threatLabel.Text = "⚠ Threats: 0"
-threatLabel.Font = Enum.Font.GothamBold
+threatLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+threatLabel.Text = "No threats nearby"
+threatLabel.Font = Enum.Font.Gotham
 threatLabel.TextSize = 11
-threatLabel.TextXAlignment = Enum.TextXAlignment.Right
-threatLabel.Parent = statusBar
+threatLabel.TextXAlignment = Enum.TextXAlignment.Left
+threatLabel.Parent = statusFrame
 
--- ========== SETTINGS BAR ==========
-local settingsBar = Instance.new("Frame")
-settingsBar.Size = UDim2.new(1, -20, 0, 28)
-settingsBar.Position = UDim2.new(0, 10, 0, 75)
-settingsBar.BackgroundTransparency = 1
-settingsBar.Parent = mainFrame
+-- ========== SETTINGS ==========
+local settingsLabel = Instance.new("TextLabel")
+settingsLabel.Size = UDim2.new(1, -20, 0, 20)
+settingsLabel.Position = UDim2.new(0, 10, 0, 100)
+settingsLabel.BackgroundTransparency = 1
+settingsLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+settingsLabel.Text = "Protection Methods"
+settingsLabel.Font = Enum.Font.GothamBold
+settingsLabel.TextSize = 12
+settingsLabel.TextXAlignment = Enum.TextXAlignment.Left
+settingsLabel.Parent = mainFrame
 
-local thresholdLabel = Instance.new("TextLabel")
-thresholdLabel.Size = UDim2.new(0, 80, 1, 0)
-thresholdLabel.BackgroundTransparency = 1
-thresholdLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-thresholdLabel.Text = "Threshold:"
-thresholdLabel.Font = Enum.Font.Gotham
-thresholdLabel.TextSize = 11
-thresholdLabel.TextXAlignment = Enum.TextXAlignment.Left
-thresholdLabel.Parent = settingsBar
+-- Anchor Toggle
+local anchorRow = Instance.new("Frame")
+anchorRow.Size = UDim2.new(1, -20, 0, 32)
+anchorRow.Position = UDim2.new(0, 10, 0, 122)
+anchorRow.BackgroundTransparency = 1
+anchorRow.Parent = mainFrame
 
-local thresholdInput = Instance.new("TextBox")
-thresholdInput.Size = UDim2.new(0, 50, 1, 0)
-thresholdInput.Position = UDim2.new(0, 80, 0, 0)
-thresholdInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-thresholdInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-thresholdInput.Text = tostring(VELOCITY_THRESHOLD)
-thresholdInput.Font = Enum.Font.Gotham
-thresholdInput.TextSize = 11
-thresholdInput.Parent = settingsBar
+local anchorLabel = Instance.new("TextLabel")
+anchorLabel.Size = UDim2.new(1, -70, 1, 0)
+anchorLabel.BackgroundTransparency = 1
+anchorLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+anchorLabel.Text = "🔧 Anchor (Locks you in place)"
+anchorLabel.Font = Enum.Font.Gotham
+anchorLabel.TextSize = 11
+anchorLabel.TextXAlignment = Enum.TextXAlignment.Left
+anchorLabel.Parent = anchorRow
 
-local thresholdCorner = Instance.new("UICorner")
-thresholdCorner.CornerRadius = UDim.new(0, 4)
-thresholdCorner.Parent = thresholdInput
+local anchorBtn = Instance.new("TextButton")
+anchorBtn.Size = UDim2.new(0, 55, 1, 0)
+anchorBtn.Position = UDim2.new(1, -55, 0, 0)
+anchorBtn.BackgroundColor3 = Color3.fromRGB(40, 167, 69)
+anchorBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+anchorBtn.Text = "ON"
+anchorBtn.Font = Enum.Font.GothamBold
+anchorBtn.TextSize = 11
+anchorBtn.Parent = anchorRow
 
--- ========== LIVE VIEW PANEL ==========
-local liveLabel = Instance.new("TextLabel")
-liveLabel.Size = UDim2.new(0, 100, 1, 0)
-liveLabel.Position = UDim2.new(0, 140, 0, 0)
-liveLabel.BackgroundTransparency = 1
-liveLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
-liveLabel.Text = "🔴 LIVE THREATS"
-liveLabel.Font = Enum.Font.GothamBold
-liveLabel.TextSize = 11
-liveLabel.TextXAlignment = Enum.TextXAlignment.Left
-liveLabel.Parent = settingsBar
+local anchorCorner = Instance.new("UICorner")
+anchorCorner.CornerRadius = UDim.new(0, 6)
+anchorCorner.Parent = anchorBtn
 
--- Live View Frame
-local liveFrame = Instance.new("Frame")
-liveFrame.Size = UDim2.new(1, -20, 0, 160)
-liveFrame.Position = UDim2.new(0, 10, 0, 108)
-liveFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-liveFrame.Parent = mainFrame
+-- Velocity Reset Toggle
+local velocityRow = Instance.new("Frame")
+velocityRow.Size = UDim2.new(1, -20, 0, 32)
+velocityRow.Position = UDim2.new(0, 10, 0, 156)
+velocityRow.BackgroundTransparency = 1
+velocityRow.Parent = mainFrame
 
-local liveFrameCorner = Instance.new("UICorner")
-liveFrameCorner.CornerRadius = UDim.new(0, 6)
-liveFrameCorner.Parent = liveFrame
+local velocityLabel = Instance.new("TextLabel")
+velocityLabel.Size = UDim2.new(1, -70, 1, 0)
+velocityLabel.BackgroundTransparency = 1
+velocityLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+velocityLabel.Text = "🌀 Velocity Reset (Stops movement)"
+velocityLabel.Font = Enum.Font.Gotham
+velocityLabel.TextSize = 11
+velocityLabel.TextXAlignment = Enum.TextXAlignment.Left
+velocityLabel.Parent = velocityRow
 
-local liveTitle = Instance.new("TextLabel")
-liveTitle.Size = UDim2.new(1, 0, 0, 22)
-liveTitle.Position = UDim2.new(0, 0, 0, 0)
-liveTitle.BackgroundTransparency = 1
-liveTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
-liveTitle.Text = "  Player                    | Angular Vel (X, Y, Z)              | Dist  | Threat"
-liveTitle.Font = Enum.Font.Gotham
-liveTitle.TextSize = 9
-liveTitle.TextXAlignment = Enum.TextXAlignment.Left
-liveTitle.Parent = liveFrame
+local velocityBtn = Instance.new("TextButton")
+velocityBtn.Size = UDim2.new(0, 55, 1, 0)
+velocityBtn.Position = UDim2.new(1, -55, 0, 0)
+velocityBtn.BackgroundColor3 = Color3.fromRGB(40, 167, 69)
+velocityBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+velocityBtn.Text = "ON"
+velocityBtn.Font = Enum.Font.GothamBold
+velocityBtn.TextSize = 11
+velocityBtn.Parent = velocityRow
 
-local liveScroll = Instance.new("ScrollingFrame")
-liveScroll.Size = UDim2.new(1, -8, 1, -24)
-liveScroll.Position = UDim2.new(0, 4, 0, 22)
-liveScroll.BackgroundTransparency = 1
-liveScroll.ScrollBarThickness = 4
-liveScroll.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
-liveScroll.Parent = liveFrame
+local velocityCorner = Instance.new("UICorner")
+velocityCorner.CornerRadius = UDim.new(0, 6)
+velocityCorner.Parent = velocityBtn
 
-local liveLayout = Instance.new("UIListLayout")
-liveLayout.Padding = UDim.new(0, 2)
-liveLayout.Parent = liveScroll
+-- Mass Boost Toggle
+local massRow = Instance.new("Frame")
+massRow.Size = UDim2.new(1, -20, 0, 32)
+massRow.Position = UDim2.new(0, 10, 0, 190)
+massRow.BackgroundTransparency = 1
+massRow.Parent = mainFrame
 
--- ========== LOG SECTION ==========
-local logLabel = Instance.new("TextLabel")
-logLabel.Size = UDim2.new(1, -20, 0, 20)
-logLabel.Position = UDim2.new(0, 10, 0, 275)
-logLabel.BackgroundTransparency = 1
-logLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-logLabel.Text = "📋 Activity Log (New threats appear here)"
-logLabel.Font = Enum.Font.GothamBold
-logLabel.TextSize = 11
-logLabel.TextXAlignment = Enum.TextXAlignment.Left
-logLabel.Parent = mainFrame
+local massLabel = Instance.new("TextLabel")
+massLabel.Size = UDim2.new(1, -70, 1, 0)
+massLabel.BackgroundTransparency = 1
+massLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+massLabel.Text = "⚖️ Mass Boost (Harder to fling)"
+massLabel.Font = Enum.Font.Gotham
+massLabel.TextSize = 11
+massLabel.TextXAlignment = Enum.TextXAlignment.Left
+massLabel.Parent = massRow
 
-local clearBtn = Instance.new("TextButton")
-clearBtn.Size = UDim2.new(0, 55, 0, 20)
-clearBtn.Position = UDim2.new(1, -65, 0, 275)
-clearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-clearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-clearBtn.Text = "Clear"
-clearBtn.Font = Enum.Font.GothamBold
-clearBtn.TextSize = 9
-clearBtn.Parent = mainFrame
+local massBtn = Instance.new("TextButton")
+massBtn.Size = UDim2.new(0, 55, 1, 0)
+massBtn.Position = UDim2.new(1, -55, 0, 0)
+massBtn.BackgroundColor3 = Color3.fromRGB(40, 167, 69)
+massBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+massBtn.Text = "ON"
+massBtn.Font = Enum.Font.GothamBold
+massBtn.TextSize = 11
+massBtn.Parent = massRow
 
-local clearCorner = Instance.new("UICorner")
-clearCorner.CornerRadius = UDim.new(0, 4)
-clearCorner.Parent = clearBtn
+local massCorner = Instance.new("UICorner")
+massCorner.CornerRadius = UDim.new(0, 6)
+massCorner.Parent = massBtn
 
--- Log Frame
-local logFrame = Instance.new("Frame")
-logFrame.Size = UDim2.new(1, -20, 1, -300)
-logFrame.Position = UDim2.new(0, 10, 0, 298)
-logFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-logFrame.Parent = mainFrame
+-- Collision Toggle
+local collisionRow = Instance.new("Frame")
+collisionRow.Size = UDim2.new(1, -20, 0, 32)
+collisionRow.Position = UDim2.new(0, 10, 0, 224)
+collisionRow.BackgroundTransparency = 1
+collisionRow.Parent = mainFrame
 
-local logFrameCorner = Instance.new("UICorner")
-logFrameCorner.CornerRadius = UDim.new(0, 6)
-logFrameCorner.Parent = logFrame
+local collisionLabel = Instance.new("TextLabel")
+collisionLabel.Size = UDim2.new(1, -70, 1, 0)
+collisionLabel.BackgroundTransparency = 1
+collisionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+collisionLabel.Text = "💥 No Collision (Phase through)"
+collisionLabel.Font = Enum.Font.Gotham
+collisionLabel.TextSize = 11
+collisionLabel.TextXAlignment = Enum.TextXAlignment.Left
+collisionLabel.Parent = collisionRow
 
-local logScroll = Instance.new("ScrollingFrame")
-logScroll.Size = UDim2.new(1, -8, 1, -8)
-logScroll.Position = UDim2.new(0, 4, 0, 4)
-logScroll.BackgroundTransparency = 1
-logScroll.ScrollBarThickness = 4
-logScroll.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
-logScroll.Parent = logFrame
+local collisionBtn = Instance.new("TextButton")
+collisionBtn.Size = UDim2.new(0, 55, 1, 0)
+collisionBtn.Position = UDim2.new(1, -55, 0, 0)
+collisionBtn.BackgroundColor3 = Color3.fromRGB(40, 167, 69)
+collisionBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+collisionBtn.Text = "ON"
+collisionBtn.Font = Enum.Font.GothamBold
+collisionBtn.TextSize = 11
+collisionBtn.Parent = collisionRow
 
-local logLayout = Instance.new("UIListLayout")
-logLayout.Padding = UDim.new(0, 4)
-logLayout.Parent = logScroll
+local collisionCorner = Instance.new("UICorner")
+collisionCorner.CornerRadius = UDim.new(0, 6)
+collisionCorner.Parent = collisionBtn
+
+-- ========== RANGE SETTINGS ==========
+local rangeLabel = Instance.new("TextLabel")
+rangeLabel.Size = UDim2.new(1, -20, 0, 20)
+rangeLabel.Position = UDim2.new(0, 10, 0, 265)
+rangeLabel.BackgroundTransparency = 1
+rangeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+rangeLabel.Text = "Range Settings"
+rangeLabel.Font = Enum.Font.GothamBold
+rangeLabel.TextSize = 12
+rangeLabel.TextXAlignment = Enum.TextXAlignment.Left
+rangeLabel.Parent = mainFrame
+
+-- Detection Range
+local detectRow = Instance.new("Frame")
+detectRow.Size = UDim2.new(1, -20, 0, 28)
+detectRow.Position = UDim2.new(0, 10, 0, 287)
+detectRow.BackgroundTransparency = 1
+detectRow.Parent = mainFrame
+
+local detectLabel = Instance.new("TextLabel")
+detectLabel.Size = UDim2.new(0, 120, 1, 0)
+detectLabel.BackgroundTransparency = 1
+detectLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+detectLabel.Text = "Detection Range:"
+detectLabel.Font = Enum.Font.Gotham
+detectLabel.TextSize = 11
+detectLabel.TextXAlignment = Enum.TextXAlignment.Left
+detectLabel.Parent = detectRow
+
+local detectInput = Instance.new("TextBox")
+detectInput.Size = UDim2.new(0, 50, 1, 0)
+detectInput.Position = UDim2.new(0, 125, 0, 0)
+detectInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+detectInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+detectInput.Text = tostring(DETECTION_RANGE)
+detectInput.Font = Enum.Font.Gotham
+detectInput.TextSize = 11
+detectInput.Parent = detectRow
+
+local detectCorner = Instance.new("UICorner")
+detectCorner.CornerRadius = UDim.new(0, 4)
+detectCorner.Parent = detectInput
+
+local detectStuds = Instance.new("TextLabel")
+detectStuds.Size = UDim2.new(0, 40, 1, 0)
+detectStuds.Position = UDim2.new(0, 180, 0, 0)
+detectStuds.BackgroundTransparency = 1
+detectStuds.TextColor3 = Color3.fromRGB(150, 150, 150)
+detectStuds.Text = "studs"
+detectStuds.Font = Enum.Font.Gotham
+detectStuds.TextSize = 11
+detectStuds.TextXAlignment = Enum.TextXAlignment.Left
+detectStuds.Parent = detectRow
+
+-- Protection Range
+local protectRow = Instance.new("Frame")
+protectRow.Size = UDim2.new(1, -20, 0, 28)
+protectRow.Position = UDim2.new(0, 10, 0, 319)
+protectRow.BackgroundTransparency = 1
+protectRow.Parent = mainFrame
+
+local protectLabel = Instance.new("TextLabel")
+protectLabel.Size = UDim2.new(0, 120, 1, 0)
+protectLabel.BackgroundTransparency = 1
+protectLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+protectLabel.Text = "Protection Range:"
+protectLabel.Font = Enum.Font.Gotham
+protectLabel.TextSize = 11
+protectLabel.TextXAlignment = Enum.TextXAlignment.Left
+protectLabel.Parent = protectRow
+
+local protectInput = Instance.new("TextBox")
+protectInput.Size = UDim2.new(0, 50, 1, 0)
+protectInput.Position = UDim2.new(0, 125, 0, 0)
+protectInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+protectInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+protectInput.Text = tostring(PROTECTION_RANGE)
+protectInput.Font = Enum.Font.Gotham
+protectInput.TextSize = 11
+protectInput.Parent = protectRow
+
+local protectCorner = Instance.new("UICorner")
+protectCorner.CornerRadius = UDim.new(0, 4)
+protectCorner.Parent = protectInput
+
+local protectStuds = Instance.new("TextLabel")
+protectStuds.Size = UDim2.new(0, 40, 1, 0)
+protectStuds.Position = UDim2.new(0, 180, 0, 0)
+protectStuds.BackgroundTransparency = 1
+protectStuds.TextColor3 = Color3.fromRGB(150, 150, 150)
+protectStuds.Text = "studs"
+protectStuds.Font = Enum.Font.Gotham
+protectStuds.TextSize = 11
+protectStuds.TextXAlignment = Enum.TextXAlignment.Left
+protectStuds.Parent = protectRow
+
+-- ========== WHITELIST ==========
+local whitelistLabel = Instance.new("TextLabel")
+whitelistLabel.Size = UDim2.new(1, -20, 0, 20)
+whitelistLabel.Position = UDim2.new(0, 10, 0, 355)
+whitelistLabel.BackgroundTransparency = 1
+whitelistLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+whitelistLabel.Text = "Whitelist (Ignore these players)"
+whitelistLabel.Font = Enum.Font.GothamBold
+whitelistLabel.TextSize = 12
+whitelistLabel.TextXAlignment = Enum.TextXAlignment.Left
+whitelistLabel.Parent = mainFrame
+
+local whitelistInput = Instance.new("TextBox")
+whitelistInput.Size = UDim2.new(1, -80, 0, 28)
+whitelistInput.Position = UDim2.new(0, 10, 0, 377)
+whitelistInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+whitelistInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+whitelistInput.Text = ""
+whitelistInput.PlaceholderText = "Username1, Username2"
+whitelistInput.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
+whitelistInput.Font = Enum.Font.Gotham
+whitelistInput.TextSize = 11
+whitelistInput.Parent = mainFrame
+
+local whitelistCorner = Instance.new("UICorner")
+whitelistCorner.CornerRadius = UDim.new(0, 4)
+whitelistCorner.Parent = whitelistInput
+
+local addWhitelistBtn = Instance.new("TextButton")
+addWhitelistBtn.Size = UDim2.new(0, 60, 0, 28)
+addWhitelistBtn.Position = UDim2.new(1, -70, 0, 377)
+addWhitelistBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+addWhitelistBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+addWhitelistBtn.Text = "Add"
+addWhitelistBtn.Font = Enum.Font.GothamBold
+addWhitelistBtn.TextSize = 11
+addWhitelistBtn.Parent = mainFrame
+
+local addWhitelistCorner = Instance.new("UICorner")
+addWhitelistCorner.CornerRadius = UDim.new(0, 4)
+addWhitelistCorner.Parent = addWhitelistBtn
 
 -- ========== DRAGGING ==========
 local dragging = false
@@ -346,151 +507,226 @@ collapseBtn.MouseButton1Click:Connect(function()
     hubButton.Visible = true
 end)
 
--- ========== CLEAR LOG ==========
-clearBtn.MouseButton1Click:Connect(function()
-    for _, child in pairs(logScroll:GetChildren()) do
-        if child:IsA("Frame") then
-            child:Destroy()
-        end
+-- ========== TOGGLE BUTTONS ==========
+local function toggleButton(btn, varName)
+    if varName == "anchor" then
+        anchorProtection = not anchorProtection
+        btn.Text = anchorProtection and "ON" or "OFF"
+        btn.BackgroundColor3 = anchorProtection and Color3.fromRGB(40, 167, 69) or Color3.fromRGB(108, 117, 125)
+    elseif varName == "velocity" then
+        velocityReset = not velocityReset
+        btn.Text = velocityReset and "ON" or "OFF"
+        btn.BackgroundColor3 = velocityReset and Color3.fromRGB(40, 167, 69) or Color3.fromRGB(108, 117, 125)
+    elseif varName == "mass" then
+        massBoost = not massBoost
+        btn.Text = massBoost and "ON" or "OFF"
+        btn.BackgroundColor3 = massBoost and Color3.fromRGB(40, 167, 69) or Color3.fromRGB(108, 117, 125)
+    elseif varName == "collision" then
+        collisionDisable = not collisionDisable
+        btn.Text = collisionDisable and "ON" or "OFF"
+        btn.BackgroundColor3 = collisionDisable and Color3.fromRGB(40, 167, 69) or Color3.fromRGB(108, 117, 125)
     end
-end)
+end
 
--- ========== THRESHOLD UPDATE ==========
-thresholdInput.FocusLost:Connect(function()
-    local val = tonumber(thresholdInput.Text)
+anchorBtn.MouseButton1Click:Connect(function() toggleButton(anchorBtn, "anchor") end)
+velocityBtn.MouseButton1Click:Connect(function() toggleButton(velocityBtn, "velocity") end)
+massBtn.MouseButton1Click:Connect(function() toggleButton(massBtn, "mass") end)
+collisionBtn.MouseButton1Click:Connect(function() toggleButton(collisionBtn, "collision") end)
+
+-- ========== RANGE SETTINGS ==========
+detectInput.FocusLost:Connect(function()
+    local val = tonumber(detectInput.Text)
     if val and val > 0 then
-        VELOCITY_THRESHOLD = val
+        DETECTION_RANGE = val
     else
-        thresholdInput.Text = tostring(VELOCITY_THRESHOLD)
+        detectInput.Text = tostring(DETECTION_RANGE)
     end
 end)
 
--- ========== LIVE VIEW ENTRIES ==========
-local liveEntries = {}
-
-local function updateOrCreateLiveEntry(plrName, velX, velY, velZ, distance, threatLevel, color)
-    local entry = liveEntries[plrName]
-    
-    if not entry then
-        -- Create new entry
-        entry = Instance.new("Frame")
-        entry.Size = UDim2.new(1, 0, 0, 20)
-        entry.BackgroundColor3 = color
-        entry.Parent = liveScroll
-        
-        local entryCorner = Instance.new("UICorner")
-        entryCorner.CornerRadius = UDim.new(0, 3)
-        entryCorner.Parent = entry
-        
-        local textLabel = Instance.new("TextLabel")
-        textLabel.Name = "Text"
-        textLabel.Size = UDim2.new(1, -8, 1, 0)
-        textLabel.Position = UDim2.new(0, 4, 0, 0)
-        textLabel.BackgroundTransparency = 1
-        textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        textLabel.Font = Enum.Font.Gotham
-        textLabel.TextSize = 9
-        textLabel.TextXAlignment = Enum.TextXAlignment.Left
-        textLabel.Parent = entry
-        
-        liveEntries[plrName] = {frame = entry, label = textLabel}
+protectInput.FocusLost:Connect(function()
+    local val = tonumber(protectInput.Text)
+    if val and val > 0 then
+        PROTECTION_RANGE = val
+    else
+        protectInput.Text = tostring(PROTECTION_RANGE)
     end
-    
-    -- Update entry
-    entry.frame.BackgroundColor3 = color
-    local velStr = string.format("%6.1f, %6.1f, %6.1f", velX, velY, velZ)
-    local distStr = string.format("%5.1f", distance)
-    entry.label.Text = string.format("%-20s | %-30s | %s | %s", plrName:sub(1, 18), velStr, distStr, threatLevel)
+end)
+
+-- ========== WHITELIST ==========
+addWhitelistBtn.MouseButton1Click:Connect(function()
+    local text = whitelistInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
+    if text ~= "" then
+        for name in text:gmatch("[^,^]+") do
+            local cleanName = name:gsub("^%s+", ""):gsub("%s+$", ""):lower()
+            if cleanName ~= "" then
+                whitelist[cleanName] = true
+            end
+        end
+        whitelistInput.Text = ""
+        -- Show confirmation
+        addWhitelistBtn.Text = "Added!"
+        addWhitelistBtn.BackgroundColor3 = Color3.fromRGB(40, 167, 69)
+        wait(0.5)
+        addWhitelistBtn.Text = "Add"
+        addWhitelistBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+    end
+end)
+
+-- ========== PROTECTION FUNCTIONS ==========
+local lastAnchorState = false
+local lastMass = {}
+local lastCollision = {}
+local originalMasses = {}
+local originalCollisions = {}
+
+local function getCharacter()
+    return player.Character or player.CharacterAdded:Wait()
 end
 
-local function removeLiveEntry(plrName)
-    if liveEntries[plrName] then
-        liveEntries[plrName].frame:Destroy()
-        liveEntries[plrName] = nil
-    end
+local function getHRP()
+    local char = getCharacter()
+    return char and char:FindFirstChild("HumanoidRootPart")
 end
 
--- ========== ADD LOG ENTRY ==========
-local logCount = 0
-local lastLoggedVelocity = {}
+local function getHumanoid()
+    local char = getCharacter()
+    return char and char:FindFirstChild("Humanoid")
+end
 
-local function addLogEntry(playerName, velocity, distance, threatLevel, color)
-    local velTotal = math.abs(velocity.X) + math.abs(velocity.Y) + math.abs(velocity.Z)
+local function getAllParts()
+    local char = getCharacter()
+    if not char then return {} end
     
-    -- Only log if this is a NEW threat or velocity changed significantly
-    local lastVel = lastLoggedVelocity[playerName]
-    if lastVel and math.abs(lastVel - velTotal) < 100 then
-        return -- Skip logging, not enough change
+    local parts = {}
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            table.insert(parts, part)
+        end
     end
-    lastLoggedVelocity[playerName] = velTotal
+    return parts
+end
+
+-- Apply protection
+local function applyProtection(threatName, threatDistance)
+    local hrp = getHRP()
+    local humanoid = getHumanoid()
+    local parts = getAllParts()
     
-    logCount = logCount + 1
+    if not hrp then return end
     
-    local entry = Instance.new("Frame")
-    entry.Size = UDim2.new(1, 0, 0, 36)
-    entry.BackgroundColor3 = color
-    entry.Parent = logScroll
-    
-    local entryCorner = Instance.new("UICorner")
-    entryCorner.CornerRadius = UDim.new(0, 4)
-    entryCorner.Parent = entry
-    
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Size = UDim2.new(1, -60, 0, 14)
-    nameLabel.Position = UDim2.new(0, 8, 0, 2)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    nameLabel.Text = playerName.." - "..threatLevel
-    nameLabel.Font = Enum.Font.GothamBold
-    nameLabel.TextSize = 10
-    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-    nameLabel.Parent = entry
-    
-    local velLabel = Instance.new("TextLabel")
-    velLabel.Size = UDim2.new(1, -60, 0, 12)
-    velLabel.Position = UDim2.new(0, 8, 0, 16)
-    velLabel.BackgroundTransparency = 1
-    velLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    velLabel.Text = string.format("Vel: X=%.1f Y=%.1f Z=%.1f", velocity.X, velocity.Y, velocity.Z)
-    velLabel.Font = Enum.Font.Gotham
-    velLabel.TextSize = 9
-    velLabel.TextXAlignment = Enum.TextXAlignment.Left
-    velLabel.Parent = entry
-    
-    local distLabel = Instance.new("TextLabel")
-    distLabel.Size = UDim2.new(1, -60, 0, 12)
-    distLabel.Position = UDim2.new(0, 8, 0, 26)
-    distLabel.BackgroundTransparency = 1
-    distLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-    distLabel.Text = string.format("Distance: %.1f studs | %s", distance, os.date("%H:%M:%S"))
-    distLabel.Font = Enum.Font.Gotham
-    distLabel.TextSize = 9
-    distLabel.TextXAlignment = Enum.TextXAlignment.Left
-    distLabel.Parent = entry
-    
-    logScroll.CanvasSize = UDim2.new(0, 0, 0, logLayout.AbsoluteContentSize.Y + 8)
-    logScroll.CanvasPosition = Vector2.new(0, math.huge)
-    
-    -- Limit entries
-    local children = logScroll:GetChildren()
-    local frameCount = 0
-    for _, child in pairs(children) do
-        if child:IsA("Frame") then
-            frameCount = frameCount + 1
+    -- ANCHOR PROTECTION
+    if anchorProtection then
+        if not lastAnchorState then
+            hrp.Anchored = true
+            lastAnchorState = true
         end
     end
     
-    if frameCount > MAX_LOG_ENTRIES then
-        for _, child in pairs(children) do
-            if child:IsA("Frame") then
-                child:Destroy()
-                break
+    -- VELOCITY RESET
+    if velocityReset then
+        hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        hrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+    end
+    
+    -- MASS BOOST
+    if massBoost then
+        for _, part in pairs(parts) do
+            if not originalMasses[part] then
+                originalMasses[part] = part:GetAttribute("OriginalMass") or part.CustomPhysicalProperties and part.CustomPhysicalProperties.Density or 1
+            end
+            
+            local physProps = part.CustomPhysicalProperties or PhysicalProperties.new(1, 0.3, 0.5)
+            part.CustomPhysicalProperties = PhysicalProperties.new(
+                100,  -- Very high density
+                physProps.Friction,
+                physProps.Elasticity,
+                physProps.FrictionWeight,
+                physProps.ElasticityWeight
+            )
+        end
+    end
+    
+    -- COLLISION DISABLE (with threat only)
+    if collisionDisable then
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr ~= player and plr.Name:lower() ~= threatName:lower() then
+                -- Check if they're a threat
+                local plrChar = plr.Character
+                local plrHrp = plrChar and plrChar:FindFirstChild("HumanoidRootPart")
+                
+                if plrHrp then
+                    local angularVel = plrHrp.AssemblyAngularVelocity
+                    local totalVel = math.abs(angularVel.X) + math.abs(angularVel.Y) + math.abs(angularVel.Z)
+                    
+                    if totalVel > VELOCITY_THRESHOLD then
+                        -- Disable collision with this threat
+                        for _, myPart in pairs(parts) do
+                            for _, theirPart in pairs(plrChar:GetDescendants()) do
+                                if theirPart:IsA("BasePart") then
+                                    myPart.CanCollide = false
+                                end
+                            end
+                        end
+                    end
+                end
             end
         end
     end
+    
+    -- Update UI
+    statusLabel.Text = "⚠ PROTECTION TRIGGERED"
+    statusLabel.TextColor3 = Color3.fromRGB(255, 193, 7)
+    threatLabel.Text = string.format("Threat: %s (%.1f studs)", threatName, threatDistance)
+    threatLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    protectDot.BackgroundColor3 = Color3.fromRGB(255, 193, 7)
 end
 
--- ========== SCAN PLAYERS ==========
+-- Remove protection
+local function removeProtection()
+    local hrp = getHRP()
+    local parts = getAllParts()
+    
+    if anchorProtection and lastAnchorState then
+        if hrp then
+            hrp.Anchored = false
+        end
+        lastAnchorState = false
+    end
+    
+    -- Restore masses
+    if massBoost then
+        for _, part in pairs(parts) do
+            if originalMasses[part] then
+                local physProps = part.CustomPhysicalProperties or PhysicalProperties.new(1, 0.3, 0.5)
+                part.CustomPhysicalProperties = PhysicalProperties.new(
+                    originalMasses[part],
+                    physProps.Friction,
+                    physProps.Elasticity,
+                    physProps.FrictionWeight,
+                    physProps.ElasticityWeight
+                )
+            end
+        end
+    end
+    
+    -- Restore collisions
+    if collisionDisable then
+        for _, part in pairs(parts) do
+            if part.Name ~= "HumanoidRootPart" then
+                part.CanCollide = true
+            end
+        end
+    end
+    
+    -- Update UI
+    statusLabel.Text = "✓ PROTECTION ACTIVE"
+    statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+    threatLabel.Text = "No threats nearby"
+    threatLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+    protectDot.BackgroundColor3 = Color3.fromRGB(100, 255, 100)
+end
+
+-- ========== SCAN LOOP ==========
 local lastScanTime = 0
 
 RunService.Heartbeat:Connect(function()
@@ -498,88 +734,56 @@ RunService.Heartbeat:Connect(function()
     if currentTime - lastScanTime < SCAN_INTERVAL then return end
     lastScanTime = currentTime
     
-    local character = player.Character
-    local hrp = character and character:FindFirstChild("HumanoidRootPart")
+    local hrp = getHRP()
+    if not hrp then return end
     
-    local playerCount = 0
-    local newThreatCount = 0
-    local currentThreats = {}
+    local nearestThreat = nil
+    local nearestDistance = math.huge
     
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= player then
-            playerCount = playerCount + 1
-            
-            local plrChar = plr.Character
-            local plrHrp = plrChar and plrChar:FindFirstChild("HumanoidRootPart")
-            
-            if plrHrp then
-                local angularVel = plrHrp.AssemblyAngularVelocity
-                local totalVel = math.abs(angularVel.X) + math.abs(angularVel.Y) + math.abs(angularVel.Z)
+            -- Check whitelist
+            if whitelist[plr.Name:lower()] then
+                -- Skip whitelisted players
+            else
+                local plrChar = plr.Character
+                local plrHrp = plrChar and plrChar:FindFirstChild("HumanoidRootPart")
                 
-                local distance = 0
-                if hrp then
-                    distance = (plrHrp.Position - hrp.Position).Magnitude
-                end
-                
-                if totalVel > VELOCITY_THRESHOLD then
-                    newThreatCount = newThreatCount + 1
-                    currentThreats[plr.Name] = true
+                if plrHrp then
+                    local angularVel = plrHrp.AssemblyAngularVelocity
+                    local totalVel = math.abs(angularVel.X) + math.abs(angularVel.Y) + math.abs(angularVel.Z)
+                    local distance = (plrHrp.Position - hrp.Position).Magnitude
                     
-                    -- Determine threat level
-                    local threatLevel, color
-                    if totalVel > 200 then
-                        threatLevel = "CRITICAL"
-                        color = Color3.fromRGB(180, 40, 40)
-                    elseif totalVel > 100 then
-                        threatLevel = "HIGH"
-                        color = Color3.fromRGB(200, 100, 40)
-                    else
-                        threatLevel = "MEDIUM"
-                        color = Color3.fromRGB(180, 150, 40)
-                    end
-                    
-                    -- Update live view
-                    updateOrCreateLiveEntry(plr.Name, angularVel.X, angularVel.Y, angularVel.Z, distance, threatLevel, color)
-                    
-                    -- Log if significant change
-                    local lastVel = suspiciousPlayers[plr.Name]
-                    if not lastVel or math.abs(lastVel - totalVel) > 200 then
-                        addLogEntry(plr.Name, angularVel, distance, threatLevel, color)
-                    end
-                    suspiciousPlayers[plr.Name] = totalVel
-                else
-                    -- Remove from live view if no longer a threat
-                    removeLiveEntry(plr.Name)
-                    if suspiciousPlayers[plr.Name] then
-                        suspiciousPlayers[plr.Name] = nil
-                        lastLoggedVelocity[plr.Name] = nil
+                    -- Check if threat
+                    if totalVel > VELOCITY_THRESHOLD and distance < DETECTION_RANGE then
+                        if distance < nearestDistance then
+                            nearestThreat = plr.Name
+                            nearestDistance = distance
+                        end
                     end
                 end
             end
         end
     end
     
-    -- Clean up live entries for players who left
-    for name, _ in pairs(liveEntries) do
-        if not currentThreats[name] then
-            removeLiveEntry(name)
+    -- Apply or remove protection
+    if nearestThreat and nearestDistance <= PROTECTION_RANGE then
+        applyProtection(nearestThreat, nearestDistance)
+        isProtected = true
+        lastThreat = nearestThreat
+    else
+        if isProtected then
+            removeProtection()
+            isProtected = false
+            lastThreat = nil
         end
     end
     
-    -- Update status
-    statusLabel.Text = string.format("Scanning %d players...", playerCount)
-    
-    -- Update threat count
-    if newThreatCount ~= threatCount then
-        threatCount = newThreatCount
-        threatLabel.Text = string.format("⚠ Threats: %d", threatCount)
-        
-        if threatCount > 0 then
-            threatLabel.TextColor3 = Color3.fromRGB(255, 60, 60)
-            warningDot.Visible = true
-        else
-            threatLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-            warningDot.Visible = false
+    -- Always reset velocity if protection is on and velocity reset enabled
+    if velocityReset and isProtected then
+        if hrp then
+            hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            hrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
         end
     end
 end)
@@ -596,4 +800,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Flinger Logger Loaded - Threshold: "..VELOCITY_THRESHOLD)
+print("✅ Anti-Fling Protection Loaded")
+print("Detection Range: "..DETECTION_RANGE.." studs")
+print("Protection Range: "..PROTECTION_RANGE.." studs")
