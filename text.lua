@@ -226,78 +226,79 @@ statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 statusLabel.Parent = contentFrame
 
 -- ========== DRAGGING FOR HUB BUTTON ==========
-local hubDragging = false
-local hubDragStart = nil
-local hubStartPos = nil
-local hubHasMoved = false
+local dragging = false
+local dragInput, dragStart, startPos
 
 hubButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        hubDragging = true
-        hubDragStart = input.Position
-        hubStartPos = hubButton.Position
-        hubHasMoved = false
+        dragging = true
+        dragStart = input.Position
+        startPos = hubButton.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+hubButton.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if hubDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - hubDragStart
-        if delta.Magnitude > 5 then
-            hubHasMoved = true
-        end
-        hubButton.Position = UDim2.new(hubStartPos.X.Scale, hubStartPos.X.Offset + delta.X, hubStartPos.Y.Scale, hubStartPos.Y.Offset + delta.Y)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        hubButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        if hubDragging then
-            hubDragging = false
-            if not hubHasMoved then
-                -- It was a click, not a drag
-                expanded = not expanded
-                if expanded then
-                    hubButton.Visible = false
-                    mainFrame.Visible = true
-                else
-                    mainFrame.Visible = false
-                    hubButton.Visible = true
-                end
-            end
-        end
-    end
-end)
-
--- ========== DRAGGING FOR MAIN FRAME (ANYWHERE) ==========
+-- ========== DRAGGING FOR MAIN FRAME ==========
 local mainDragging = false
-local mainDragStart = nil
-local mainStartPos = nil
+local mainDragInput, mainDragStart, mainDragPos
 
 mainFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         mainDragging = true
         mainDragStart = input.Position
-        mainStartPos = mainFrame.Position
+        mainDragPos = mainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                mainDragging = false
+            end
+        end)
+    end
+end)
+
+mainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        mainDragInput = input
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if mainDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+    if input == mainDragInput and mainDragging then
         local delta = input.Position - mainDragStart
-        mainFrame.Position = UDim2.new(mainStartPos.X.Scale, mainStartPos.X.Offset + delta.X, mainStartPos.Y.Scale, mainStartPos.Y.Offset + delta.Y)
+        mainFrame.Position = UDim2.new(mainDragPos.X.Scale, mainDragPos.X.Offset + delta.X, mainDragPos.Y.Scale, mainDragPos.Y.Offset + delta.Y)
     end
 end)
 
-UserInputService.InputEnded:Connect(function(input)
+-- ========== TOGGLE HUB (SAME AS YOUR WORKING SCRIPT) ==========
+hubButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        mainDragging = false
+        wait(0.1)
+        if not dragging then
+            hubButton.Visible = false
+            mainFrame.Visible = true
+        end
     end
 end)
 
--- ========== COLLAPSE BUTTON ==========
 collapseBtn.MouseButton1Click:Connect(function()
-    expanded = false
     mainFrame.Visible = false
     hubButton.Visible = true
 end)
@@ -410,8 +411,7 @@ local guiVisible = true
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.RightControl then
-        if expanded then
-            expanded = false
+        if mainFrame.Visible then
             mainFrame.Visible = false
             hubButton.Visible = guiVisible
         else
@@ -421,4 +421,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Multi-Line Chat Hub Loaded (Fixed)")
+print("✅ Multi-Line Chat Hub Loaded")
