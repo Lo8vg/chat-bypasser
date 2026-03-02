@@ -644,6 +644,11 @@ textbox2.FocusLost:Connect(function(enterPressed)
     -- Don't send on Enter - only send via button
 end)
 
+-- Focused - clear (Tab 2) - clears when user taps the box again
+textbox2.Focused:Connect(function()
+    textbox2.Text = ""
+end)
+
 -- Send All Button (Tab 2)
 sendAllButton.MouseButton1Click:Connect(function()
     local text = textbox2.Text
@@ -676,7 +681,7 @@ sendAllButton.MouseButton1Click:Connect(function()
         sendAllButton.Text = "Send All"
         sendAllButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
         statusLabel.Text = "Done! Sent "..#lines.." messages"
-        textbox2.Text = ""
+        -- Removed: textbox2.Text = ""  -- Don't clear after sending
     end)
 end)
 
