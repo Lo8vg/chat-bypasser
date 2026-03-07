@@ -3914,3 +3914,2334 @@ spawn(function()
         end
     end
 end)
+-- ========== ADVANCED TAB SWITCHING ==========
+
+local function switchAdvancedTab(tabName)
+    currentAdvTab = tabName
+    tradePanel.Visible = tabName == "Trade"
+    grindPanel.Visible = tabName == "Grind"
+    autoGGPanel.Visible = tabName == "AutoGG"
+    alertsPanel.Visible = tabName == "Alerts"
+    muterPanel.Visible = tabName == "Muter"
+    statsPanel.Visible = tabName == "Stats"
+    
+    for name, btn in pairs(advSubTabBtns) do
+        if name == tabName then
+            btn.BackgroundColor3 = COLORS.buttonPrimary
+            btn.TextColor3 = COLORS.textLight
+        else
+            btn.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+            btn.TextColor3 = COLORS.textDark
+        end
+    end
+end
+
+for name, btn in pairs(advSubTabBtns) do
+    btn.MouseButton1Click:Connect(function()
+        switchAdvancedTab(name)
+    end)
+end
+
+-- Update main tab switching to include Advanced
+local originalSwitchTab = switchTab
+switchTab = function(tabName)
+    currentTab = tabName
+    chatSection.Visible = tabName == "Chat"
+    spamSection.Visible = tabName == "Spam"
+    autoReplySection.Visible = tabName == "AutoReply"
+    toolsSection.Visible = tabName == "Tools"
+    afkSection.Visible = tabName == "AFK"
+    settingsSection.Visible = tabName == "Settings"
+    advancedSection.Visible = tabName == "Advanced"
+    
+    for name, btn in pairs(tabButtons) do
+        if name == tabName then
+            btn.BackgroundColor3 = COLORS.buttonPrimary
+            btn.TextColor3 = COLORS.textLight
+        else
+            btn.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+            btn.TextColor3 = COLORS.textDark
+        end
+    end
+end
+
+-- Rebind tab buttons
+for name, btn in pairs(tabButtons) do
+    btn.MouseButton1Click:Connect(function()
+        switchTab(name)
+    end)
+end
+
+-- ========== TRADE MODE LOGIC ==========
+
+local tradeRunning = false
+local tradeMessageIndex = 1
+local lastTradeTime = 0
+local tradeResponseDetected = false
+
+tradeToggle.MouseButton1Click:Connect(function()
+    tradeModeEnabled = not tradeModeEnabled
+    
+    if tradeModeEnabled then
+        tradeToggle.Text = "TRADE MODE: ON"
+        tradeToggle.BackgroundColor3 = COLORS.buttonSuccess
+        tradeRunning = true
+        
+        spawn(function()
+            while tradeModeEnabled and tradeRunning do
+                local messages = {}
+                for line in tradeMsgsInput.Text:gmatch("[^\r\n]+") do
+                    local trimmed = line:gsub("^%s+", ""):gsub("%s+$", "")
+                    if trimmed ~= "" then
+                        table.insert(messages, trimmed)
+                    end
+                end
+                
+                if #messages > 0 then
+                    local msg = messages[tradeMessageIndex]
+                    tradeMessageIndex = tradeMessageIndex + 1
+                    if tradeMessageIndex > #messages then tradeMessageIndex = 1 end
+                    
+                    if stopResponseEnabled and tradeResponseDetected then
+                        -- Wait a bit longer after someone responds
+                        tradeResponseDetected = false
+                        wait(60 + math.random(30))
+                    end
+                    
+                    sendMessage(msg)
+                    messageStats.sent = messageStats.sent + 1
+                end
+                
+                local interval = tonumber(tradeIntervalInput.Text) or 180
+                local randomAdd = math.random(10, 40)
+                wait(interval + randomAdd)
+            end
+        end)
+    else
+        tradeToggle.Text = "TRADE MODE: OFF"
+        tradeToggle.BackgroundColor3 = COLORS.buttonDanger
+        tradeRunning = false
+    end
+end)
+
+-- ========== GRIND MODE LOGIC ==========
+
+local grindRunning = false
+local grindMessageIndex = 1
+local grindResponseDetected = false
+
+grindToggle.MouseButton1Click:Connect(function()
+    grindModeEnabled = not grindModeEnabled
+    
+    if grindModeEnabled then
+        grindToggle.Text = "GRIND MODE: ON"
+        grindToggle.BackgroundColor3 = COLORS.buttonSuccess
+        grindRunning = true
+        
+        spawn(function()
+            while grindModeEnabled and grindRunning do
+                local messages = {}
+                for line in grindMsgsInput.Text:gmatch("[^\r\n]+") do
+                    local trimmed = line:gsub("^%s+", ""):gsub("%s+$", "")
+                    if trimmed ~= "" then
+                        table.insert(messages, trimmed)
+                    end
+                end
+                
+                if #messages > 0 then
+                    local msg = messages[grindMessageIndex]
+                    grindMessageIndex = grindMessageIndex + 1
+                    if grindMessageIndex > #messages then grindMessageIndex = 1 end
+                    
+                    if stopResponseEnabled and grindResponseDetected then
+                        grindResponseDetected = false
+                        wait(45 + math.random(15))
+                    end
+                    
+                    sendMessage(msg)
+                    messageStats.sent = messageStats.sent + 1
+                end
+                
+                local interval = tonumber(grindIntervalInput.Text) or 120
+                local randomAdd = math.random(10, 30)
+                wait(interval + randomAdd)
+            end
+        end)
+    else
+        grindToggle.Text = "GRIND MODE: OFF"
+        grindToggle.BackgroundColor3 = COLORS.buttonDanger
+        grindRunning = false
+    end
+end)
+
+stopResponseBtn.MouseButton1Click:Connect(function()
+    stopResponseEnabled = not stopResponseEnabled
+    stopResponseBtn.Text = stopResponseEnabled and "ON" or "OFF"
+    stopResponseBtn.BackgroundColor3 = stopResponseEnabled and COLORS.buttonSuccess or COLORS.buttonOff
+end)
+
+-- ========== AUTO-GG LOGIC ==========
+
+local lastGGTime = 0
+local ggCooldown = 10
+
+autoGGToggle.MouseButton1Click:Connect(function()
+    autoGGEnabled = not autoGGEnabled
+    
+    if autoGGEnabled then
+        autoGGToggle.Text = "AUTO-GG: ON"
+        autoGGToggle.BackgroundColor3 = COLORS.buttonSuccess
+    else
+        autoGGToggle.Text = "AUTO-GG: OFF"
+        autoGGToggle.BackgroundColor3 = COLORS.buttonDanger
+    end
+end)
+
+detectEndBtn.MouseButton1Click:Connect(function()
+    detectEndEnabled = not detectEndEnabled
+    detectEndBtn.Text = detectEndEnabled and "ON" or "OFF"
+    detectEndBtn.BackgroundColor3 = detectEndEnabled and COLORS.buttonSuccess or COLORS.buttonOff
+end)
+
+detectDeathBtn.MouseButton1Click:Connect(function()
+    detectDeathEnabled = not detectDeathEnabled
+    detectDeathBtn.Text = detectDeathEnabled and "ON" or "OFF"
+    detectDeathBtn.BackgroundColor3 = detectDeathEnabled and COLORS.buttonSuccess or COLORS.buttonOff
+end)
+
+-- Detect game end (round end, match end, etc.)
+local lastRoundState = nil
+
+spawn(function()
+    while true do
+        wait(1)
+        
+        if autoGGEnabled and detectEndEnabled then
+            -- Try to detect round/game end through common patterns
+            local ReplicatedStorage = game:GetService("ReplicatedStorage")
+            
+            -- Check for common round state remotes/values
+            local roundValue = ReplicatedStorage:FindFirstChild("RoundStatus")
+                or ReplicatedStorage:FindFirstChild("GameStatus")
+                or ReplicatedStorage:FindFirstChild("MatchState")
+                or ReplicatedStorage:FindFirstChild("RoundState")
+            
+            if roundValue and roundValue:IsA("StringValue") then
+                local currentState = roundValue.Value
+                local endStates = {"Ended", "Finished", "Intermission", "Lobby", "Waiting", "Results", "GameOver", "Game End"}
+                
+                if lastRoundState ~= currentState then
+                    for _, endState in ipairs(endStates) do
+                        if currentState:lower():find(endState:lower()) then
+                            if tick() - lastGGTime > ggCooldown then
+                                local ggMessages = {}
+                                for line in ggMsgsInput.Text:gmatch("[^\r\n]+") do
+                                    local trimmed = line:gsub("^%s+", ""):gsub("%s+$", "")
+                                    if trimmed ~= "" then
+                                        table.insert(ggMessages, trimmed)
+                                    end
+                                end
+                                
+                                if #ggMessages > 0 then
+                                    local msg = ggMessages[math.random(1, #ggMessages)]
+                                    wait(1 + math.random() * 2)
+                                    sendMessage(msg)
+                                    messageStats.sent = messageStats.sent + 1
+                                    lastGGTime = tick()
+                                end
+                            end
+                            break
+                        end
+                    end
+                    lastRoundState = currentState
+                end
+            end
+            
+            -- Alternative: Check for time remaining values
+            local timeValue = ReplicatedStorage:FindFirstChild("TimeRemaining")
+                or ReplicatedStorage:FindFirstChild("RoundTime")
+            
+            if timeValue and timeValue:IsA("IntValue") or timeValue:IsA("NumberValue") then
+                if timeValue.Value <= 0 and lastRoundState ~= 0 then
+                    if tick() - lastGGTime > ggCooldown then
+                        local ggMessages = {}
+                        for line in ggMsgsInput.Text:gmatch("[^\r\n]+") do
+                            local trimmed = line:gsub("^%s+", ""):gsub("%s+$", "")
+                            if trimmed ~= "" then
+                                table.insert(ggMessages, trimmed)
+                            end
+                        end
+                        
+                        if #ggMessages > 0 then
+                            local msg = ggMessages[math.random(1, #ggMessages)]
+                            wait(1 + math.random() * 2)
+                            sendMessage(msg)
+                            messageStats.sent = messageStats.sent + 1
+                            lastGGTime = tick()
+                        end
+                    end
+                    lastRoundState = 0
+                elseif timeValue.Value > 0 then
+                    lastRoundState = timeValue.Value
+                end
+            end
+        end
+    end
+end)
+
+-- Death detection
+local lastHealth = 100
+local isDead = false
+
+spawn(function()
+    while true do
+        wait(0.5)
+        
+        local char = player.Character
+        if char then
+            local humanoid = char:FindFirstChild("Humanoid")
+            if humanoid then
+                local currentHealth = humanoid.Health
+                
+                if currentHealth <= 0 and lastHealth > 0 and not isDead then
+                    isDead = true
+                    
+                    if autoGGEnabled and detectDeathEnabled then
+                        local deathMessages = {}
+                        for line in deathMsgsInput.Text:gmatch("[^\r\n]+") do
+                            local trimmed = line:gsub("^%s+", ""):gsub("%s+$", "")
+                            if trimmed ~= "" then
+                                table.insert(deathMessages, trimmed)
+                            end
+                        end
+                        
+                        if #deathMessages > 0 then
+                            local msg = deathMessages[math.random(1, #deathMessages)]
+                            wait(0.5 + math.random() * 0.5)
+                            sendMessage(msg)
+                            messageStats.sent = messageStats.sent + 1
+                        end
+                    end
+                elseif currentHealth > 0 and isDead then
+                    isDead = false
+                end
+                
+                lastHealth = currentHealth
+            end
+        end
+    end
+end)
+
+-- ========== KEYWORD ALERTS LOGIC ==========
+
+alertsToggle.MouseButton1Click:Connect(function()
+    pingEnabled = not pingEnabled
+    
+    if pingEnabled then
+        alertsToggle.Text = "KEYWORD ALERTS: ON"
+        alertsToggle.BackgroundColor3 = COLORS.buttonSuccess
+    else
+        alertsToggle.Text = "KEYWORD ALERTS: OFF"
+        alertsToggle.BackgroundColor3 = COLORS.buttonDanger
+    end
+end)
+
+soundAlertBtn.MouseButton1Click:Connect(function()
+    soundAlertEnabled = not soundAlertEnabled
+    soundAlertBtn.Text = soundAlertEnabled and "ON" or "OFF"
+    soundAlertBtn.BackgroundColor3 = soundAlertEnabled and COLORS.buttonSuccess or COLORS.buttonOff
+end)
+
+flashAlertBtn.MouseButton1Click:Connect(function()
+    flashAlertEnabled = not flashAlertEnabled
+    flashAlertBtn.Text = flashAlertEnabled and "ON" or "OFF"
+    flashAlertBtn.BackgroundColor3 = flashAlertEnabled and COLORS.buttonSuccess or COLORS.buttonOff
+end)
+
+local function triggerAlert(keyword, playerName, message)
+    addAlertLog(keyword, playerName, message)
+    
+    -- Sound alert
+    if soundAlertEnabled then
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://4590660907" -- Ding sound
+        sound.Volume = 1
+        sound.Parent = screenGui
+        sound:Play()
+        wait(1)
+        sound:Destroy()
+    end
+    
+    -- Flash alert
+    if flashAlertEnabled then
+        local originalColor = hubFrame.BackgroundColor3
+        for i = 1, 3 do
+            hubFrame.BackgroundColor3 = Color3.fromRGB(255, 200, 100)
+            wait(0.15)
+            hubFrame.BackgroundColor3 = originalColor
+            wait(0.15)
+        end
+    end
+end
+
+local function checkKeywords(playerName, message)
+    if not pingEnabled then return end
+    
+    local keywords = keywordsInput.Text
+    for keyword in keywords:gmatch("[^,^]+") do
+        keyword = keyword:gsub("^%s+", ""):gsub("%s+$", ""):lower()
+        if keyword ~= "" and message:lower():find(keyword) then
+            triggerAlert(keyword, playerName, message)
+            break
+        end
+    end
+end
+
+-- ========== SMART AUTO-REPLY ==========
+
+local function smartAutoReply(plr, msg)
+    if not smartReplyEnabled then return end
+    
+    local username = plr.Name:lower()
+    
+    -- Check cooldown
+    if lastReplyTimes[username] then
+        if tick() - lastReplyTimes[username] < smartReplyCooldown then
+            return
+        end
+    end
+    
+    -- Check if message mentions player
+    local playerName = player.Name:lower()
+    local displayName = player.DisplayName and player.DisplayName:lower() or ""
+    
+    if msg:lower():find(playerName) or msg:lower():find(displayName) or msg:find("@") then
+        -- Someone mentioned us, send a reply
+        local replies = {"?", "yeah?", "what's up", "hm?", "yes?", "sup"}
+        local reply = replies[math.random(1, #replies)]
+        wait(1 + math.random() * 2)
+        sendMessage(reply)
+        messageStats.autoReplies = messageStats.autoReplies + 1
+        lastReplyTimes[username] = tick()
+    end
+end
+
+-- ========== WHISPER SUPPORT ==========
+
+local whisperTarget = nil
+
+local function sendWhisper(targetName, msg)
+    local message = msg:gsub("^%s+", ""):gsub("%s+$", "")
+    if message == "" then return false end
+    
+    local chatRemote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
+    if chatRemote then
+        local sayMessage = chatRemote:FindFirstChild("SayMessageRequest")
+        if sayMessage then
+            sayMessage:FireServer("/w " .. targetName .. " " .. message, "All")
+            return true
+        end
+    end
+    
+    -- Try TextChatService whisper
+    local TextChatService = game:GetService("TextChatService")
+    if TextChatService then
+        local channels = TextChatService:FindFirstChild("TextChannels")
+        if channels then
+            -- Try to find or create whisper channel
+            local whisperChannel = channels:FindFirstChild("RBXWhisper:" .. player.Name .. ":" .. targetName)
+                or channels:FindFirstChild("RBXWhisper:" .. targetName .. ":" .. player.Name)
+            
+            if whisperChannel then
+                whisperChannel:SendAsync(message)
+                return true
+            end
+        end
+    end
+    
+    return false
+end
+
+-- ========== MESSAGE ENCRYPTION ==========
+
+local function encryptMessage(msg)
+    if not encryptionEnabled then return msg end
+    
+    local encrypted = ""
+    for i = 1, #msg do
+        local char = msg:sub(i, i)
+        local keyChar = encryptionKey:sub((i - 1) % #encryptionKey + 1, (i - 1) % #encryptionKey + 1)
+        encrypted = encrypted .. string.char(bit32.bxor(string.byte(char), string.byte(keyChar)))
+    end
+    
+    return "[ENC]" .. encrypted
+end
+
+local function decryptMessage(msg)
+    if not msg:find("^%[ENC%]") then return msg end
+    
+    msg = msg:sub(6) -- Remove [ENC] prefix
+    local decrypted = ""
+    
+    for i = 1, #msg do
+        local char = msg:sub(i, i)
+        local keyChar = encryptionKey:sub((i - 1) % #encryptionKey + 1, (i - 1) % #encryptionKey + 1)
+        decrypted = decrypted .. string.char(bit32.bxor(string.byte(char), string.byte(keyChar)))
+    end
+    
+    return decrypted
+end
+
+-- ========== ANTI-DETECTION ==========
+
+local antiDetectionEnabled = true
+local typoChance = 0.05 -- 5% chance to add typo
+local varianceChance = 0.1 -- 10% chance to vary message
+
+local commonTypos = {
+    ["a"] = {"q", "s"},
+    ["e"] = {"w", "r"},
+    ["i"] = {"u", "o"},
+    ["o"] = {"i", "p"},
+    ["s"] = {"a", "d"},
+    ["n"] = {"b", "m"},
+    ["t"] = {"r", "y"},
+    ["h"] = {"g", "j"},
+}
+
+local function addTypo(msg)
+    if math.random() > typoChance then return msg end
+    
+    local pos = math.random(1, #msg)
+    local char = msg:sub(pos, pos):lower()
+    
+    if commonTypos[char] then
+        local replacements = commonTypos[char]
+        local replacement = replacements[math.random(1, #replacements)]
+        return msg:sub(1, pos - 1) .. replacement .. msg:sub(pos + 1)
+    end
+    
+    return msg
+end
+
+local function varyMessage(msg)
+    if math.random() > varianceChance then return msg end
+    
+    local variations = {
+        function(m) return m .. "." end,
+        function(m) return m .. "!" end,
+        function(m) return m .. " lol" end,
+        function(m) return m .. " :)" end,
+        function(m) return string.lower(m:sub(1,1)) .. m:sub(2) end,
+        function(m) return string.upper(m:sub(1,1)) .. m:sub(2) end,
+    }
+    
+    local variation = variations[math.random(1, #variations)]
+    return variation(msg)
+end
+
+-- ========== ENHANCED SEND MESSAGE (with anti-detection) ==========
+
+local function sendMessageEnhanced(msg, useAntiDetection)
+    local message = msg or chatTextbox.Text
+    message = message:gsub("^%s+", ""):gsub("%s+$", ""):gsub("\n", " ")
+    
+    if message == "" or #message > MAX_CHARS then return false end
+    
+    -- Apply anti-detection
+    if useAntiDetection and antiDetectionEnabled then
+        message = addTypo(message)
+        message = varyMessage(message)
+    end
+    
+    return sendMessage(message)
+end
+
+-- ========== MODIFIED CHAT HANDLER WITH ALL FEATURES ==========
+
+local originalHandleChat = handleChat
+
+handleChat = function(plr, msg)
+    -- Update stats
+    messageStats.received = messageStats.received + 1
+    
+    -- Check mute list
+    local isMuted = false
+    for _, mutedName in ipairs(muteList) do
+        if plr.Name:lower() == mutedName:lower() then
+            isMuted = true
+            break
+        end
+    end
+    
+    -- Add to logger (unless muted)
+    if not isMuted then
+        addLogEntry(plr.Name, msg, plr == player)
+    end
+    
+    -- Check keywords for alerts
+    checkKeywords(plr.Name, msg)
+    
+    -- Smart auto-reply
+    if plr ~= player then
+        smartAutoReply(plr, msg)
+    end
+    
+    -- Detect trade/grind responses
+    if tradeModeEnabled then
+        if msg:lower():find("trade") or msg:lower():find("offer") or msg:lower():find("deal") 
+           or msg:lower():find(player.Name:lower()) then
+            tradeResponseDetected = true
+        end
+    end
+    
+    if grindModeEnabled then
+        if msg:lower():find("sell") or msg:lower():find("buy") or msg:lower():find("how much")
+           or msg:lower():find(player.Name:lower()) then
+            grindResponseDetected = true
+        end
+    end
+    
+    -- Original auto-reply logic
+    if autoReplyEnabled and autoReplyTargets[plr.Name:lower()] then
+        local data = autoReplyTargets[plr.Name:lower()]
+        local reply = data.messages[data.index]
+        data.index = data.index + 1
+        if data.index > #data.messages then
+            data.index = 1
+        end
+        wait(0.5 + math.random() * 0.5)
+        sendReply(reply)
+        messageStats.autoReplies = messageStats.autoReplies + 1
+    end
+    
+    -- Keyword-based auto-reply
+    if keywordEnabled and plr ~= player then
+        for targetName, data in pairs(autoReplyTargets) do
+            if msg:lower():find(targetName:lower()) then
+                local reply = data.messages[data.index]
+                data.index = data.index + 1
+                if data.index > #data.messages then
+                    data.index = 1
+                end
+                wait(0.5 + math.random() * 0.5)
+                sendReply(reply)
+                messageStats.autoReplies = messageStats.autoReplies + 1
+                break
+            end
+        end
+    end
+end
+
+-- Re-hook chat events with enhanced handler
+for _, plr in pairs(Players:GetPlayers()) do
+    if plr ~= player then
+        plr.Chatted:Connect(function(msg)
+            handleChat(plr, msg)
+        end)
+    end
+end
+
+Players.PlayerAdded:Connect(function(plr)
+    plr.Chatted:Connect(function(msg)
+        handleChat(plr, msg)
+    end)
+end)
+
+-- Update message stats on send
+local originalSendMessage = sendMessage
+sendMessage = function(msg)
+    local result = originalSendMessage(msg)
+    if result then
+        messageStats.sent = messageStats.sent + 1
+    end
+    return result
+end
+
+-- ========== COOLDOWN WARNING SYSTEM ==========
+
+local cooldownWarnings = {}
+
+local function checkCooldownWarning(msgType)
+    local now = tick()
+    local cooldownTime = 5 -- seconds between warnings
+    
+    if cooldownWarnings[msgType] and (now - cooldownWarnings[msgType]) < cooldownTime then
+        return false
+    end
+    
+    cooldownWarnings[msgType] = now
+    return true
+end
+
+-- Update spam to track stats
+local originalSpamToggle = spamToggle.MouseButton1Click
+spamToggle.MouseButton1Click:Connect(function()
+    spamEnabled = not spamEnabled
+    spamDelay = tonumber(spamDelayInput.Text) or 1
+    if spamDelay < 0.1 then spamDelay = 0.1 end
+    
+    if spamEnabled then
+        spamToggle.Text = "SPAM: ON"
+        spamToggle.BackgroundColor3 = COLORS.buttonSuccess
+        
+        spawn(function()
+            while spamEnabled do
+                local msg = getSpamMessage()
+                
+                if checkRateLimit() then
+                    sendMessage(msg)
+                    messageStats.sent = messageStats.sent + 1
+                    messageStats.spamSent = messageStats.spamSent + 1
+                else
+                    if checkCooldownWarning("rateLimit") then
+                        print("⚠️ Rate limit reached! Pausing spam for 5 seconds...")
+                        wait(5)
+                    end
+                end
+                
+                local actualDelay = spamDelay
+                if spamRandomizeEnabled then
+                    actualDelay = spamDelay + (math.random() * spamDelay * 0.5)
+                end
+                
+                wait(actualDelay)
+            end
+        end)
+    else
+        spamToggle.Text = "SPAM: OFF"
+        spamToggle.BackgroundColor3 = COLORS.buttonDanger
+    end
+end)
+
+-- ========== KEYBOARD SHORTCUTS ==========
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    -- F1: Toggle GUI
+    if input.KeyCode == Enum.KeyCode.F1 then
+        if hubFrame.Visible then
+            hubFrame.Visible = false
+            hubButton.Visible = true
+        else
+            hubButton.Visible = not hubButton.Visible
+        end
+    end
+    
+    -- F2: Quick toggle Anti-AFK
+    if input.KeyCode == Enum.KeyCode.F2 then
+        antiAfkEnabled = not antiAfkEnabled
+        if antiAfkEnabled then
+            afkToggle.Text = "ANTI-AFK: ON"
+            afkToggle.BackgroundColor3 = COLORS.buttonSuccess
+        else
+            afkToggle.Text = "ANTI-AFK: OFF"
+            afkToggle.BackgroundColor3 = COLORS.buttonDanger
+        end
+    end
+    
+    -- F3: Quick toggle Spam
+    if input.KeyCode == Enum.KeyCode.F3 then
+        spamEnabled = not spamEnabled
+        if spamEnabled then
+            spamToggle.Text = "SPAM: ON"
+            spamToggle.BackgroundColor3 = COLORS.buttonSuccess
+        else
+            spamToggle.Text = "SPAM: OFF"
+            spamToggle.BackgroundColor3 = COLORS.buttonDanger
+        end
+    end
+    
+    -- F4: Quick toggle Auto-Reply
+    if input.KeyCode == Enum.KeyCode.F4 then
+        autoReplyEnabled = not autoReplyEnabled
+        if autoReplyEnabled then
+            autoReplyToggle.Text = "AUTO-REPLY: ON"
+            autoReplyToggle.BackgroundColor3 = COLORS.buttonSuccess
+        else
+            autoReplyToggle.Text = "AUTO-REPLY: OFF"
+            autoReplyToggle.BackgroundColor3 = COLORS.buttonDanger
+        end
+    end
+end)
+
+-- ========== INITIALIZE CHUNK 2 ==========
+
+updateMutedList()
+switchAdvancedTab("Trade")
+
+print("✅ Chat Hub v2 - Chunk 2 Loaded!")
+print("   - Trade Mode: Auto-bump trades")
+print("   - Grind Mode: Auto buy/sell messages")
+print("   - Auto-GG: Detect game end + death")
+print("   - Keyword Alerts: Sound + flash notifications")
+print("   - Chat Muter: Hide messages from players")
+print("   - Statistics: Track your chat activity")
+print("   - Keyboard Shortcuts: F1-F4 for quick toggles")
+-- ========== CHUNK 3: ADVANCED FEATURES CONTINUED ==========
+
+-- New variables for Chunk 3
+local commandsEnabled = true
+local commandPrefix = "/"
+local massMentionEnabled = false
+local massMentionDelay = 2
+local chatSpyEnabled = false
+local rateLimitQueue = {}
+local queueProcessing = false
+local advancedAntiDetection = false
+local humanizationEnabled = false
+local lastTypingTime = 0
+
+-- ========== WHISPER UI ENHANCEMENT ==========
+
+-- Add whisper mode toggle to Chat tab
+local whisperRow = Instance.new("Frame")
+whisperRow.Size = UDim2.new(1, 0, 0, 28)
+whisperRow.Position = UDim2.new(0, 0, 0, 55)
+whisperRow.BackgroundTransparency = 1
+whisperRow.Parent = chatSection
+
+local whisperToggleLabel = Instance.new("TextLabel")
+whisperToggleLabel.Size = UDim2.new(0, 100, 1, 0)
+whisperToggleLabel.BackgroundTransparency = 1
+whisperToggleLabel.TextColor3 = COLORS.textDark
+whisperToggleLabel.Text = "Whisper Mode:"
+whisperToggleLabel.Font = Enum.Font.Gotham
+whisperToggleLabel.TextSize = 11
+whisperToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+whisperToggleLabel.Parent = whisperRow
+
+local whisperToggleBtn = Instance.new("TextButton")
+whisperToggleBtn.Size = UDim2.new(0, 50, 1, 0)
+whisperToggleBtn.Position = UDim2.new(0, 105, 0, 0)
+whisperToggleBtn.BackgroundColor3 = COLORS.buttonOff
+whisperToggleBtn.TextColor3 = COLORS.textLight
+whisperToggleBtn.Text = "OFF"
+whisperToggleBtn.Font = Enum.Font.GothamBold
+whisperToggleBtn.TextSize = 11
+whisperToggleBtn.Parent = whisperRow
+
+local whisperToggleCorner = Instance.new("UICorner")
+whisperToggleCorner.CornerRadius = UDim.new(0, 6)
+whisperToggleCorner.Parent = whisperToggleBtn
+
+local whisperTargetLabel = Instance.new("TextLabel")
+whisperTargetLabel.Size = UDim2.new(0, 60, 1, 0)
+whisperTargetLabel.Position = UDim2.new(0, 165, 0, 0)
+whisperTargetLabel.BackgroundTransparency = 1
+whisperTargetLabel.TextColor3 = COLORS.textDark
+whisperTargetLabel.Text = "Target:"
+whisperTargetLabel.Font = Enum.Font.Gotham
+whisperTargetLabel.TextSize = 11
+whisperTargetLabel.TextXAlignment = Enum.TextXAlignment.Left
+whisperTargetLabel.Parent = whisperRow
+
+local whisperTargetInput = Instance.new("TextBox")
+whisperTargetInput.Size = UDim2.new(1, -245, 1, 0)
+whisperTargetInput.Position = UDim2.new(0, 230, 0, 0)
+whisperTargetInput.BackgroundColor3 = COLORS.inputBg
+whisperTargetInput.TextColor3 = COLORS.textDark
+whisperTargetInput.Text = ""
+whisperTargetInput.PlaceholderText = "Username"
+whisperTargetInput.PlaceholderColor3 = COLORS.textMuted
+whisperTargetInput.Font = Enum.Font.Gotham
+whisperTargetInput.TextSize = 11
+whisperTargetInput.ClearTextOnFocus = false
+whisperTargetInput.Parent = whisperRow
+
+local whisperTargetCorner = Instance.new("UICorner")
+whisperTargetCorner.CornerRadius = UDim.new(0, 6)
+whisperTargetCorner.Parent = whisperTargetInput
+
+local whisperTargetStroke = Instance.new("UIStroke")
+whisperTargetStroke.Color = COLORS.border
+whisperTargetStroke.Thickness = 1
+whisperTargetStroke.Parent = whisperTargetInput
+
+-- Update positions of existing elements
+chatTextbox.Position = UDim2.new(0, 0, 0, 88)
+sendButton.Position = UDim2.new(1, -85, 0, 88)
+chatCharCounter.Position = UDim2.new(1, -65, 0, 115)
+rateLimitWarning.Position = UDim2.new(0, 0, 0, 115)
+prefixStatus.Position = UDim2.new(0, 0, 0, 135)
+
+-- Whisper toggle logic
+whisperToggleBtn.MouseButton1Click:Connect(function()
+    whisperMode = not whisperMode
+    whisperToggleBtn.Text = whisperMode and "ON" or "OFF"
+    whisperToggleBtn.BackgroundColor3 = whisperMode and COLORS.buttonSuccess or COLORS.buttonOff
+    
+    if whisperMode then
+        chatTextbox.PlaceholderText = "Whisper message..."
+    else
+        chatTextbox.PlaceholderText = "Type your message..."
+    end
+end)
+
+-- ========== CHAT COMMANDS SYSTEM ==========
+
+-- Commands panel in Tools
+local commandsPanel = Instance.new("Frame")
+commandsPanel.Size = UDim2.new(1, 0, 1, 0)
+commandsPanel.BackgroundTransparency = 1
+commandsPanel.Visible = false
+commandsPanel.Parent = toolsContent
+
+-- Add Commands to tools sub-tabs
+table.insert(toolsSubTabs, "Commands")
+local commandsSubTabBtn = Instance.new("TextButton")
+commandsSubTabBtn.Size = UDim2.new(1/#toolsSubTabs, -2, 1, 0)
+commandsSubTabBtn.Position = UDim2.new((#toolsSubTabs - 1)/#toolsSubTabs, 0, 0, 0)
+commandsSubTabBtn.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+commandsSubTabBtn.TextColor3 = COLORS.textDark
+commandsSubTabBtn.Text = "Commands"
+commandsSubTabBtn.Font = Enum.Font.GothamBold
+commandsSubTabBtn.TextSize = 9
+commandsSubTabBtn.Parent = toolsSubTabFrame
+
+local commandsSubTabCorner = Instance.new("UICorner")
+commandsSubTabCorner.CornerRadius = UDim.new(0, 5)
+commandsSubTabCorner.Parent = commandsSubTabBtn
+
+toolsSubTabBtns["Commands"] = commandsSubTabBtn
+
+-- Commands content
+local commandsToggleRow = Instance.new("Frame")
+commandsToggleRow.Size = UDim2.new(1, 0, 0, 35)
+commandsToggleRow.BackgroundTransparency = 1
+commandsToggleRow.Parent = commandsPanel
+
+local commandsToggleLabel = Instance.new("TextLabel")
+commandsToggleLabel.Size = UDim2.new(0, 120, 1, 0)
+commandsToggleLabel.BackgroundTransparency = 1
+commandsToggleLabel.TextColor3 = COLORS.textDark
+commandsToggleLabel.Text = "Chat Commands:"
+commandsToggleLabel.Font = Enum.Font.GothamBold
+commandsToggleLabel.TextSize = 12
+commandsToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+commandsToggleLabel.Parent = commandsToggleRow
+
+local commandsToggleBtn = Instance.new("TextButton")
+commandsToggleBtn.Size = UDim2.new(0, 60, 0, 28)
+commandsToggleBtn.Position = UDim2.new(0, 125, 0, 3)
+commandsToggleBtn.BackgroundColor3 = COLORS.buttonSuccess
+commandsToggleBtn.TextColor3 = COLORS.textLight
+commandsToggleBtn.Text = "ON"
+commandsToggleBtn.Font = Enum.Font.GothamBold
+commandsToggleBtn.TextSize = 11
+commandsToggleBtn.Parent = commandsToggleRow
+
+local commandsToggleCorner = Instance.new("UICorner")
+commandsToggleCorner.CornerRadius = UDim.new(0, 6)
+commandsToggleCorner.Parent = commandsToggleBtn
+
+-- Command prefix input
+local cmdPrefixRow = Instance.new("Frame")
+cmdPrefixRow.Size = UDim2.new(1, 0, 0, 28)
+cmdPrefixRow.Position = UDim2.new(0, 0, 0, 40)
+cmdPrefixRow.BackgroundTransparency = 1
+cmdPrefixRow.Parent = commandsPanel
+
+local cmdPrefixLabel = Instance.new("TextLabel")
+cmdPrefixLabel.Size = UDim2.new(0, 100, 1, 0)
+cmdPrefixLabel.BackgroundTransparency = 1
+cmdPrefixLabel.TextColor3 = COLORS.textDark
+cmdPrefixLabel.Text = "Command Prefix:"
+cmdPrefixLabel.Font = Enum.Font.Gotham
+cmdPrefixLabel.TextSize = 11
+cmdPrefixLabel.TextXAlignment = Enum.TextXAlignment.Left
+cmdPrefixLabel.Parent = cmdPrefixRow
+
+local cmdPrefixInput = Instance.new("TextBox")
+cmdPrefixInput.Size = UDim2.new(0, 50, 1, 0)
+cmdPrefixInput.Position = UDim2.new(0, 105, 0, 0)
+cmdPrefixInput.BackgroundColor3 = COLORS.inputBg
+cmdPrefixInput.TextColor3 = COLORS.textDark
+cmdPrefixInput.Text = "/"
+cmdPrefixInput.Font = Enum.Font.Gotham
+cmdPrefixInput.TextSize = 14
+cmdPrefixInput.ClearTextOnFocus = false
+cmdPrefixInput.Parent = cmdPrefixRow
+
+local cmdPrefixCorner = Instance.new("UICorner")
+cmdPrefixCorner.CornerRadius = UDim.new(0, 6)
+cmdPrefixCorner.Parent = cmdPrefixInput
+
+local cmdPrefixStroke = Instance.new("UIStroke")
+cmdPrefixStroke.Color = COLORS.border
+cmdPrefixStroke.Thickness = 1
+cmdPrefixStroke.Parent = cmdPrefixInput
+
+-- Commands list
+local commandsListLabel = Instance.new("TextLabel")
+commandsListLabel.Size = UDim2.new(1, 0, 0, 20)
+commandsListLabel.Position = UDim2.new(0, 0, 0, 75)
+commandsListLabel.BackgroundTransparency = 1
+commandsListLabel.TextColor3 = COLORS.textDark
+commandsListLabel.Text = "Available Commands:"
+commandsListLabel.Font = Enum.Font.GothamBold
+commandsListLabel.TextSize = 12
+commandsListLabel.TextXAlignment = Enum.TextXAlignment.Left
+commandsListLabel.Parent = commandsPanel
+
+local commandsListScroll = Instance.new("ScrollingFrame")
+commandsListScroll.Size = UDim2.new(1, 0, 1, -100)
+commandsListScroll.Position = UDim2.new(0, 0, 0, 98)
+commandsListScroll.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
+commandsListScroll.ScrollBarThickness = 4
+commandsListScroll.Parent = commandsPanel
+
+local commandsListCorner = Instance.new("UICorner")
+commandsListCorner.CornerRadius = UDim.new(0, 6)
+commandsListCorner.Parent = commandsListScroll
+
+local commandsListLayout = Instance.new("UIListLayout")
+commandsListLayout.Padding = UDim.new(0, 3)
+commandsListLayout.Parent = commandsListScroll
+
+-- Command definitions
+local commands = {
+    {cmd = "clear", desc = "Clear chat history", usage = "/clear"},
+    {cmd = "stats", desc = "Show your stats", usage = "/stats"},
+    {cmd = "afk", desc = "Toggle Anti-AFK", usage = "/afk"},
+    {cmd = "spam", desc = "Toggle spam mode", usage = "/spam"},
+    {cmd = "reply", desc = "Toggle auto-reply", usage = "/reply"},
+    {cmd = "gg", desc = "Toggle auto-GG", usage = "/gg"},
+    {cmd = "trade", desc = "Toggle trade mode", usage = "/trade"},
+    {cmd = "grind", desc = "Toggle grind mode", usage = "/grind"},
+    {cmd = "hide", desc = "Hide the GUI", usage = "/hide"},
+    {cmd = "show", desc = "Show the GUI", usage = "/show"},
+    {cmd = "mute", desc = "Mute a player", usage = "/mute [username]"},
+    {cmd = "unmute", desc = "Unmute a player", usage = "/unmute [username]"},
+    {cmd = "alert", desc = "Toggle keyword alerts", usage = "/alert"},
+    {cmd = "prefix", desc = "Set message prefix", usage = "/prefix [text]"},
+    {cmd = "clearprefix", desc = "Clear message prefix", usage = "/clearprefix"},
+    {cmd = "time", desc = "Show current time", usage = "/time"},
+    {cmd = "me", desc = "Show *me* action message", usage = "/me [action]"},
+    {cmd = "roll", desc = "Roll a random number", usage = "/roll [max]"},
+    {cmd = "flip", desc = "Flip a coin", usage = "/flip"},
+    {cmd = "8ball", desc = "Magic 8-ball response", usage = "/8ball [question]"},
+    {cmd = "pick", desc = "Pick random from options", usage = "/pick [opt1] [opt2] ..."},
+    {cmd = "count", desc = "Count from X to Y", usage = "/count [start] [end]"},
+    {cmd = "repeat", desc = "Repeat message N times", usage = "/repeat [count] [message]"},
+    {cmd = "delay", desc = "Send message after delay", usage = "/delay [sec] [message]"},
+    {cmd = "help", desc = "Show command list", usage = "/help"},
+}
+
+-- Populate commands list
+for _, cmd in ipairs(commands) do
+    local cmdFrame = Instance.new("Frame")
+    cmdFrame.Size = UDim2.new(1, 0, 0, 45)
+    cmdFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+    cmdFrame.Parent = commandsListScroll
+    
+    local cmdFrameCorner = Instance.new("UICorner")
+    cmdFrameCorner.CornerRadius = UDim.new(0, 5)
+    cmdFrameCorner.Parent = cmdFrame
+    
+    local cmdName = Instance.new("TextLabel")
+    cmdName.Size = UDim2.new(1, -10, 0, 18)
+    cmdName.Position = UDim2.new(0, 8, 0, 3)
+    cmdName.BackgroundTransparency = 1
+    cmdName.TextColor3 = COLORS.buttonPrimary
+    cmdName.Text = cmd.usage
+    cmdName.Font = Enum.Font.GothamBold
+    cmdName.TextSize = 11
+    cmdName.TextXAlignment = Enum.TextXAlignment.Left
+    cmdName.Parent = cmdFrame
+    
+    local cmdDesc = Instance.new("TextLabel")
+    cmdDesc.Size = UDim2.new(1, -10, 0, 16)
+    cmdDesc.Position = UDim2.new(0, 8, 0, 23)
+    cmdDesc.BackgroundTransparency = 1
+    cmdDesc.TextColor3 = COLORS.textMuted
+    cmdDesc.Text = cmd.desc
+    cmdDesc.Font = Enum.Font.Gotham
+    cmdDesc.TextSize = 10
+    cmdDesc.TextXAlignment = Enum.TextXAlignment.Left
+    cmdDesc.Parent = cmdFrame
+end
+
+commandsListScroll.CanvasSize = UDim2.new(0, 0, 0, #commands * 48)
+
+commandsToggleBtn.MouseButton1Click:Connect(function()
+    commandsEnabled = not commandsEnabled
+    commandsToggleBtn.Text = commandsEnabled and "ON" or "OFF"
+    commandsToggleBtn.BackgroundColor3 = commandsEnabled and COLORS.buttonSuccess or COLORS.buttonOff
+end)
+
+cmdPrefixInput:GetPropertyChangedSignal("Text"):Connect(function()
+    commandPrefix = cmdPrefixInput.Text
+end)
+
+-- Command processor
+local function processCommand(msg)
+    if not commandsEnabled then return false end
+    if not msg:sub(1, #commandPrefix) == commandPrefix then return false end
+    
+    local cmdMsg = msg:sub(#commandPrefix + 1)
+    local args = {}
+    for word in cmdMsg:gmatch("%S+") do
+        table.insert(args, word)
+    end
+    
+    if #args == 0 then return false end
+    
+    local cmd = args[1]:lower()
+    table.remove(args, 1)
+    
+    -- Command handlers
+    if cmd == "clear" then
+        chatLog = {}
+        for _, child in pairs(loggerScroll:GetChildren()) do
+            if child:IsA("Frame") then child:Destroy() end
+        end
+        loggerStats.Text = "Messages: 0"
+        return true
+        
+    elseif cmd == "stats" then
+        local elapsed = os.time() - messageStats.startTime
+        local hours = math.floor(elapsed / 3600)
+        local mins = math.floor((elapsed % 3600) / 60)
+        local statsMsg = string.format("Session: %dh %dm | Sent: %d | Recv: %d | Auto: %d", 
+            hours, mins, messageStats.sent, messageStats.received, messageStats.autoReplies)
+        sendMessage(statsMsg)
+        return true
+        
+    elseif cmd == "afk" then
+        antiAfkEnabled = not antiAfkEnabled
+        afkToggle.Text = antiAfkEnabled and "ANTI-AFK: ON" or "ANTI-AFK: OFF"
+        afkToggle.BackgroundColor3 = antiAfkEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
+        return true
+        
+    elseif cmd == "spam" then
+        spamEnabled = not spamEnabled
+        spamToggle.Text = spamEnabled and "SPAM: ON" or "SPAM: OFF"
+        spamToggle.BackgroundColor3 = spamEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
+        return true
+        
+    elseif cmd == "reply" then
+        autoReplyEnabled = not autoReplyEnabled
+        autoReplyToggle.Text = autoReplyEnabled and "AUTO-REPLY: ON" or "AUTO-REPLY: OFF"
+        autoReplyToggle.BackgroundColor3 = autoReplyEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
+        return true
+        
+    elseif cmd == "gg" then
+        autoGGEnabled = not autoGGEnabled
+        autoGGToggle.Text = autoGGEnabled and "AUTO-GG: ON" or "AUTO-GG: OFF"
+        autoGGToggle.BackgroundColor3 = autoGGEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
+        return true
+        
+    elseif cmd == "trade" then
+        tradeModeEnabled = not tradeModeEnabled
+        tradeToggle.Text = tradeModeEnabled and "TRADE MODE: ON" or "TRADE MODE: OFF"
+        tradeToggle.BackgroundColor3 = tradeModeEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
+        return true
+        
+    elseif cmd == "grind" then
+        grindModeEnabled = not grindModeEnabled
+        grindToggle.Text = grindModeEnabled and "GRIND MODE: ON" or "GRIND MODE: OFF"
+        grindToggle.BackgroundColor3 = grindModeEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
+        return true
+        
+    elseif cmd == "hide" then
+        hubFrame.Visible = false
+        hubButton.Visible = false
+        return true
+        
+    elseif cmd == "show" then
+        hubFrame.Visible = true
+        hubButton.Visible = false
+        return true
+        
+    elseif cmd == "mute" then
+        if #args >= 1 then
+            local name = args[1]:lower()
+            local alreadyMuted = false
+            for _, n in ipairs(muteList) do
+                if n == name then alreadyMuted = true break end
+            end
+            if not alreadyMuted then
+                table.insert(muteList, name)
+                updateMutedList()
+            end
+        end
+        return true
+        
+    elseif cmd == "unmute" then
+        if #args >= 1 then
+            local name = args[1]:lower()
+            for i, n in ipairs(muteList) do
+                if n == name then
+                    table.remove(muteList, i)
+                    updateMutedList()
+                    break
+                end
+            end
+        end
+        return true
+        
+    elseif cmd == "alert" then
+        pingEnabled = not pingEnabled
+        alertsToggle.Text = pingEnabled and "KEYWORD ALERTS: ON" or "KEYWORD ALERTS: OFF"
+        alertsToggle.BackgroundColor3 = pingEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
+        return true
+        
+    elseif cmd == "prefix" then
+        if #args >= 1 then
+            prefixMode = "FIXED"
+            fixedPrefixInput.Text = table.concat(args, " ")
+            updatePrefixStatus()
+            for m, b in pairs(prefixModeButtons) do
+                if m == "FIXED" then
+                    b.BackgroundColor3 = COLORS.buttonPrimary
+                    b.TextColor3 = COLORS.textLight
+                else
+                    b.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+                    b.TextColor3 = COLORS.textDark
+                end
+            end
+        end
+        return true
+        
+    elseif cmd == "clearprefix" then
+        prefixMode = "OFF"
+        updatePrefixStatus()
+        for m, b in pairs(prefixModeButtons) do
+            if m == "OFF" then
+                b.BackgroundColor3 = COLORS.buttonPrimary
+                b.TextColor3 = COLORS.textLight
+            else
+                b.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+                b.TextColor3 = COLORS.textDark
+            end
+        end
+        return true
+        
+    elseif cmd == "time" then
+        sendMessage("Current time: " .. os.date("%I:%M %p"))
+        return true
+        
+    elseif cmd == "me" then
+        if #args >= 1 then
+            local action = table.concat(args, " ")
+            sendMessage("* " .. player.Name .. " " .. action)
+        end
+        return true
+        
+    elseif cmd == "roll" then
+        local max = tonumber(args[1]) or 100
+        local result = math.random(1, max)
+        sendMessage("🎲 Rolled: " .. result .. " (1-" .. max .. ")")
+        return true
+        
+    elseif cmd == "flip" then
+        local result = math.random(1, 2) == 1 and "Heads" or "Tails"
+        sendMessage("🪙 Coin flip: " .. result)
+        return true
+        
+    elseif cmd == "8ball" then
+        local responses = {
+            "It is certain", "Without a doubt", "Yes definitely",
+            "Reply hazy, try again", "Ask again later", "Cannot predict now",
+            "Don't count on it", "My reply is no", "Very doubtful",
+            "Most likely", "Outlook good", "Yes"
+        }
+        local response = responses[math.random(1, #responses)]
+        sendMessage("🎱 " .. response)
+        return true
+        
+    elseif cmd == "pick" then
+        if #args >= 2 then
+            local choice = args[math.random(1, #args)]
+            sendMessage("🎯 I pick: " .. choice)
+        end
+        return true
+        
+    elseif cmd == "count" then
+        local start = tonumber(args[1]) or 1
+        local endNum = tonumber(args[2]) or 10
+        if endNum - start > 10 then endNum = start + 9 end
+        
+        spawn(function()
+            for i = start, endNum do
+                sendMessage(tostring(i))
+                wait(1.5 + math.random() * 0.5)
+            end
+        end)
+        return true
+        
+    elseif cmd == "repeat" then
+        local count = tonumber(args[1]) or 1
+        if count > 10 then count = 10 end
+        if #args >= 2 then
+            local message = table.concat(args, " ", 2)
+            spawn(function()
+                for i = 1, count do
+                    sendMessage(message)
+                    messageStats.sent = messageStats.sent + 1
+                    wait(2 + math.random())
+                end
+            end)
+        end
+        return true
+        
+    elseif cmd == "delay" then
+        local delay = tonumber(args[1]) or 5
+        if #args >= 2 then
+            local message = table.concat(args, " ", 2)
+            spawn(function()
+                wait(delay)
+                sendMessage(message)
+                messageStats.sent = messageStats.sent + 1
+            end)
+        end
+        return true
+        
+    elseif cmd == "help" then
+        sendMessage("Commands: /clear /stats /afk /spam /reply /gg /trade /mute /alert /roll /flip /8ball")
+        return true
+    end
+    
+    return false
+end
+
+-- ========== MASS MENTION SYSTEM ==========
+
+-- Add to Tools tab
+local massMentionPanel = Instance.new("Frame")
+massMentionPanel.Size = UDim2.new(1, 0, 1, 0)
+massMentionPanel.BackgroundTransparency = 1
+massMentionPanel.Visible = false
+massMentionPanel.Parent = toolsContent
+
+table.insert(toolsSubTabs, "Mentions")
+local mentionsSubTabBtn = Instance.new("TextButton")
+mentionsSubTabBtn.Size = UDim2.new(1/#toolsSubTabs, -2, 1, 0)
+mentionsSubTabBtn.Position = UDim2.new((#toolsSubTabs - 1)/#toolsSubTabs, 0, 0, 0)
+mentionsSubTabBtn.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+mentionsSubTabBtn.TextColor3 = COLORS.textDark
+mentionsSubTabBtn.Text = "Mentions"
+mentionsSubTabBtn.Font = Enum.Font.GothamBold
+mentionsSubTabBtn.TextSize = 9
+mentionsSubTabBtn.Parent = toolsSubTabFrame
+
+local mentionsSubTabCorner = Instance.new("UICorner")
+mentionsSubTabCorner.CornerRadius = UDim.new(0, 5)
+mentionsSubTabCorner.Parent = mentionsSubTabBtn
+
+toolsSubTabBtns["Mentions"] = mentionsSubTabBtn
+
+-- Mass Mention Toggle
+local massMentionToggle = Instance.new("TextButton")
+massMentionToggle.Size = UDim2.new(1, 0, 0, 40)
+massMentionToggle.Position = UDim2.new(0, 0, 0, 0)
+massMentionToggle.BackgroundColor3 = COLORS.buttonDanger
+massMentionToggle.TextColor3 = COLORS.textLight
+massMentionToggle.Text = "MASS MENTION: OFF"
+massMentionToggle.Font = Enum.Font.GothamBold
+massMentionToggle.TextSize = 15
+massMentionToggle.Parent = massMentionPanel
+
+local massMentionToggleCorner = Instance.new("UICorner")
+massMentionToggleCorner.CornerRadius = UDim.new(0, 8)
+massMentionToggleCorner.Parent = massMentionToggle
+
+-- Mention Settings
+local mentionSettingsLabel = Instance.new("TextLabel")
+mentionSettingsLabel.Size = UDim2.new(1, 0, 0, 20)
+mentionSettingsLabel.Position = UDim2.new(0, 0, 0, 48)
+mentionSettingsLabel.BackgroundTransparency = 1
+mentionSettingsLabel.TextColor3 = COLORS.textDark
+mentionSettingsLabel.Text = "Settings"
+mentionSettingsLabel.Font = Enum.Font.GothamBold
+mentionSettingsLabel.TextSize = 12
+mentionSettingsLabel.TextXAlignment = Enum.TextXAlignment.Left
+mentionSettingsLabel.Parent = massMentionPanel
+
+-- Mention Delay
+local mentionDelayRow = Instance.new("Frame")
+mentionDelayRow.Size = UDim2.new(1, 0, 0, 28)
+mentionDelayRow.Position = UDim2.new(0, 0, 0, 70)
+mentionDelayRow.BackgroundTransparency = 1
+mentionDelayRow.Parent = massMentionPanel
+
+local mentionDelayLabel = Instance.new("TextLabel")
+mentionDelayLabel.Size = UDim2.new(0, 120, 1, 0)
+mentionDelayLabel.BackgroundTransparency = 1
+mentionDelayLabel.TextColor3 = COLORS.textDark
+mentionDelayLabel.Text = "Delay (sec):"
+mentionDelayLabel.Font = Enum.Font.Gotham
+mentionDelayLabel.TextSize = 11
+mentionDelayLabel.TextXAlignment = Enum.TextXAlignment.Left
+mentionDelayLabel.Parent = mentionDelayRow
+
+local mentionDelayInput = Instance.new("TextBox")
+mentionDelayInput.Size = UDim2.new(0, 60, 1, 0)
+mentionDelayInput.Position = UDim2.new(0, 125, 0, 0)
+mentionDelayInput.BackgroundColor3 = COLORS.inputBg
+mentionDelayInput.TextColor3 = COLORS.textDark
+mentionDelayInput.Text = "3"
+mentionDelayInput.Font = Enum.Font.Gotham
+mentionDelayInput.TextSize = 12
+mentionDelayInput.ClearTextOnFocus = false
+mentionDelayInput.Parent = mentionDelayRow
+
+local mentionDelayCorner = Instance.new("UICorner")
+mentionDelayCorner.CornerRadius = UDim.new(0, 6)
+mentionDelayCorner.Parent = mentionDelayInput
+
+local mentionDelayStroke = Instance.new("UIStroke")
+mentionDelayStroke.Color = COLORS.border
+mentionDelayStroke.Thickness = 1
+mentionDelayStroke.Parent = mentionDelayInput
+
+-- Mention Type
+local mentionTypeLabel = Instance.new("TextLabel")
+mentionTypeLabel.Size = UDim2.new(1, 0, 0, 18)
+mentionTypeLabel.Position = UDim2.new(0, 0, 0, 105)
+mentionTypeLabel.BackgroundTransparency = 1
+mentionTypeLabel.TextColor3 = COLORS.textDark
+mentionTypeLabel.Text = "Mention Style:"
+mentionTypeLabel.Font = Enum.Font.GothamBold
+mentionTypeLabel.TextSize = 11
+mentionTypeLabel.TextXAlignment = Enum.TextXAlignment.Left
+mentionTypeLabel.Parent = massMentionPanel
+
+local mentionTypeFrame = Instance.new("Frame")
+mentionTypeFrame.Size = UDim2.new(1, 0, 0, 28)
+mentionTypeFrame.Position = UDim2.new(0, 0, 0, 125)
+mentionTypeFrame.BackgroundTransparency = 1
+mentionTypeFrame.Parent = massMentionPanel
+
+local mentionTypes = {"@Name", "Name:", "Hi Name"}
+local mentionType = "@Name"
+local mentionTypeBtns = {}
+
+for i, mtype in ipairs(mentionTypes) do
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1/3, -3, 1, 0)
+    btn.Position = UDim2.new((i-1)/3, 0, 0, 0)
+    btn.BackgroundColor3 = i == 1 and COLORS.buttonPrimary or Color3.fromRGB(220, 220, 220)
+    btn.TextColor3 = i == 1 and COLORS.textLight or COLORS.textDark
+    btn.Text = mtype
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 10
+    btn.Parent = mentionTypeFrame
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 5)
+    btnCorner.Parent = btn
+    
+    mentionTypeBtns[mtype] = btn
+end
+
+-- Exclude Self Toggle
+local excludeSelfRow = Instance.new("Frame")
+excludeSelfRow.Size = UDim2.new(1, 0, 0, 28)
+excludeSelfRow.Position = UDim2.new(0, 0, 0, 160)
+excludeSelfRow.BackgroundTransparency = 1
+excludeSelfRow.Parent = massMentionPanel
+
+local excludeSelfLabel = Instance.new("TextLabel")
+excludeSelfLabel.Size = UDim2.new(0, 140, 1, 0)
+excludeSelfLabel.BackgroundTransparency = 1
+excludeSelfLabel.TextColor3 = COLORS.textDark
+excludeSelfLabel.Text = "Exclude Yourself:"
+excludeSelfLabel.Font = Enum.Font.Gotham
+excludeSelfLabel.TextSize = 11
+excludeSelfLabel.TextXAlignment = Enum.TextXAlignment.Left
+excludeSelfLabel.Parent = excludeSelfRow
+
+local excludeSelfBtn = Instance.new("TextButton")
+excludeSelfBtn.Size = UDim2.new(0, 50, 1, 0)
+excludeSelfBtn.Position = UDim2.new(0, 145, 0, 0)
+excludeSelfBtn.BackgroundColor3 = COLORS.buttonSuccess
+excludeSelfBtn.TextColor3 = COLORS.textLight
+excludeSelfBtn.Text = "ON"
+excludeSelfBtn.Font = Enum.Font.GothamBold
+excludeSelfBtn.TextSize = 11
+excludeSelfBtn.Parent = excludeSelfRow
+
+local excludeSelfCorner = Instance.new("UICorner")
+excludeSelfCorner.CornerRadius = UDim.new(0, 6)
+excludeSelfCorner.Parent = excludeSelfBtn
+
+local excludeSelfEnabled = true
+
+-- Custom Message
+local mentionMsgLabel = Instance.new("TextLabel")
+mentionMsgLabel.Size = UDim2.new(1, 0, 0, 18)
+mentionMsgLabel.Position = UDim2.new(0, 0, 0, 195)
+mentionMsgLabel.BackgroundTransparency = 1
+mentionMsgLabel.TextColor3 = COLORS.textDark
+mentionMsgLabel.Text = "Message (use {name} as placeholder):"
+mentionMsgLabel.Font = Enum.Font.GothamBold
+mentionMsgLabel.TextSize = 11
+mentionMsgLabel.TextXAlignment = Enum.TextXAlignment.Left
+mentionMsgLabel.Parent = massMentionPanel
+
+local mentionMsgInput = Instance.new("TextBox")
+mentionMsgInput.Size = UDim2.new(1, 0, 0, 50)
+mentionMsgInput.Position = UDim2.new(0, 0, 0, 215)
+mentionMsgInput.BackgroundColor3 = COLORS.inputBg
+mentionMsgInput.TextColor3 = COLORS.textDark
+mentionMsgInput.Text = "Hey {name}!"
+mentionMsgInput.PlaceholderText = "Message with {name} placeholder"
+mentionMsgInput.PlaceholderColor3 = COLORS.textMuted
+mentionMsgInput.Font = Enum.Font.Gotham
+mentionMsgInput.TextSize = 12
+mentionMsgInput.TextXAlignment = Enum.TextXAlignment.Left
+mentionMsgInput.TextYAlignment = Enum.TextYAlignment.Top
+mentionMsgInput.MultiLine = true
+mentionMsgInput.ClearTextOnFocus = false
+mentionMsgInput.Parent = massMentionPanel
+
+local mentionMsgCorner = Instance.new("UICorner")
+mentionMsgCorner.CornerRadius = UDim.new(0, 6)
+mentionMsgCorner.Parent = mentionMsgInput
+
+local mentionMsgStroke = Instance.new("UIStroke")
+mentionMsgStroke.Color = COLORS.border
+mentionMsgStroke.Thickness = 1
+mentionMsgStroke.Parent = mentionMsgInput
+
+-- Preview Label
+local mentionPreviewLabel = Instance.new("TextLabel")
+mentionPreviewLabel.Size = UDim2.new(1, 0, 0, 18)
+mentionPreviewLabel.Position = UDim2.new(0, 0, 1, -55)
+mentionPreviewLabel.BackgroundTransparency = 1
+mentionPreviewLabel.TextColor3 = COLORS.textMuted
+mentionPreviewLabel.Text = "Preview: Hey @Player1! | Hey @Player2! ..."
+mentionPreviewLabel.Font = Enum.Font.Gotham
+mentionPreviewLabel.TextSize = 10
+mentionPreviewLabel.TextXAlignment = Enum.TextXAlignment.Left
+mentionPreviewLabel.TextTruncate = Enum.TextTruncate.AtEnd
+mentionPreviewLabel.Parent = massMentionPanel
+
+-- Mention type selection
+for mtype, btn in pairs(mentionTypeBtns) do
+    btn.MouseButton1Click:Connect(function()
+        mentionType = mtype
+        for mt, b in pairs(mentionTypeBtns) do
+            if mt == mtype then
+                b.BackgroundColor3 = COLORS.buttonPrimary
+                b.TextColor3 = COLORS.textLight
+            else
+                b.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+                b.TextColor3 = COLORS.textDark
+            end
+        end
+    end)
+end
+
+excludeSelfBtn.MouseButton1Click:Connect(function()
+    excludeSelfEnabled = not excludeSelfEnabled
+    excludeSelfBtn.Text = excludeSelfEnabled and "ON" or "OFF"
+    excludeSelfBtn.BackgroundColor3 = excludeSelfEnabled and COLORS.buttonSuccess or COLORS.buttonOff
+end)
+
+-- Mass mention logic
+massMentionToggle.MouseButton1Click:Connect(function()
+    massMentionEnabled = not massMentionEnabled
+    
+    if massMentionEnabled then
+        massMentionToggle.Text = "MASS MENTION: ON"
+        massMentionToggle.BackgroundColor3 = COLORS.buttonSuccess
+        
+        spawn(function()
+            local delay = tonumber(mentionDelayInput.Text) or 3
+            if delay < 1 then delay = 1 end
+            
+            local playersToMention = {}
+            for _, plr in pairs(Players:GetPlayers()) do
+                if not excludeSelfEnabled or plr ~= player then
+                    table.insert(playersToMention, plr.Name)
+                end
+            end
+            
+            for _, plrName in ipairs(playersToMention) do
+                if not massMentionEnabled then break end
+                
+                local msg = mentionMsgInput.Text
+                msg = msg:gsub("{name}", plrName)
+                
+                if mentionType == "@Name" then
+                    msg = "@" .. plrName .. " " .. msg
+                elseif mentionType == "Name:" then
+                    msg = plrName .. ": " .. msg
+                elseif mentionType == "Hi Name" then
+                    -- Already handled by placeholder
+                end
+                
+                sendMessage(msg)
+                messageStats.sent = messageStats.sent + 1
+                
+                wait(delay + math.random() * 0.5)
+            end
+            
+            massMentionEnabled = false
+            massMentionToggle.Text = "MASS MENTION: OFF"
+            massMentionToggle.BackgroundColor3 = COLORS.buttonDanger
+        end)
+    else
+        massMentionToggle.Text = "MASS MENTION: OFF"
+        massMentionToggle.BackgroundColor3 = COLORS.buttonDanger
+    end
+end)
+-- ========== CHUNK 3 CONTINUED: FINAL FEATURES ==========
+
+-- ========== CHAT SPY SYSTEM ==========
+
+table.insert(toolsSubTabs, "Spy")
+local spySubTabBtn = Instance.new("TextButton")
+spySubTabBtn.Size = UDim2.new(1/#toolsSubTabs, -2, 1, 0)
+spySubTabBtn.Position = UDim2.new((#toolsSubTabs - 1)/#toolsSubTabs, 0, 0, 0)
+spySubTabBtn.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+spySubTabBtn.TextColor3 = COLORS.textDark
+spySubTabBtn.Text = "Spy"
+spySubTabBtn.Font = Enum.Font.GothamBold
+spySubTabBtn.TextSize = 9
+spySubTabBtn.Parent = toolsSubTabFrame
+
+local spySubTabCorner = Instance.new("UICorner")
+spySubTabCorner.CornerRadius = UDim.new(0, 5)
+spySubTabCorner.Parent = spySubTabBtn
+
+toolsSubTabBtns["Spy"] = spySubTabBtn
+
+local spyPanel = Instance.new("Frame")
+spyPanel.Size = UDim2.new(1, 0, 1, 0)
+spyPanel.BackgroundTransparency = 1
+spyPanel.Visible = false
+spyPanel.Parent = toolsContent
+
+-- Spy Toggle
+local spyToggle = Instance.new("TextButton")
+spyToggle.Size = UDim2.new(1, 0, 0, 40)
+spyToggle.Position = UDim2.new(0, 0, 0, 0)
+spyToggle.BackgroundColor3 = COLORS.buttonDanger
+spyToggle.TextColor3 = COLORS.textLight
+spyToggle.Text = "CHAT SPY: OFF"
+spyToggle.Font = Enum.Font.GothamBold
+spyToggle.TextSize = 15
+spyToggle.Parent = spyPanel
+
+local spyToggleCorner = Instance.new("UICorner")
+spyToggleCorner.CornerRadius = UDim.new(0, 8)
+spyToggleCorner.Parent = spyToggle
+
+-- Spy Target
+local spyTargetLabel = Instance.new("TextLabel")
+spyTargetLabel.Size = UDim2.new(1, 0, 0, 18)
+spyTargetLabel.Position = UDim2.new(0, 0, 0, 48)
+spyTargetLabel.BackgroundTransparency = 1
+spyTargetLabel.TextColor3 = COLORS.textDark
+spyTargetLabel.Text = "Spy on specific player (leave empty for all):"
+spyTargetLabel.Font = Enum.Font.Gotham
+spyTargetLabel.TextSize = 11
+spyTargetLabel.TextXAlignment = Enum.TextXAlignment.Left
+spyTargetLabel.Parent = spyPanel
+
+local spyTargetInput = Instance.new("TextBox")
+spyTargetInput.Size = UDim2.new(1, 0, 0, 28)
+spyTargetInput.Position = UDim2.new(0, 0, 0, 68)
+spyTargetInput.BackgroundColor3 = COLORS.inputBg
+spyTargetInput.TextColor3 = COLORS.textDark
+spyTargetInput.Text = ""
+spyTargetInput.PlaceholderText = "Username (empty = all players)"
+spyTargetInput.PlaceholderColor3 = COLORS.textMuted
+spyTargetInput.Font = Enum.Font.Gotham
+spyTargetInput.TextSize = 12
+spyTargetInput.ClearTextOnFocus = false
+spyTargetInput.Parent = spyPanel
+
+local spyTargetCorner = Instance.new("UICorner")
+spyTargetCorner.CornerRadius = UDim.new(0, 6)
+spyTargetCorner.Parent = spyTargetInput
+
+local spyTargetStroke = Instance.new("UIStroke")
+spyTargetStroke.Color = COLORS.border
+spyTargetStroke.Thickness = 1
+spyTargetStroke.Parent = spyTargetInput
+
+-- Spy Log
+local spyLogLabel = Instance.new("TextLabel")
+spyLogLabel.Size = UDim2.new(1, 0, 0, 18)
+spyLogLabel.Position = UDim2.new(0, 0, 0, 105)
+spyLogLabel.BackgroundTransparency = 1
+spyLogLabel.TextColor3 = COLORS.textDark
+spyLogLabel.Text = "Spy Log:"
+spyLogLabel.Font = Enum.Font.GothamBold
+spyLogLabel.TextSize = 11
+spyLogLabel.TextXAlignment = Enum.TextXAlignment.Left
+spyLogLabel.Parent = spyPanel
+
+local spyLogScroll = Instance.new("ScrollingFrame")
+spyLogScroll.Size = UDim2.new(1, 0, 1, -130)
+spyLogScroll.Position = UDim2.new(0, 0, 0, 125)
+spyLogScroll.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
+spyLogScroll.ScrollBarThickness = 4
+spyLogScroll.Parent = spyPanel
+
+local spyLogCorner = Instance.new("UICorner")
+spyLogCorner.CornerRadius = UDim.new(0, 6)
+spyLogCorner.Parent = spyLogScroll
+
+local spyLogLayout = Instance.new("UIListLayout")
+spyLogLayout.Padding = UDim.new(0, 2)
+spyLogLayout.Parent = spyLogScroll
+
+local spyLog = {}
+local spyTargetPlayer = nil
+
+local function addSpyLog(plrName, msg, isWhisper)
+    local entry = {
+        player = plrName,
+        message = msg,
+        whisper = isWhisper,
+        time = os.date("%H:%M:%S")
+    }
+    table.insert(spyLog, 1, entry)
+    if #spyLog > 50 then table.remove(spyLog) end
+    
+    local entryFrame = Instance.new("Frame")
+    entryFrame.Size = UDim2.new(1, 0, 0, 22)
+    entryFrame.BackgroundColor3 = isWhisper and Color3.fromRGB(255, 240, 200) or Color3.fromRGB(240, 250, 240)
+    entryFrame.Parent = spyLogScroll
+    
+    local entryCorner = Instance.new("UICorner")
+    entryCorner.CornerRadius = UDim.new(0, 4)
+    entryCorner.Parent = entryFrame
+    
+    local entryText = Instance.new("TextLabel")
+    entryText.Size = UDim2.new(1, -10, 1, 0)
+    entryText.Position = UDim2.new(0, 5, 0, 0)
+    entryText.BackgroundTransparency = 1
+    entryText.TextColor3 = COLORS.textDark
+    entryText.Text = string.format("[%s]%s %s: %s", entry.time, isWhisper and " [W]" or "", plrName, msg)
+    entryText.Font = Enum.Font.Gotham
+    entryText.TextSize = 10
+    entryText.TextXAlignment = Enum.TextXAlignment.Left
+    entryText.TextTruncate = Enum.TextTruncate.AtEnd
+    entryText.Parent = entryFrame
+    
+    spyLogScroll.CanvasSize = UDim2.new(0, 0, 0, spyLogLayout.AbsoluteContentSize.Y + 10)
+end
+
+-- Hook chat for spy
+local function hookChatSpy()
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= player then
+            plr.Chatted:Connect(function(msg, recipient)
+                if chatSpyEnabled then
+                    local targetFilter = spyTargetInput.Text:gsub("^%s+", ""):gsub("%s+$", ""):lower()
+                    if targetFilter == "" or plr.Name:lower():find(targetFilter) then
+                        addSpyLog(plr.Name, msg, recipient ~= nil)
+                    end
+                end
+            end)
+        end
+    end
+    
+    Players.PlayerAdded:Connect(function(plr)
+        if plr ~= player then
+            plr.Chatted:Connect(function(msg, recipient)
+                if chatSpyEnabled then
+                    local targetFilter = spyTargetInput.Text:gsub("^%s+", ""):gsub("%s+$", ""):lower()
+                    if targetFilter == "" or plr.Name:lower():find(targetFilter) then
+                        addSpyLog(plr.Name, msg, recipient ~= nil)
+                    end
+                end
+            end)
+        end
+    end)
+end
+
+spyToggle.MouseButton1Click:Connect(function()
+    chatSpyEnabled = not chatSpyEnabled
+    if chatSpyEnabled then
+        spyToggle.Text = "CHAT SPY: ON"
+        spyToggle.BackgroundColor3 = COLORS.buttonSuccess
+    else
+        spyToggle.Text = "CHAT SPY: OFF"
+        spyToggle.BackgroundColor3 = COLORS.buttonDanger
+    end
+end)
+
+-- ========== RATE LIMIT QUEUE ==========
+
+local queuePanel = Instance.new("Frame")
+queuePanel.Size = UDim2.new(1, 0, 1, 0)
+queuePanel.BackgroundTransparency = 1
+queuePanel.Visible = false
+queuePanel.Parent = toolsContent
+
+table.insert(toolsSubTabs, "Queue")
+local queueSubTabBtn = Instance.new("TextButton")
+queueSubTabBtn.Size = UDim2.new(1/#toolsSubTabs, -2, 1, 0)
+queueSubTabBtn.Position = UDim2.new((#toolsSubTabs - 1)/#toolsSubTabs, 0, 0, 0)
+queueSubTabBtn.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+queueSubTabBtn.TextColor3 = COLORS.textDark
+queueSubTabBtn.Text = "Queue"
+queueSubTabBtn.Font = Enum.Font.GothamBold
+queueSubTabBtn.TextSize = 9
+queueSubTabBtn.Parent = toolsSubTabFrame
+
+local queueSubTabCorner = Instance.new("UICorner")
+queueSubTabCorner.CornerRadius = UDim.new(0, 5)
+queueSubTabCorner.Parent = queueSubTabBtn
+
+toolsSubTabBtns["Queue"] = queueSubTabBtn
+
+-- Queue Toggle
+local queueToggle = Instance.new("TextButton")
+queueToggle.Size = UDim2.new(1, 0, 0, 40)
+queueToggle.Position = UDim2.new(0, 0, 0, 0)
+queueToggle.BackgroundColor3 = COLORS.buttonOff
+queueToggle.TextColor3 = COLORS.textLight
+queueToggle.Text = "MESSAGE QUEUE: OFF"
+queueToggle.Font = Enum.Font.GothamBold
+queueToggle.TextSize = 14
+queueToggle.Parent = queuePanel
+
+local queueToggleCorner = Instance.new("UICorner")
+queueToggleCorner.CornerRadius = UDim.new(0, 8)
+queueToggleCorner.Parent = queueToggle
+
+local queueEnabled = false
+
+-- Queue Settings
+local queueSettingsLabel = Instance.new("TextLabel")
+queueSettingsLabel.Size = UDim2.new(1, 0, 0, 20)
+queueSettingsLabel.Position = UDim2.new(0, 0, 0, 48)
+queueSettingsLabel.BackgroundTransparency = 1
+queueSettingsLabel.TextColor3 = COLORS.textDark
+queueSettingsLabel.Text = "Queue automatically sends messages when rate limit allows"
+queueSettingsLabel.Font = Enum.Font.Gotham
+queueSettingsLabel.TextSize = 10
+queueSettingsLabel.TextXAlignment = Enum.TextXAlignment.Left
+queueSettingsLabel.TextWrapped = true
+queueSettingsLabel.Parent = queuePanel
+
+-- Queue Input
+local queueInputLabel = Instance.new("TextLabel")
+queueInputLabel.Size = UDim2.new(1, 0, 0, 18)
+queueInputLabel.Position = UDim2.new(0, 0, 0, 78)
+queueInputLabel.BackgroundTransparency = 1
+queueInputLabel.TextColor3 = COLORS.textDark
+queueInputLabel.Text = "Add to Queue:"
+queueInputLabel.Font = Enum.Font.GothamBold
+queueInputLabel.TextSize = 11
+queueInputLabel.TextXAlignment = Enum.TextXAlignment.Left
+queueInputLabel.Parent = queuePanel
+
+local queueInput = Instance.new("TextBox")
+queueInput.Size = UDim2.new(1, -80, 0, 28)
+queueInput.Position = UDim2.new(0, 0, 0, 98)
+queueInput.BackgroundColor3 = COLORS.inputBg
+queueInput.TextColor3 = COLORS.textDark
+queueInput.Text = ""
+queueInput.PlaceholderText = "Message to queue..."
+queueInput.PlaceholderColor3 = COLORS.textMuted
+queueInput.Font = Enum.Font.Gotham
+queueInput.TextSize = 12
+queueInput.ClearTextOnFocus = false
+queueInput.Parent = queuePanel
+
+local queueInputCorner = Instance.new("UICorner")
+queueInputCorner.CornerRadius = UDim.new(0, 6)
+queueInputCorner.Parent = queueInput
+
+local queueInputStroke = Instance.new("UIStroke")
+queueInputStroke.Color = COLORS.border
+queueInputStroke.Thickness = 1
+queueInputStroke.Parent = queueInput
+
+local queueAddBtn = Instance.new("TextButton")
+queueAddBtn.Size = UDim2.new(0, 70, 0, 28)
+queueAddBtn.Position = UDim2.new(1, -75, 0, 98)
+queueAddBtn.BackgroundColor3 = COLORS.buttonPrimary
+queueAddBtn.TextColor3 = COLORS.textLight
+queueAddBtn.Text = "+ Add"
+queueAddBtn.Font = Enum.Font.GothamBold
+queueAddBtn.TextSize = 11
+queueAddBtn.Parent = queuePanel
+
+local queueAddCorner = Instance.new("UICorner")
+queueAddCorner.CornerRadius = UDim.new(0, 6)
+queueAddCorner.Parent = queueAddBtn
+
+-- Queue List
+local queueListLabel = Instance.new("TextLabel")
+queueListLabel.Size = UDim2.new(1, 0, 0, 18)
+queueListLabel.Position = UDim2.new(0, 0, 0, 132)
+queueListLabel.BackgroundTransparency = 1
+queueListLabel.TextColor3 = COLORS.textDark
+queueListLabel.Text = "Queued Messages:"
+queueListLabel.Font = Enum.Font.GothamBold
+queueListLabel.TextSize = 11
+queueListLabel.TextXAlignment = Enum.TextXAlignment.Left
+queueListLabel.Parent = queuePanel
+
+local queueScroll = Instance.new("ScrollingFrame")
+queueScroll.Size = UDim2.new(1, 0, 1, -160)
+queueScroll.Position = UDim2.new(0, 0, 0, 152)
+queueScroll.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
+queueScroll.ScrollBarThickness = 4
+queueScroll.Parent = queuePanel
+
+local queueScrollCorner = Instance.new("UICorner")
+queueScrollCorner.CornerRadius = UDim.new(0, 6)
+queueScrollCorner.Parent = queueScroll
+
+local queueLayout = Instance.new("UIListLayout")
+queueLayout.Padding = UDim.new(0, 4)
+queueLayout.Parent = queueScroll
+
+local queueCountLabel = Instance.new("TextLabel")
+queueCountLabel.Size = UDim2.new(1, 0, 0, 18)
+queueCountLabel.Position = UDim2.new(0, 0, 1, -18)
+queueCountLabel.BackgroundTransparency = 1
+queueCountLabel.TextColor3 = COLORS.textMuted
+queueCountLabel.Text = "0 messages in queue"
+queueCountLabel.Font = Enum.Font.Gotham
+queueCountLabel.TextSize = 10
+queueCountLabel.TextXAlignment = Enum.TextXAlignment.Left
+queueCountLabel.Parent = queuePanel
+
+local function updateQueueUI()
+    for _, child in pairs(queueScroll:GetChildren()) do
+        if child:IsA("Frame") then child:Destroy() end
+    end
+    
+    for i, msg in ipairs(rateLimitQueue) do
+        local msgFrame = Instance.new("Frame")
+        msgFrame.Size = UDim2.new(1, 0, 0, 30)
+        msgFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+        msgFrame.Parent = queueScroll
+        
+        local msgFrameCorner = Instance.new("UICorner")
+        msgFrameCorner.CornerRadius = UDim.new(0, 5)
+        msgFrameCorner.Parent = msgFrame
+        
+        local msgLabel = Instance.new("TextLabel")
+        msgLabel.Size = UDim2.new(1, -40, 1, 0)
+        msgLabel.Position = UDim2.new(0, 8, 0, 0)
+        msgLabel.BackgroundTransparency = 1
+        msgLabel.TextColor3 = COLORS.textDark
+        msgLabel.Text = msg:sub(1, 60) .. (#msg > 60 and "..." or "")
+        msgLabel.Font = Enum.Font.Gotham
+        msgLabel.TextSize = 10
+        msgLabel.TextXAlignment = Enum.TextXAlignment.Left
+        msgLabel.Parent = msgFrame
+        
+        local removeBtn = Instance.new("TextButton")
+        removeBtn.Size = UDim2.new(0, 28, 0, 24)
+        removeBtn.Position = UDim2.new(1, -32, 0.5, -12)
+        removeBtn.BackgroundColor3 = COLORS.buttonDanger
+        removeBtn.TextColor3 = COLORS.textLight
+        removeBtn.Text = "✕"
+        removeBtn.Font = Enum.Font.GothamBold
+        removeBtn.TextSize = 10
+        removeBtn.Parent = msgFrame
+        
+        local removeCorner = Instance.new("UICorner")
+        removeCorner.CornerRadius = UDim.new(0, 5)
+        removeCorner.Parent = removeBtn
+        
+        removeBtn.MouseButton1Click:Connect(function()
+            table.remove(rateLimitQueue, i)
+            updateQueueUI()
+        end)
+    end
+    
+    queueScroll.CanvasSize = UDim2.new(0, 0, 0, queueLayout.AbsoluteContentSize.Y + 10)
+    queueCountLabel.Text = #rateLimitQueue .. " messages in queue"
+end
+
+queueAddBtn.MouseButton1Click:Connect(function()
+    local msg = queueInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
+    if msg ~= "" then
+        table.insert(rateLimitQueue, msg)
+        queueInput.Text = ""
+        updateQueueUI()
+    end
+end)
+
+queueInput.FocusLost:Connect(function(enterPressed)
+    if enterPressed and queueInput.Text ~= "" then
+        local msg = queueInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
+        if msg ~= "" then
+            table.insert(rateLimitQueue, msg)
+            queueInput.Text = ""
+            updateQueueUI()
+        end
+    end
+end)
+
+queueToggle.MouseButton1Click:Connect(function()
+    queueEnabled = not queueEnabled
+    if queueEnabled then
+        queueToggle.Text = "MESSAGE QUEUE: ON"
+        queueToggle.BackgroundColor3 = COLORS.buttonSuccess
+    else
+        queueToggle.Text = "MESSAGE QUEUE: OFF"
+        queueToggle.BackgroundColor3 = COLORS.buttonOff
+    end
+end)
+
+-- Queue processor
+spawn(function()
+    while true do
+        wait(1.5)
+        if queueEnabled and #rateLimitQueue > 0 and checkRateLimit() then
+            local msg = table.remove(rateLimitQueue, 1)
+            sendMessage(msg)
+            messageStats.sent = messageStats.sent + 1
+            updateQueueUI()
+        end
+    end
+end)
+
+-- ========== ADVANCED ANTI-DETECTION ==========
+
+table.insert(toolsSubTabs, "Anti-Det")
+local antiDetSubTabBtn = Instance.new("TextButton")
+antiDetSubTabBtn.Size = UDim2.new(1/#toolsSubTabs, -2, 1, 0)
+antiDetSubTabBtn.Position = UDim2.new((#toolsSubTabs - 1)/#toolsSubTabs, 0, 0, 0)
+antiDetSubTabBtn.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+antiDetSubTabBtn.TextColor3 = COLORS.textDark
+antiDetSubTabBtn.Text = "Anti-Det"
+antiDetSubTabBtn.Font = Enum.Font.GothamBold
+antiDetSubTabBtn.TextSize = 8
+antiDetSubTabBtn.Parent = toolsSubTabFrame
+
+local antiDetSubTabCorner = Instance.new("UICorner")
+antiDetSubTabCorner.CornerRadius = UDim.new(0, 5)
+antiDetSubTabCorner.Parent = antiDetSubTabBtn
+
+toolsSubTabBtns["Anti-Det"] = antiDetSubTabBtn
+
+local antiDetPanel = Instance.new("Frame")
+antiDetPanel.Size = UDim2.new(1, 0, 1, 0)
+antiDetPanel.BackgroundTransparency = 1
+antiDetPanel.Visible = false
+antiDetPanel.Parent = toolsContent
+
+-- Anti-Detection Toggle
+local antiDetToggle = Instance.new("TextButton")
+antiDetToggle.Size = UDim2.new(1, 0, 0, 40)
+antiDetToggle.Position = UDim2.new(0, 0, 0, 0)
+antiDetToggle.BackgroundColor3 = COLORS.buttonSuccess
+antiDetToggle.TextColor3 = COLORS.textLight
+antiDetToggle.Text = "ANTI-DETECTION: ON"
+antiDetToggle.Font = Enum.Font.GothamBold
+antiDetToggle.TextSize = 14
+antiDetToggle.Parent = antiDetPanel
+
+local antiDetToggleCorner = Instance.new("UICorner")
+antiDetToggleCorner.CornerRadius = UDim.new(0, 8)
+antiDetToggleCorner.Parent = antiDetToggle
+
+-- Settings
+local antiDetInfo = Instance.new("TextLabel")
+antiDetInfo.Size = UDim2.new(1, 0, 0, 35)
+antiDetInfo.Position = UDim2.new(0, 0, 0, 48)
+antiDetInfo.BackgroundTransparency = 1
+antiDetInfo.TextColor3 = COLORS.textMuted
+antiDetInfo.Text = "Anti-detection adds random variations to your messages to make them appear more human-like and avoid chat filters."
+antiDetInfo.Font = Enum.Font.Gotham
+antiDetInfo.TextSize = 10
+antiDetInfo.TextXAlignment = Enum.TextXAlignment.Left
+antiDetInfo.TextWrapped = true
+antiDetInfo.Parent = antiDetPanel
+
+-- Typo Chance
+local typoRow = Instance.new("Frame")
+typoRow.Size = UDim2.new(1, 0, 0, 28)
+typoRow.Position = UDim2.new(0, 0, 0, 90)
+typoRow.BackgroundTransparency = 1
+typoRow.Parent = antiDetPanel
+
+local typoLabel = Instance.new("TextLabel")
+typoLabel.Size = UDim2.new(0, 140, 1, 0)
+typoLabel.BackgroundTransparency = 1
+typoLabel.TextColor3 = COLORS.textDark
+typoLabel.Text = "Typo Chance (%):"
+typoLabel.Font = Enum.Font.Gotham
+typoLabel.TextSize = 11
+typoLabel.TextXAlignment = Enum.TextXAlignment.Left
+typoLabel.Parent = typoRow
+
+local typoInput = Instance.new("TextBox")
+typoInput.Size = UDim2.new(0, 50, 1, 0)
+typoInput.Position = UDim2.new(0, 145, 0, 0)
+typoInput.BackgroundColor3 = COLORS.inputBg
+typoInput.TextColor3 = COLORS.textDark
+typoInput.Text = "5"
+typoInput.Font = Enum.Font.Gotham
+typoInput.TextSize = 12
+typoInput.ClearTextOnFocus = false
+typoInput.Parent = typoRow
+
+local typoCorner = Instance.new("UICorner")
+typoCorner.CornerRadius = UDim.new(0, 6)
+typoCorner.Parent = typoInput
+
+local typoStroke = Instance.new("UIStroke")
+typoStroke.Color = COLORS.border
+typoStroke.Thickness = 1
+typoStroke.Parent = typoInput
+
+-- Variance Chance
+local varianceRow = Instance.new("Frame")
+varianceRow.Size = UDim2.new(1, 0, 0, 28)
+varianceRow.Position = UDim2.new(0, 0, 0, 122)
+varianceRow.BackgroundTransparency = 1
+varianceRow.Parent = antiDetPanel
+
+local varianceLabel = Instance.new("TextLabel")
+varianceLabel.Size = UDim2.new(0, 140, 1, 0)
+varianceLabel.BackgroundTransparency = 1
+varianceLabel.TextColor3 = COLORS.textDark
+varianceLabel.Text = "Variance Chance (%):"
+varianceLabel.Font = Enum.Font.Gotham
+varianceLabel.TextSize = 11
+varianceLabel.TextXAlignment = Enum.TextXAlignment.Left
+varianceLabel.Parent = varianceRow
+
+local varianceInput = Instance.new("TextBox")
+varianceInput.Size = UDim2.new(0, 50, 1, 0)
+varianceInput.Position = UDim2.new(0, 145, 0, 0)
+varianceInput.BackgroundColor3 = COLORS.inputBg
+varianceInput.TextColor3 = COLORS.textDark
+varianceInput.Text = "10"
+varianceInput.Font = Enum.Font.Gotham
+varianceInput.TextSize = 12
+varianceInput.ClearTextOnFocus = false
+varianceInput.Parent = varianceRow
+
+local varianceCorner = Instance.new("UICorner")
+varianceCorner.CornerRadius = UDim.new(0, 6)
+varianceCorner.Parent = varianceInput
+
+local varianceStroke = Instance.new("UIStroke")
+varianceStroke.Color = COLORS.border
+varianceStroke.Thickness = 1
+varianceStroke.Parent = varianceInput
+
+-- Humanization
+local humanRow = Instance.new("Frame")
+humanRow.Size = UDim2.new(1, 0, 0, 28)
+humanRow.Position = UDim2.new(0, 0, 0, 160)
+humanRow.BackgroundTransparency = 1
+humanRow.Parent = antiDetPanel
+
+local humanLabel = Instance.new("TextLabel")
+humanLabel.Size = UDim2.new(0, 140, 1, 0)
+humanLabel.BackgroundTransparency = 1
+humanLabel.TextColor3 = COLORS.textDark
+humanLabel.Text = "Humanization:"
+humanLabel.Font = Enum.Font.Gotham
+humanLabel.TextSize = 11
+humanLabel.TextXAlignment = Enum.TextXAlignment.Left
+humanLabel.Parent = humanRow
+
+local humanToggle = Instance.new("TextButton")
+humanToggle.Size = UDim2.new(0, 50, 1, 0)
+humanToggle.Position = UDim2.new(0, 145, 0, 0)
+humanToggle.BackgroundColor3 = COLORS.buttonSuccess
+humanToggle.TextColor3 = COLORS.textLight
+humanToggle.Text = "ON"
+humanToggle.Font = Enum.Font.GothamBold
+humanToggle.TextSize = 11
+humanToggle.Parent = humanRow
+
+local humanCorner = Instance.new("UICorner")
+humanCorner.CornerRadius = UDim.new(0, 6)
+humanCorner.Parent = humanToggle
+
+humanizationEnabled = true
+
+-- Random case toggle
+local caseRow = Instance.new("Frame")
+caseRow.Size = UDim2.new(1, 0, 0, 28)
+caseRow.Position = UDim2.new(0, 0, 0, 195)
+caseRow.BackgroundTransparency = 1
+caseRow.Parent = antiDetPanel
+
+local caseLabel = Instance.new("TextLabel")
+caseLabel.Size = UDim2.new(0, 140, 1, 0)
+caseLabel.BackgroundTransparency = 1
+caseLabel.TextColor3 = COLORS.textDark
+caseLabel.Text = "Random Case:"
+caseLabel.Font = Enum.Font.Gotham
+caseLabel.TextSize = 11
+caseLabel.TextXAlignment = Enum.TextXAlignment.Left
+caseLabel.Parent = caseRow
+
+local caseToggle = Instance.new("TextButton")
+caseToggle.Size = UDim2.new(0, 50, 1, 0)
+caseToggle.Position = UDim2.new(0, 145, 0, 0)
+caseToggle.BackgroundColor3 = COLORS.buttonOff
+caseToggle.TextColor3 = COLORS.textLight
+caseToggle.Text = "OFF"
+caseToggle.Font = Enum.Font.GothamBold
+caseToggle.TextSize = 11
+caseToggle.Parent = caseRow
+
+local caseCorner = Instance.new("UICorner")
+caseCorner.CornerRadius = UDim.new(0, 6)
+caseCorner.Parent = caseToggle
+
+local caseEnabled = false
+
+antiDetToggle.MouseButton1Click:Connect(function()
+    antiDetectionEnabled = not antiDetectionEnabled
+    if antiDetectionEnabled then
+        antiDetToggle.Text = "ANTI-DETECTION: ON"
+        antiDetToggle.BackgroundColor3 = COLORS.buttonSuccess
+    else
+        antiDetToggle.Text = "ANTI-DETECTION: OFF"
+        antiDetToggle.BackgroundColor3 = COLORS.buttonDanger
+    end
+end)
+
+humanToggle.MouseButton1Click:Connect(function()
+    humanizationEnabled = not humanizationEnabled
+    humanToggle.Text = humanizationEnabled and "ON" or "OFF"
+    humanToggle.BackgroundColor3 = humanizationEnabled and COLORS.buttonSuccess or COLORS.buttonOff
+end)
+
+caseToggle.MouseButton1Click:Connect(function()
+    caseEnabled = not caseEnabled
+    caseToggle.Text = caseEnabled and "ON" or "OFF"
+    caseToggle.BackgroundColor3 = caseEnabled and COLORS.buttonSuccess or COLORS.buttonOff
+end)
+
+typoInput.FocusLost:Connect(function()
+    local val = tonumber(typoInput.Text) or 5
+    val = math.clamp(val, 0, 50)
+    typoInput.Text = tostring(val)
+    typoChance = val / 100
+end)
+
+varianceInput.FocusLost:Connect(function()
+    local val = tonumber(varianceInput.Text) or 10
+    val = math.clamp(val, 0, 50)
+    varianceInput.Text = tostring(val)
+    varianceChance = val / 100
+end)
+
+-- Enhanced anti-detection
+local function humanizeMessage(msg)
+    if not humanizationEnabled then return msg end
+    
+    -- Random capitalization
+    if caseEnabled and math.random() < 0.3 then
+        local result = ""
+        for i = 1, #msg do
+            local char = msg:sub(i, i)
+            if math.random() < 0.5 then
+                result = result .. char:upper()
+            else
+                result = result .. char:lower()
+            end
+        end
+        msg = result
+    end
+    
+    return msg
+end
+
+-- ========== FINAL: TOOLS TAB SWITCHING (UPDATED) ==========
+
+local function switchToolsTabFinal(tabName)
+    currentToolsTab = tabName
+    loggerPanel.Visible = tabName == "Logger"
+    schedulerPanel.Visible = tabName == "Scheduler"
+    patternsPanel.Visible = tabName == "Patterns"
+    commandsPanel.Visible = tabName == "Commands"
+    massMentionPanel.Visible = tabName == "Mentions"
+    spyPanel.Visible = tabName == "Spy"
+    queuePanel.Visible = tabName == "Queue"
+    antiDetPanel.Visible = tabName == "Anti-Det"
+    
+    for name, btn in pairs(toolsSubTabBtns) do
+        if name == tabName then
+            btn.BackgroundColor3 = COLORS.buttonPrimary
+            btn.TextColor3 = COLORS.textLight
+        else
+            btn.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+            btn.TextColor3 = COLORS.textDark
+        end
+    end
+end
+
+for name, btn in pairs(toolsSubTabBtns) do
+    btn.MouseButton1Click:Connect(function()
+        switchToolsTabFinal(name)
+    end)
+end
+
+-- ========== HOOK CHAT COMMANDS ==========
+
+local originalSendForCmd = sendMessage
+sendMessage = function(msg)
+    -- Check for commands first
+    if msg:sub(1, #commandPrefix) == commandPrefix then
+        if processCommand(msg) then
+            return true
+        end
+    end
+    
+    -- Apply anti-detection
+    if antiDetectionEnabled then
+        msg = addTypo(msg)
+        msg = varyMessage(msg)
+        msg = humanizeMessage(msg)
+    end
+    
+    -- Check whisper mode
+    if whisperMode and whisperTargetInput.Text ~= "" then
+        return sendWhisper(whisperTargetInput.Text, msg)
+    end
+    
+    return originalSendForCmd(msg)
+end
+
+-- ========== INITIALIZE EVERYTHING ==========
+
+hookChatSpy()
+updateQueueUI()
+switchToolsTabFinal("Logger")
+
+print("╔════════════════════════════════════════════╗")
+print("║     CHAT HUB v2 - FULLY LOADED             ║")
+print("╠════════════════════════════════════════════╣")
+print("║  Features:                                 ║")
+print("║  ✓ Chat with Prefix Modes                  ║")
+print("║  ✓ Spam with Multiple Patterns             ║")
+print("║  ✓ Auto-Reply with Targeting               ║")
+print("║  ✓ Message Scheduler                       ║")
+print("║  ✓ Chat Logger with Search                 ║")
+print("║  ✓ Anti-AFK (Multiple Methods)             ║")
+print("║  ✓ Trade & Grind Modes                     ║")
+print("║  ✓ Auto-GG (Game End + Death)              ║")
+print("║  ✓ Keyword Alerts                          ║")
+print("║  ✓ Chat Muter                              ║")
+print("║  ✓ Statistics Tracking                     ║")
+print("║  ✓ Chat Commands (/help)                   ║")
+print("║  ✓ Mass Mention System                     ║")
+print("║  ✓ Chat Spy                                ║")
+print("║  ✓ Message Queue                           ║")
+print("║  ✓ Anti-Detection                          ║")
+print("║  ✓ Quick Responses (1-9 Keys)              ║")
+print("║  ✓ Whisper Mode                            ║")
+print("║  ✓ Rate Limit Protection                   ║")
+print("╠════════════════════════════════════════════╣")
+print("║  Shortcuts: F1=GUI | F2=AFK | F3=Spam     ║")
+print("║             F4=Auto-Reply                  ║")
+print("╚════════════════════════════════════════════╝")
