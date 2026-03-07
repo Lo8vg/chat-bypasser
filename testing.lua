@@ -1,4 +1,4 @@
--- Custom Chat GUI (TALL + Spam Cycle Messages + Emoji Prefix)
+-- Custom Chat GUI (TALL + Spam Cycle Messages + Custom Prefix + Case Toggles)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,28 +12,18 @@ local MAX_CHARS = 200
 local spamEnabled = false
 local spamDelay = 1
 local messagesExpanded = false
-local emojiExpanded = false
+local prefixExpanded = false
 local spamIndex = 1
 
--- Emoji prefix settings
-local emojiPrefixEnabled = false
-local emojiPrefixMode = "FIXED" -- "FIXED" or "ROTATE"
-local selectedEmoji = "😀"
-local emojiIndex = 1
+-- Prefix settings
+local prefixEnabled = false
+local prefixMode = "FIXED" -- "FIXED" or "ROTATE"
+local fixedPrefix = "😀 "
+local rotatePrefixes = {"😀 ", "🔥 ", "⭐ "}
+local rotateIndex = 1
 
--- Available emojis
-local emojiList = {
-    "😀", "😃", "😄", "😁", "😅", "😂", "🤣", "😊", "😇", "🙂",
-    "😉", "😌", "😍", "🥰", "😘", "😋", "😛", "😜", "🤪", "😎",
-    "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "😣",
-    "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬",
-    "🤯", "😱", "🥵", "🥶", "😳", "🤡", "👻", "👽", "🤖", "💩",
-    "👋", "🤚", "🖐️", "✋", "🖖", "👌", "🤌", "🤏", "✌️", "🤞",
-    "🤟", "🤘", "🤙", "👈", "👉", "👆", "🖕", "👇", "☝️", "👍",
-    "👎", "✊", "👊", "🤛", "🤜", "👏", "🙌", "👐", "🤲", "🤝",
-    "🙏", "✍️", "💪", "🦾", "🔥", "⭐", "🌟", "✨", "💫", "🎉",
-    "🎊", "💎", "🏆", "🥇", "🥈", "🥉", "💰", "💵", "💳", "👑"
-}
+-- Case settings
+local caseMode = "NORMAL" -- "NORMAL", "UPPER", "LOWER"
 
 -- Premade messages list
 local premadeMessages = {
@@ -194,27 +184,27 @@ local spamCorner = Instance.new("UICorner")
 spamCorner.CornerRadius = UDim.new(0, 6)
 spamCorner.Parent = spamButton
 
--- Toggles Row (Emoji + Messages)
+-- Toggles Row (Prefix + Messages)
 local togglesRow = Instance.new("Frame")
 togglesRow.Size = UDim2.new(1, -20, 0, 24)
 togglesRow.Position = UDim2.new(0, 10, 0, 152)
 togglesRow.BackgroundTransparency = 1
 togglesRow.Parent = frame
 
--- Emoji Toggle Button
-local emojiToggle = Instance.new("TextButton")
-emojiToggle.Size = UDim2.new(0.5, -2, 0, 24)
-emojiToggle.Position = UDim2.new(0, 0, 0, 0)
-emojiToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-emojiToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-emojiToggle.Text = "😀 Emoji"
-emojiToggle.Font = Enum.Font.GothamBold
-emojiToggle.TextSize = 11
-emojiToggle.Parent = togglesRow
+-- Prefix Toggle Button
+local prefixToggle = Instance.new("TextButton")
+prefixToggle.Size = UDim2.new(0.5, -2, 0, 24)
+prefixToggle.Position = UDim2.new(0, 0, 0, 0)
+prefixToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+prefixToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+prefixToggle.Text = "📝 Prefix"
+prefixToggle.Font = Enum.Font.GothamBold
+prefixToggle.TextSize = 11
+prefixToggle.Parent = togglesRow
 
-local emojiToggleCorner = Instance.new("UICorner")
-emojiToggleCorner.CornerRadius = UDim.new(0, 6)
-emojiToggleCorner.Parent = emojiToggle
+local prefixToggleCorner = Instance.new("UICorner")
+prefixToggleCorner.CornerRadius = UDim.new(0, 6)
+prefixToggleCorner.Parent = prefixToggle
 
 -- Messages Toggle Button
 local messagesToggle = Instance.new("TextButton")
@@ -231,75 +221,60 @@ local messagesToggleCorner = Instance.new("UICorner")
 messagesToggleCorner.CornerRadius = UDim.new(0, 6)
 messagesToggleCorner.Parent = messagesToggle
 
--- ========== EMOJI PREFIX PANEL ==========
+-- ========== PREFIX PANEL ==========
 
-local emojiPanel = Instance.new("Frame")
-emojiPanel.Size = UDim2.new(1, -20, 0, 150)
-emojiPanel.Position = UDim2.new(0, 10, 0, 180)
-emojiPanel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-emojiPanel.Visible = false
-emojiPanel.Parent = frame
+local prefixPanel = Instance.new("Frame")
+prefixPanel.Size = UDim2.new(1, -20, 0, 165)
+prefixPanel.Position = UDim2.new(0, 10, 0, 180)
+prefixPanel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+prefixPanel.Visible = false
+prefixPanel.Parent = frame
 
-local emojiPanelCorner = Instance.new("UICorner")
-emojiPanelCorner.CornerRadius = UDim.new(0, 6)
-emojiPanelCorner.Parent = emojiPanel
+local prefixPanelCorner = Instance.new("UICorner")
+prefixPanelCorner.CornerRadius = UDim.new(0, 6)
+prefixPanelCorner.Parent = prefixPanel
 
--- Emoji Enable Toggle
-local emojiEnableRow = Instance.new("Frame")
-emojiEnableRow.Size = UDim2.new(1, 0, 0, 28)
-emojiEnableRow.Position = UDim2.new(0, 0, 0, 5)
-emojiEnableRow.BackgroundTransparency = 1
-emojiEnableRow.Parent = emojiPanel
+-- Enable Toggle
+local enableRow = Instance.new("Frame")
+enableRow.Size = UDim2.new(1, 0, 0, 28)
+enableRow.Position = UDim2.new(0, 0, 0, 5)
+enableRow.BackgroundTransparency = 1
+enableRow.Parent = prefixPanel
 
-local emojiEnableLabel = Instance.new("TextLabel")
-emojiEnableLabel.Size = UDim2.new(0, 80, 1, 0)
-emojiEnableLabel.Position = UDim2.new(0, 5, 0, 0)
-emojiEnableLabel.BackgroundTransparency = 1
-emojiEnableLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-emojiEnableLabel.Text = "Emoji Prefix:"
-emojiEnableLabel.Font = Enum.Font.Gotham
-emojiEnableLabel.TextSize = 11
-emojiEnableLabel.TextXAlignment = Enum.TextXAlignment.Left
-emojiEnableLabel.Parent = emojiEnableRow
+local enableLabel = Instance.new("TextLabel")
+enableLabel.Size = UDim2.new(0, 60, 1, 0)
+enableLabel.Position = UDim2.new(0, 5, 0, 0)
+enableLabel.BackgroundTransparency = 1
+enableLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+enableLabel.Text = "Enabled:"
+enableLabel.Font = Enum.Font.Gotham
+enableLabel.TextSize = 11
+enableLabel.TextXAlignment = Enum.TextXAlignment.Left
+enableLabel.Parent = enableRow
 
-local emojiEnableBtn = Instance.new("TextButton")
-emojiEnableBtn.Size = UDim2.new(0, 50, 0, 24)
-emojiEnableBtn.Position = UDim2.new(0, 85, 0, 2)
-emojiEnableBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-emojiEnableBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-emojiEnableBtn.Text = "OFF"
-emojiEnableBtn.Font = Enum.Font.GothamBold
-emojiEnableBtn.TextSize = 11
-emojiEnableBtn.Parent = emojiEnableRow
+local enableBtn = Instance.new("TextButton")
+enableBtn.Size = UDim2.new(0, 50, 0, 24)
+enableBtn.Position = UDim2.new(0, 65, 0, 2)
+enableBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+enableBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+enableBtn.Text = "OFF"
+enableBtn.Font = Enum.Font.GothamBold
+enableBtn.TextSize = 11
+enableBtn.Parent = enableRow
 
-local emojiEnableCorner = Instance.new("UICorner")
-emojiEnableCorner.CornerRadius = UDim.new(0, 5)
-emojiEnableCorner.Parent = emojiEnableBtn
-
--- Current Emoji Display
-local emojiDisplayLabel = Instance.new("TextLabel")
-emojiDisplayLabel.Size = UDim2.new(0, 40, 0, 24)
-emojiDisplayLabel.Position = UDim2.new(1, -45, 0, 2)
-emojiDisplayLabel.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-emojiDisplayLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-emojiDisplayLabel.Text = selectedEmoji
-emojiDisplayLabel.Font = Enum.Font.GothamBold
-emojiDisplayLabel.TextSize = 18
-emojiDisplayLabel.Parent = emojiEnableRow
-
-local emojiDisplayCorner = Instance.new("UICorner")
-emojiDisplayCorner.CornerRadius = UDim.new(0, 5)
-emojiDisplayCorner.Parent = emojiDisplayLabel
+local enableCorner = Instance.new("UICorner")
+enableCorner.CornerRadius = UDim.new(0, 5)
+enableCorner.Parent = enableBtn
 
 -- Mode Selection (Fixed / Rotate)
 local modeRow = Instance.new("Frame")
 modeRow.Size = UDim2.new(1, 0, 0, 28)
 modeRow.Position = UDim2.new(0, 0, 0, 35)
 modeRow.BackgroundTransparency = 1
-modeRow.Parent = emojiPanel
+modeRow.Parent = prefixPanel
 
 local modeLabel = Instance.new("TextLabel")
-modeLabel.Size = UDim2.new(0, 50, 1, 0)
+modeLabel.Size = UDim2.new(0, 45, 1, 0)
 modeLabel.Position = UDim2.new(0, 5, 0, 0)
 modeLabel.BackgroundTransparency = 1
 modeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -310,8 +285,8 @@ modeLabel.TextXAlignment = Enum.TextXAlignment.Left
 modeLabel.Parent = modeRow
 
 local fixedBtn = Instance.new("TextButton")
-fixedBtn.Size = UDim2.new(0, 65, 0, 24)
-fixedBtn.Position = UDim2.new(0, 55, 0, 2)
+fixedBtn.Size = UDim2.new(0, 60, 0, 24)
+fixedBtn.Position = UDim2.new(0, 50, 0, 2)
 fixedBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 fixedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 fixedBtn.Text = "FIXED"
@@ -324,8 +299,8 @@ fixedCorner.CornerRadius = UDim.new(0, 5)
 fixedCorner.Parent = fixedBtn
 
 local rotateBtn = Instance.new("TextButton")
-rotateBtn.Size = UDim2.new(0, 65, 0, 24)
-rotateBtn.Position = UDim2.new(0, 125, 0, 2)
+rotateBtn.Size = UDim2.new(0, 60, 0, 24)
+rotateBtn.Position = UDim2.new(0, 115, 0, 2)
 rotateBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 rotateBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 rotateBtn.Text = "ROTATE"
@@ -337,59 +312,133 @@ local rotateCorner = Instance.new("UICorner")
 rotateCorner.CornerRadius = UDim.new(0, 5)
 rotateCorner.Parent = rotateBtn
 
--- Emoji Grid Label
-local emojiGridLabel = Instance.new("TextLabel")
-emojiGridLabel.Size = UDim2.new(1, 0, 0, 18)
-emojiGridLabel.Position = UDim2.new(0, 0, 0, 65)
-emojiGridLabel.BackgroundTransparency = 1
-emojiGridLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-emojiGridLabel.Text = "Select Emoji:"
-emojiGridLabel.Font = Enum.Font.Gotham
-emojiGridLabel.TextSize = 10
-emojiGridLabel.TextXAlignment = Enum.TextXAlignment.Left
-emojiGridLabel.Parent = emojiPanel
+-- Fixed Prefix Input
+local fixedRow = Instance.new("Frame")
+fixedRow.Size = UDim2.new(1, 0, 0, 28)
+fixedRow.Position = UDim2.new(0, 0, 0, 65)
+fixedRow.BackgroundTransparency = 1
+fixedRow.Parent = prefixPanel
 
--- Emoji Grid ScrollingFrame
-local emojiScroll = Instance.new("ScrollingFrame")
-emojiScroll.Size = UDim2.new(1, 0, 1, -85)
-emojiScroll.Position = UDim2.new(0, 0, 0, 83)
-emojiScroll.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-emojiScroll.ScrollBarThickness = 4
-emojiScroll.Parent = emojiPanel
+local fixedLabel = Instance.new("TextLabel")
+fixedLabel.Size = UDim2.new(0, 45, 1, 0)
+fixedLabel.Position = UDim2.new(0, 5, 0, 0)
+fixedLabel.BackgroundTransparency = 1
+fixedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+fixedLabel.Text = "Prefix:"
+fixedLabel.Font = Enum.Font.Gotham
+fixedLabel.TextSize = 11
+fixedLabel.TextXAlignment = Enum.TextXAlignment.Left
+fixedLabel.Parent = fixedRow
 
-local emojiScrollCorner = Instance.new("UICorner")
-emojiScrollCorner.CornerRadius = UDim.new(0, 4)
-emojiScrollCorner.Parent = emojiScroll
+local fixedInput = Instance.new("TextBox")
+fixedInput.Size = UDim2.new(1, -55, 0, 24)
+fixedInput.Position = UDim2.new(0, 50, 0, 2)
+fixedInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+fixedInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+fixedInput.Text = "😀 "
+fixedInput.PlaceholderText = "Enter prefix..."
+fixedInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+fixedInput.Font = Enum.Font.Gotham
+fixedInput.TextSize = 14
+fixedInput.ClearTextOnFocus = false
+fixedInput.Parent = fixedRow
 
-local emojiGrid = Instance.new("UIGridLayout")
-emojiGrid.CellSize = UDim2.new(0, 30, 0, 30)
-emojiGrid.CellPadding = UDim2.new(0, 2, 0, 2)
-emojiGrid.Parent = emojiScroll
+local fixedInputCorner = Instance.new("UICorner")
+fixedInputCorner.CornerRadius = UDim.new(0, 5)
+fixedInputCorner.Parent = fixedInput
 
--- Create emoji buttons
-local function createEmojiGrid()
-    for _, emoji in ipairs(emojiList) do
-        local emojiBtn = Instance.new("TextButton")
-        emojiBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        emojiBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        emojiBtn.Text = emoji
-        emojiBtn.Font = Enum.Font.GothamBold
-        emojiBtn.TextSize = 16
-        emojiBtn.Parent = emojiScroll
-        
-        local emojiBtnCorner = Instance.new("UICorner")
-        emojiBtnCorner.CornerRadius = UDim.new(0, 4)
-        emojiBtnCorner.Parent = emojiBtn
-        
-        emojiBtn.MouseButton1Click:Connect(function()
-            selectedEmoji = emoji
-            emojiDisplayLabel.Text = emoji
-            emojiToggle.Text = emoji .. " Emoji"
-        end)
-    end
-end
+-- Rotate Prefixes List
+local rotateLabel = Instance.new("TextLabel")
+rotateLabel.Size = UDim2.new(1, 0, 0, 18)
+rotateLabel.Position = UDim2.new(0, 0, 0, 95)
+rotateLabel.BackgroundTransparency = 1
+rotateLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+rotateLabel.Text = "Rotate Prefixes (one per line):"
+rotateLabel.Font = Enum.Font.Gotham
+rotateLabel.TextSize = 10
+rotateLabel.TextXAlignment = Enum.TextXAlignment.Left
+rotateLabel.Parent = prefixPanel
 
-createEmojiGrid()
+local rotateInput = Instance.new("TextBox")
+rotateInput.Size = UDim2.new(1, 0, 0, 28)
+rotateInput.Position = UDim2.new(0, 0, 0, 113)
+rotateInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+rotateInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+rotateInput.Text = "😀 \n🔥 \n⭐ \n💎 "
+rotateInput.PlaceholderText = "One prefix per line..."
+rotateInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+rotateInput.Font = Enum.Font.Gotham
+rotateInput.TextSize = 12
+rotateInput.TextXAlignment = Enum.TextXAlignment.Left
+rotateInput.TextYAlignment = Enum.TextYAlignment.Top
+rotateInput.ClearTextOnFocus = false
+rotateInput.MultiLine = true
+rotateInput.Parent = prefixPanel
+
+local rotateInputCorner = Instance.new("UICorner")
+rotateInputCorner.CornerRadius = UDim.new(0, 5)
+rotateInputCorner.Parent = rotateInput
+
+-- ========== CASE TOGGLES ROW ==========
+
+local caseRow = Instance.new("Frame")
+caseRow.Size = UDim2.new(1, 0, 0, 24)
+caseRow.Position = UDim2.new(0, 0, 0, 143)
+caseRow.BackgroundTransparency = 1
+caseRow.Parent = prefixPanel
+
+local caseLabel = Instance.new("TextLabel")
+caseLabel.Size = UDim2.new(0, 35, 1, 0)
+caseLabel.Position = UDim2.new(0, 5, 0, 0)
+caseLabel.BackgroundTransparency = 1
+caseLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+caseLabel.Text = "Case:"
+caseLabel.Font = Enum.Font.Gotham
+caseLabel.TextSize = 11
+caseLabel.TextXAlignment = Enum.TextXAlignment.Left
+caseLabel.Parent = caseRow
+
+local normalBtn = Instance.new("TextButton")
+normalBtn.Size = UDim2.new(0, 50, 0, 22)
+normalBtn.Position = UDim2.new(0, 40, 0, 1)
+normalBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+normalBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+normalBtn.Text = "Normal"
+normalBtn.Font = Enum.Font.GothamBold
+normalBtn.TextSize = 9
+normalBtn.Parent = caseRow
+
+local normalCorner = Instance.new("UICorner")
+normalCorner.CornerRadius = UDim.new(0, 4)
+normalCorner.Parent = normalBtn
+
+local upperBtn = Instance.new("TextButton")
+upperBtn.Size = UDim2.new(0, 55, 0, 22)
+upperBtn.Position = UDim2.new(0, 93, 0, 1)
+upperBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+upperBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+upperBtn.Text = "ALL CAPS"
+upperBtn.Font = Enum.Font.GothamBold
+upperBtn.TextSize = 9
+upperBtn.Parent = caseRow
+
+local upperCorner = Instance.new("UICorner")
+upperCorner.CornerRadius = UDim.new(0, 4)
+upperCorner.Parent = upperBtn
+
+local lowerBtn = Instance.new("TextButton")
+lowerBtn.Size = UDim2.new(0, 55, 0, 22)
+lowerBtn.Position = UDim2.new(0, 151, 0, 1)
+lowerBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+lowerBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+lowerBtn.Text = "lowercase"
+lowerBtn.Font = Enum.Font.GothamBold
+lowerBtn.TextSize = 9
+lowerBtn.Parent = caseRow
+
+local lowerCorner = Instance.new("UICorner")
+lowerCorner.CornerRadius = UDim.new(0, 4)
+lowerCorner.Parent = lowerBtn
 
 -- ========== MESSAGES PANEL ==========
 
@@ -487,24 +536,51 @@ textbox:GetPropertyChangedSignal("Text"):Connect(function()
     end
 end)
 
--- ========== SEND MESSAGE FUNCTION ==========
+-- ========== GET PREFIX ==========
 
-local function getEmojiPrefix()
-    if not emojiPrefixEnabled then
+local function getPrefix()
+    if not prefixEnabled then
         return ""
     end
     
-    if emojiPrefixMode == "FIXED" then
-        return selectedEmoji .. " "
+    if prefixMode == "FIXED" then
+        return fixedInput.Text
     else -- ROTATE
-        local emoji = emojiList[emojiIndex]
-        emojiIndex = emojiIndex + 1
-        if emojiIndex > #emojiList then
-            emojiIndex = 1
+        local prefixes = {}
+        for line in rotateInput.Text:gmatch("[^\r\n]+") do
+            local trimmed = line:gsub("^%s+", ""):gsub("%s+$", "")
+            if trimmed ~= "" then
+                table.insert(prefixes, trimmed)
+            end
         end
-        return emoji .. " "
+        
+        if #prefixes == 0 then
+            return ""
+        end
+        
+        local prefix = prefixes[rotateIndex]
+        rotateIndex = rotateIndex + 1
+        if rotateIndex > #prefixes then
+            rotateIndex = 1
+        end
+        
+        return prefix
     end
 end
+
+-- ========== APPLY CASE ==========
+
+local function applyCase(text)
+    if caseMode == "UPPER" then
+        return text:upper()
+    elseif caseMode == "LOWER" then
+        return text:lower()
+    else
+        return text
+    end
+end
+
+-- ========== SEND MESSAGE FUNCTION ==========
 
 local function sendMessage(msg)
     local message = msg or textbox.Text
@@ -515,8 +591,11 @@ local function sendMessage(msg)
         return false
     end
     
-    -- Add emoji prefix
-    local prefix = getEmojiPrefix()
+    -- Apply case transformation
+    message = applyCase(message)
+    
+    -- Add prefix
+    local prefix = getPrefix()
     message = prefix .. message
     
     if #message > MAX_CHARS then
@@ -604,20 +683,20 @@ end
 
 -- ========== TOGGLE HANDLERS ==========
 
--- Toggle emoji panel
-emojiToggle.MouseButton1Click:Connect(function()
-    emojiExpanded = not emojiExpanded
+-- Toggle prefix panel
+prefixToggle.MouseButton1Click:Connect(function()
+    prefixExpanded = not prefixExpanded
     messagesExpanded = false
     messagesPanel.Visible = false
     messagesToggle.Text = "▼ Messages"
     
-    emojiPanel.Visible = emojiExpanded
+    prefixPanel.Visible = prefixExpanded
     
-    if emojiExpanded then
-        emojiToggle.Text = selectedEmoji .. " Emoji"
-        frame.Size = UDim2.new(0, 200, 0, 338)
+    if prefixExpanded then
+        prefixToggle.Text = "▲ Prefix"
+        frame.Size = UDim2.new(0, 200, 0, 353)
     else
-        emojiToggle.Text = selectedEmoji .. " Emoji"
+        prefixToggle.Text = "📝 Prefix"
         frame.Size = UDim2.new(0, 200, 0, 180)
     end
 end)
@@ -625,8 +704,9 @@ end)
 -- Toggle messages panel
 messagesToggle.MouseButton1Click:Connect(function()
     messagesExpanded = not messagesExpanded
-    emojiExpanded = false
-    emojiPanel.Visible = false
+    prefixExpanded = false
+    prefixPanel.Visible = false
+    prefixToggle.Text = "📝 Prefix"
     
     messagesPanel.Visible = messagesExpanded
     
@@ -641,29 +721,51 @@ messagesToggle.MouseButton1Click:Connect(function()
     updateMessagesUI()
 end)
 
--- Emoji enable toggle
-emojiEnableBtn.MouseButton1Click:Connect(function()
-    emojiPrefixEnabled = not emojiPrefixEnabled
-    if emojiPrefixEnabled then
-        emojiEnableBtn.Text = "ON"
-        emojiEnableBtn.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
+-- Enable toggle
+enableBtn.MouseButton1Click:Connect(function()
+    prefixEnabled = not prefixEnabled
+    if prefixEnabled then
+        enableBtn.Text = "ON"
+        enableBtn.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
     else
-        emojiEnableBtn.Text = "OFF"
-        emojiEnableBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+        enableBtn.Text = "OFF"
+        enableBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
     end
 end)
 
 -- Mode buttons
 fixedBtn.MouseButton1Click:Connect(function()
-    emojiPrefixMode = "FIXED"
+    prefixMode = "FIXED"
     fixedBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
     rotateBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 end)
 
 rotateBtn.MouseButton1Click:Connect(function()
-    emojiPrefixMode = "ROTATE"
+    prefixMode = "ROTATE"
     rotateBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
     fixedBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+end)
+
+-- Case buttons
+normalBtn.MouseButton1Click:Connect(function()
+    caseMode = "NORMAL"
+    normalBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+    upperBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    lowerBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+end)
+
+upperBtn.MouseButton1Click:Connect(function()
+    caseMode = "UPPER"
+    upperBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+    normalBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    lowerBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+end)
+
+lowerBtn.MouseButton1Click:Connect(function()
+    caseMode = "LOWER"
+    lowerBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+    normalBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    upperBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 end)
 
 -- Add current message to list
@@ -765,4 +867,4 @@ end)
 -- Initialize
 updateMessagesUI()
 
-print("✅ Custom Chat GUI Loaded (with Emoji Prefix + Spam Cycle)")
+print("✅ Custom Chat GUI Loaded (Prefix + Case Toggles + Spam)")
