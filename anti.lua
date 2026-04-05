@@ -1,5 +1,5 @@
--- COLLISION FLING PROTECTION
--- Uses collision groups, anchor glitching, and velocity reset on collision detection
+-- COLLISION FLING PROTECTION v2
+-- Fixed: No spawn delay, real collision groups, instant spike detection, no counter-force garbage
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -7,22 +7,19 @@ local PhysicsService = game:GetService("PhysicsService")
 
 local player = Players.LocalPlayer
 
--- Create collision groups
-local success, err = pcall(function()
+-- Create collision groups ONCE at startup
+local collisionGroupsCreated = false
+pcall(function()
     PhysicsService:CreateCollisionGroup("AntiFlingSelf")
     PhysicsService:CreateCollisionGroup("AntiFlingOthers")
     PhysicsService:CollisionGroupSetCollidable("AntiFlingSelf", "AntiFlingOthers", false)
+    collisionGroupsCreated = true
 end)
 
 local antiFlingEnabled = false
-local lastVelocities = {}
-local anchorOnCollision = true
-local velocityResetOnSpike = true
-local collisionGroupEnabled = true
-local spamAnchorEnabled = true
 
 local function getRoot(char)
-    return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
+    return char and (char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso"))
 end
 
 local function getBodyParts(char)
@@ -36,100 +33,69 @@ local function getBodyParts(char)
 end
 
 local function setCollisionGroup(char, groupName)
+    if not collisionGroupsCreated then return end
     for _, part in pairs(getBodyParts(char)) do
         PhysicsService:SetPartCollisionGroup(part, groupName)
     end
 end
 
-local function applyAntiCollisionFling()
-    local myChar = player.Character
-    if not myChar then return end
-    local myRoot = getRoot(myChar)
-    if not myRoot then return end
+-- INSTANT spawn protection - NO WAIT
+local function protectCharacter(char)
+    if not antiFlingEnabled then return end
     
-    -- Set YOUR parts to AntiFlingSelf group (doesn't collide with others in AntiFlingOthers)
-    if collisionGroupEnabled then
-        setCollisionGroup(myChar, "AntiFlingSelf")
+    local root = getRoot(char)
+    if not root then return end
+    
+    -- Set collision group immediately
+    if collisionGroupsCreated then
+        setCollisionGroup(char, "AntiFlingSelf")
     end
     
-    -- Set OTHER players to AntiFlingOthers group
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= player and plr.Character then
-            for _, part in pairs(getBodyParts(plr.Character)) do
-                PhysicsService:SetPartCollisionGroup(part, "AntiFlingOthers")
-            end
-        end
-    end
+    -- Brief anchor on spawn to break any immediate physics
+    root.Anchored = true
+    task.defer(function()
+        task.wait(0.03)
+        root.Anchored = false
+    end)
 end
 
-local function detectCollisionFling()
-    local myChar = player.Character
-    if not myChar then return false end
-    local myRoot = getRoot(myChar)
-    if not myRoot then return false end
-    
-    local currentVel = myRoot.AssemblyLinearVelocity
-    local currentAngVel = myRoot.AssemblyAngularVelocity
-    local currentSpeed = currentVel.Magnitude
-    local currentAngSpeed = currentAngVel.Magnitude
-    
-    -- Track velocity history
-    table.insert(lastVelocities, {vel = currentVel, ang = currentAngVel, time = tick()})
-    if #lastVelocities > 10 then
-        table.remove(lastVelocities, 1)
-    end
-    
-    -- Detect sudden velocity spike (collision fling signature)
-    if #lastVelocities >= 3 then
-        local prev = lastVelocities[#lastVelocities - 1]
-        local velDiff = (currentVel - prev.vel).Magnitude
-        local timeDiff = tick() - prev.time
-        
-        -- If velocity jumped significantly in a short time, it's a fling
-        if velDiff > 100 and timeDiff < 0.1 then
-            return true, currentVel, currentAngVel
-        end
-    end
-    
-    -- Detect extreme angular velocity (spinning)
-    if currentAngSpeed > 30 then
-        return true, currentVel, currentAngVel
-    end
-    
-    -- Detect extreme linear velocity
-    if currentSpeed > 200 then
-        return true, currentVel, currentAngVel
-    end
-    
-    return false, nil, nil
-end
+-- Track velocities for spike detection
+local prevVelocity = Vector3.new()
+local prevAngVelocity = Vector3.new()
+local prevTime = tick()
 
-local function counterCollisionFling()
+local function detectAndNeutralizeSpike()
     local myChar = player.Character
-    if not myChar then return end
-    local myRoot = getRoot(myChar)
-    if not myRoot then return end
+    local root = getRoot(myChar)
+    if not root then return end
     
-    local isFling, vel, angVel = detectCollisionFling()
+    local currentVel = root.AssemblyLinearVelocity
+    local currentAng = root.AssemblyAngularVelocity
+    local currentTime = tick()
+    local dt = currentTime - prevTime
     
-    if isFling then
-        -- Method 1: Instant velocity reset
-        if velocityResetOnSpike then
-            myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-            myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-        end
-        
-        -- Method 2: Brief anchor (breaks physics chain)
-        if anchorOnCollision then
-            local humanoid = myChar:FindFirstChild("Humanoid")
-            if humanoid then
-                local originalHealth = humanoid.Health
-                myRoot.Anchored = true
-                wait(0.05)
-                myRoot.Anchored = false
-            end
-        end
+    if dt <= 0 then
+        prevVelocity = currentVel
+        prevAngVelocity = currentAng
+        prevTime = currentTime
+        return
     end
+    
+    local velSpike = (currentVel - prevVelocity).Magnitude / dt
+    local angSpike = (currentAng - prevAngVelocity).Magnitude / dt
+    
+    -- Instant neutralization on ANY spike
+    if velSpike > 500 or currentVel.Magnitude > 150 then
+        root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+    end
+    
+    if angSpike > 100 or currentAng.Magnitude > 50 then
+        root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+    end
+    
+    prevVelocity = currentVel
+    prevAngVelocity = currentAng
+    prevTime = currentTime
 end
 
 local antiFlingLoop = nil
@@ -139,11 +105,30 @@ local function startAntiFling()
         antiFlingLoop:Disconnect()
     end
     
+    -- Protect current character IMMEDIATELY
+    if player.Character then
+        protectCharacter(player.Character)
+    end
+    
     antiFlingLoop = RunService.Heartbeat:Connect(function()
         if not antiFlingEnabled then return end
         
-        applyAntiCollisionFling()
-        counterCollisionFling()
+        local myChar = player.Character
+        if not myChar then return end
+        
+        -- Keep collision groups applied
+        if collisionGroupsCreated then
+            setCollisionGroup(myChar, "AntiFlingSelf")
+            
+            -- Apply to others
+            for _, plr in pairs(Players:GetPlayers()) do
+                if plr ~= player and plr.Character then
+                    setCollisionGroup(plr.Character, "AntiFlingOthers")
+                end
+            end
+        end
+        
+        detectAndNeutralizeSpike()
     end)
 end
 
@@ -154,25 +139,21 @@ local function stopAntiFling()
     end
     
     -- Reset collision groups
-    local myChar = player.Character
-    if myChar then
-        for _, part in pairs(getBodyParts(myChar)) do
-            PhysicsService:SetPartCollisionGroup(part, "Default")
-        end
+    if player.Character then
+        setCollisionGroup(player.Character, "Default")
     end
 end
 
--- Simple toggle (bind to a key or GUI)
-player.CharacterAdded:Connect(function()
+-- Character added: IMMEDIATE protection, NO WAIT
+player.CharacterAdded:Connect(function(char)
     if antiFlingEnabled then
-        wait(0.5)
-        startAntiFling()
+        protectCharacter(char)
     end
 end)
 
--- Enable by default
+-- Enable immediately
 antiFlingEnabled = true
 startAntiFling()
 
-print("✅ Collision Fling Protection Loaded")
-print("   Collision group isolation + velocity spike detection + anchor glitch")
+print("✅ Collision Fling Protection v2 Loaded")
+print("   NO spawn delay, REAL collision groups, INSTANT spike neutralization")
