@@ -1,4 +1,4 @@
--- Chat Trigger Pro (With Save System)
+-- Chat Trigger Pro (With Bypass System)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,37 +12,83 @@ local playerGui = player:WaitForChild("PlayerGui")
 local enabled = false
 local spamming = false
 local savedMessages = {}
-local FILE_NAME = "ChatTriggerPro_Save.json"
+local bypassMode = "none" -- none, spaces, zero, mixed, smart
 
--- ========== SAVE/LOAD FUNCTIONS ==========
-local function saveData()
-	local data = {
-		trigger = triggerBox.Text,
-		delay = delayBox.Text,
-		messages = savedMessages
-	}
-	local success, encoded = pcall(function()
-		return HttpService:JSONEncode(data)
-	end)
-	if success and encoded then
-		writefile(FILE_NAME, encoded)
+-- Bypass characters
+local zeroWidth = "​" -- invisible character
+local specialChars = {".", ",", "-", "'", '"'}
+
+-- ========== BYPASS FUNCTIONS ==========
+local function spaceBypass(text)
+	local result = ""
+	for i = 1, #text do
+		result = result .. text:sub(i, i) .. " "
 	end
+	return result:sub(1, #result - 1)
 end
 
-local function loadData()
-	local success, content = pcall(function()
-		return readfile(FILE_NAME)
-	end)
-	if success and content then
-		local data = HttpService:JSONDecode(content)
-		if data then
-			if data.messages then
-				savedMessages = data.messages
-			end
-			return data
+local function zeroWidthBypass(text)
+	local result = ""
+	for i = 1, #text do
+		result = result .. text:sub(i, i) .. zeroWidth
+	end
+	return result
+end
+
+local function mixedBypass(text)
+	local result = ""
+	for i = 1, #text do
+		local char = text:sub(i, i)
+		local shouldBypass = math.random(1, 3)
+		if shouldBypass == 1 then
+			result = result .. char .. zeroWidth
+		elseif shouldBypass == 2 then
+			result = result .. string.upper(char)
+		else
+			result = result .. char
 		end
 	end
-	return nil
+	return result
+end
+
+local function smartBypass(text)
+	-- Flagged words that commonly get tagged
+	local flaggedWords = {"loser", "idiot", "stupid", "dumb", "noob", "nub", "trash", 
+		"female", "girl", "woman", "head", "kill", "die", "hate", "ugly", "fat",
+		"cry", "mad", "rage", "bad", "worst", "terrible", "awful", "wtf", "omg",
+		"female", "loser", "head", "off", "haha", "lol", "ez", "easy"}
+	
+	local lowerText = string.lower(text)
+	local result = text
+	
+	for _, word in ipairs(flaggedWords) do
+		local startPos, endPos = string.find(lowerText, word)
+		while startPos do
+			local originalWord = string.sub(text, startPos, endPos)
+			local bypassed = ""
+			for i = 1, #originalWord do
+				bypassed = bypassed .. string.sub(originalWord, i, i) .. zeroWidth
+			end
+			result = string.gsub(result, originalWord, bypassed, 1)
+			startPos, endPos = string.find(lowerText, word, endPos + 1)
+		end
+	end
+	
+	return result
+end
+
+local function applyBypass(text)
+	if bypassMode == "spaces" then
+		return spaceBypass(text)
+	elseif bypassMode == "zero" then
+		return zeroWidthBypass(text)
+	elseif bypassMode == "mixed" then
+		return mixedBypass(text)
+	elseif bypassMode == "smart" then
+		return smartBypass(text)
+	else
+		return text
+	end
 end
 
 -- ========== CREATE GUI ==========
@@ -72,7 +118,7 @@ hubStroke.Parent = hubButton
 local hubIcon = Instance.new("TextLabel")
 hubIcon.Size = UDim2.new(1, 0, 1, 0)
 hubIcon.BackgroundTransparency = 1
-hubIcon.TextColor3 = Color3.fromRGB(100, 200, 255)
+hubIcon.TextColor3 = Color3.fromRGB(255, 100, 100)
 hubIcon.Text = "⚡"
 hubIcon.Font = Enum.Font.GothamBold
 hubIcon.TextSize = 24
@@ -81,8 +127,8 @@ hubIcon.Parent = hubButton
 -- Main Frame
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 280, 0, 350)
-mainFrame.Position = UDim2.new(0, 20, 0.5, -175)
+mainFrame.Size = UDim2.new(0, 320, 0, 420)
+mainFrame.Position = UDim2.new(0, 20, 0.5, -210)
 mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -119,7 +165,7 @@ local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -45, 1, 0)
 titleLabel.Position = UDim2.new(0, 15, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
+titleLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
 titleLabel.Text = "Chat Trigger Pro"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 14
@@ -186,10 +232,164 @@ triggerStroke.Color = Color3.fromRGB(50, 50, 60)
 triggerStroke.Thickness = 1
 triggerStroke.Parent = triggerBox
 
+-- ========== BYPASS SECTION ==========
+local bypassSection = Instance.new("Frame")
+bypassSection.Size = UDim2.new(1, -20, 0, 75)
+bypassSection.Position = UDim2.new(0, 10, 0, 58)
+bypassSection.BackgroundTransparency = 1
+bypassSection.Parent = contentFrame
+
+local bypassLabel = Instance.new("TextLabel")
+bypassLabel.Size = UDim2.new(1, 0, 0, 16)
+bypassLabel.BackgroundTransparency = 1
+bypassLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+bypassLabel.Text = "BYPASS MODE"
+bypassLabel.Font = Enum.Font.GothamBold
+bypassLabel.TextSize = 9
+bypassLabel.TextXAlignment = Enum.TextXAlignment.Left
+bypassLabel.Parent = bypassSection
+
+-- Bypass Buttons Row 1
+local bypassRow1 = Instance.new("Frame")
+bypassRow1.Size = UDim2.new(1, 0, 0, 24)
+bypassRow1.Position = UDim2.new(0, 0, 0, 18)
+bypassRow1.BackgroundTransparency = 1
+bypassRow1.Parent = bypassSection
+
+local noneBtn = Instance.new("TextButton")
+noneBtn.Size = UDim2.new(0.48, 0, 1, 0)
+noneBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+noneBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+noneBtn.Text = "NONE"
+noneBtn.Font = Enum.Font.GothamBold
+noneBtn.TextSize = 10
+noneBtn.Parent = bypassRow1
+
+local noneCorner = Instance.new("UICorner")
+noneCorner.CornerRadius = UDim.new(0, 5)
+noneCorner.Parent = noneBtn
+
+local spaceBtn = Instance.new("TextButton")
+spaceBtn.Size = UDim2.new(0.48, 0, 1, 0)
+spaceBtn.Position = UDim2.new(0.52, 0, 0, 0)
+spaceBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+spaceBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+spaceBtn.Text = "SPACES"
+spaceBtn.Font = Enum.Font.GothamBold
+spaceBtn.TextSize = 10
+spaceBtn.Parent = bypassRow1
+
+local spaceCorner = Instance.new("UICorner")
+spaceCorner.CornerRadius = UDim.new(0, 5)
+spaceCorner.Parent = spaceBtn
+
+-- Bypass Buttons Row 2
+local bypassRow2 = Instance.new("Frame")
+bypassRow2.Size = UDim2.new(1, 0, 0, 24)
+bypassRow2.Position = UDim2.new(0, 0, 0, 46)
+bypassRow2.BackgroundTransparency = 1
+bypassRow2.Parent = bypassSection
+
+local zeroBtn = Instance.new("TextButton")
+zeroBtn.Size = UDim2.new(0.31, 0, 1, 0)
+zeroBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+zeroBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+zeroBtn.Text = "INVISIBLE"
+zeroBtn.Font = Enum.Font.GothamBold
+zeroBtn.TextSize = 9
+zeroBtn.Parent = bypassRow2
+
+local zeroCorner = Instance.new("UICorner")
+zeroCorner.CornerRadius = UDim.new(0, 5)
+zeroCorner.Parent = zeroBtn
+
+local mixedBtn = Instance.new("TextButton")
+mixedBtn.Size = UDim2.new(0.31, 0, 1, 0)
+mixedBtn.Position = UDim2.new(0.34, 0, 0, 0)
+mixedBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+mixedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+mixedBtn.Text = "MIXED"
+mixedBtn.Font = Enum.Font.GothamBold
+mixedBtn.TextSize = 9
+mixedBtn.Parent = bypassRow2
+
+local mixedCorner = Instance.new("UICorner")
+mixedCorner.CornerRadius = UDim.new(0, 5)
+mixedCorner.Parent = mixedBtn
+
+local smartBtn = Instance.new("TextButton")
+smartBtn.Size = UDim2.new(0.31, 0, 1, 0)
+smartBtn.Position = UDim2.new(0.68, 0, 0, 0)
+smartBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+smartBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+smartBtn.Text = "SMART"
+smartBtn.Font = Enum.Font.GothamBold
+smartBtn.TextSize = 9
+smartBtn.Parent = bypassRow2
+
+local smartCorner = Instance.new("UICorner")
+smartCorner.CornerRadius = UDim.new(0, 5)
+smartCorner.Parent = smartBtn
+
+-- Bypass status
+local bypassStatus = Instance.new("TextLabel")
+bypassStatus.Size = UDim2.new(1, 0, 0, 14)
+bypassStatus.Position = UDim2.new(0, 0, 0, 72)
+bypassStatus.BackgroundTransparency = 1
+bypassStatus.TextColor3 = Color3.fromRGB(100, 200, 255)
+bypassStatus.Text = "Current: None (No bypass)"
+bypassStatus.Font = Enum.Font.Gotham
+bypassStatus.TextSize = 8
+bypassStatus.TextXAlignment = Enum.TextXAlignment.Left
+bypassStatus.Parent = bypassSection
+
+-- ========== UPDATE BYPASS BUTTONS ==========
+local function updateBypassButtons()
+	noneBtn.BackgroundColor3 = bypassMode == "none" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 60)
+	spaceBtn.BackgroundColor3 = bypassMode == "spaces" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 60)
+	zeroBtn.BackgroundColor3 = bypassMode == "zero" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 60)
+	mixedBtn.BackgroundColor3 = bypassMode == "mixed" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 60)
+	smartBtn.BackgroundColor3 = bypassMode == "smart" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 60)
+	
+	local statusText = {
+		["none"] = "None (No bypass)",
+		["spaces"] = "Spaces (Adds spaces)",
+		["zero"] = "Invisible (Hidden chars)",
+		["mixed"] = "Mixed (Random bypass)",
+		["smart"] = "Smart (Flagged words only)"
+	}
+	bypassStatus.Text = "Current: "..(statusText[bypassMode] or "None")
+end
+
+noneBtn.MouseButton1Click:Connect(function()
+	bypassMode = "none"
+	updateBypassButtons()
+end)
+
+spaceBtn.MouseButton1Click:Connect(function()
+	bypassMode = "spaces"
+	updateBypassButtons()
+end)
+
+zeroBtn.MouseButton1Click:Connect(function()
+	bypassMode = "zero"
+	updateBypassButtons()
+end)
+
+mixedBtn.MouseButton1Click:Connect(function()
+	bypassMode = "mixed"
+	updateBypassButtons()
+end)
+
+smartBtn.MouseButton1Click:Connect(function()
+	bypassMode = "smart"
+	updateBypassButtons()
+end)
+
 -- Messages List Section
 local listSection = Instance.new("Frame")
-listSection.Size = UDim2.new(1, -20, 0, 145)
-listSection.Position = UDim2.new(0, 10, 0, 60)
+listSection.Size = UDim2.new(1, -20, 0, 115)
+listSection.Position = UDim2.new(0, 10, 0, 138)
 listSection.BackgroundTransparency = 1
 listSection.Parent = contentFrame
 
@@ -204,7 +404,7 @@ listLabel.TextXAlignment = Enum.TextXAlignment.Left
 listLabel.Parent = listSection
 
 local listContainer = Instance.new("Frame")
-listContainer.Size = UDim2.new(1, 0, 0, 105)
+listContainer.Size = UDim2.new(1, 0, 0, 90)
 listContainer.Position = UDim2.new(0, 0, 0, 18)
 listContainer.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 listContainer.Parent = listSection
@@ -234,7 +434,7 @@ listLayout.Parent = scrollingList
 -- Add Message Section
 local addSection = Instance.new("Frame")
 addSection.Size = UDim2.new(1, -20, 0, 50)
-addSection.Position = UDim2.new(0, 10, 0, 210)
+addSection.Position = UDim2.new(0, 10, 0, 258)
 addSection.BackgroundTransparency = 1
 addSection.Parent = contentFrame
 
@@ -287,7 +487,7 @@ addBtnCorner.Parent = addBtn
 -- Settings Row
 local settingsRow = Instance.new("Frame")
 settingsRow.Size = UDim2.new(1, -20, 0, 30)
-settingsRow.Position = UDim2.new(0, 10, 0, 265)
+settingsRow.Position = UDim2.new(0, 10, 0, 313)
 settingsRow.BackgroundTransparency = 1
 settingsRow.Parent = contentFrame
 
@@ -337,7 +537,7 @@ local countLabel = Instance.new("TextLabel")
 countLabel.Size = UDim2.new(0, 80, 1, 0)
 countLabel.Position = UDim2.new(1, -80, 0, 0)
 countLabel.BackgroundTransparency = 1
-countLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
+countLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
 countLabel.Text = "0 messages"
 countLabel.Font = Enum.Font.Gotham
 countLabel.TextSize = 10
@@ -347,7 +547,7 @@ countLabel.Parent = settingsRow
 -- Enable Button
 local enableBtn = Instance.new("TextButton")
 enableBtn.Size = UDim2.new(1, -20, 0, 34)
-enableBtn.Position = UDim2.new(0, 10, 0, 300)
+enableBtn.Position = UDim2.new(0, 10, 0, 348)
 enableBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 enableBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 enableBtn.Text = "DISABLED - Click to Enable"
@@ -438,20 +638,17 @@ end)
 
 -- ========== UPDATE MESSAGE LIST ==========
 local function updateList()
-	-- Clear existing
 	for _, child in pairs(scrollingList:GetChildren()) do
 		if child:IsA("Frame") then
 			child:Destroy()
 		end
 	end
 	
-	-- Update count
 	countLabel.Text = #savedMessages.." messages"
 	
-	-- Add messages
 	for i, msg in ipairs(savedMessages) do
 		local msgFrame = Instance.new("Frame")
-		msgFrame.Size = UDim2.new(1, 0, 0, 26)
+		msgFrame.Size = UDim2.new(1, 0, 0, 22)
 		msgFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
 		msgFrame.Parent = scrollingList
 		
@@ -466,19 +663,19 @@ local function updateList()
 		msgText.TextColor3 = Color3.fromRGB(220, 220, 230)
 		msgText.Text = msg
 		msgText.Font = Enum.Font.Gotham
-		msgText.TextSize = 11
+		msgText.TextSize = 10
 		msgText.TextXAlignment = Enum.TextXAlignment.Left
 		msgText.TextTruncate = Enum.TextTruncate.AtEnd
 		msgText.Parent = msgFrame
 		
 		local removeBtn = Instance.new("TextButton")
-		removeBtn.Size = UDim2.new(0, 22, 0, 22)
-		removeBtn.Position = UDim2.new(1, -26, 0.5, -11)
+		removeBtn.Size = UDim2.new(0, 20, 0, 20)
+		removeBtn.Position = UDim2.new(1, -24, 0.5, -10)
 		removeBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 		removeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 		removeBtn.Text = "×"
 		removeBtn.Font = Enum.Font.GothamBold
-		removeBtn.TextSize = 12
+		removeBtn.TextSize = 11
 		removeBtn.Parent = msgFrame
 		
 		local removeCorner = Instance.new("UICorner")
@@ -488,12 +685,10 @@ local function updateList()
 		removeBtn.MouseButton1Click:Connect(function()
 			table.remove(savedMessages, i)
 			updateList()
-			saveData()
 		end)
 	end
 	
-	scrollingList.CanvasSize = UDim2.new(0, 0, 0, #savedMessages * 30)
-	saveData()
+	scrollingList.CanvasSize = UDim2.new(0, 0, 0, #savedMessages * 26)
 end
 
 -- ========== ADD MESSAGE ==========
@@ -506,7 +701,6 @@ addBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Enter key to add
 addBox.FocusLost:Connect(function(enterPressed)
 	if enterPressed then
 		local msg = addBox.Text:gsub("^%s+", ""):gsub("%s+$", "")
@@ -518,18 +712,10 @@ addBox.FocusLost:Connect(function(enterPressed)
 	end
 end)
 
--- Save on trigger/delay change
-triggerBox.FocusLost:Connect(function()
-	saveData()
-end)
-
-delayBox.FocusLost:Connect(function()
-	saveData()
-end)
-
 -- ========== SEND MESSAGE FUNCTION ==========
 local function sendMessage(msg)
-	local message = msg:gsub("^%s+", ""):gsub("%s+$", "")
+	local message = applyBypass(msg)
+	message = message:gsub("^%s+", ""):gsub("%s+$", "")
 	
 	if message == "" then
 		return false
@@ -620,19 +806,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	end
 end)
 
--- ========== LOAD SAVED DATA ON START ==========
-local loadedData = loadData()
-if loadedData then
-	if loadedData.trigger then
-		triggerBox.Text = loadedData.trigger
-	end
-	if loadedData.delay then
-		delayBox.Text = loadedData.delay
-	end
-	if loadedData.messages then
-		savedMessages = loadedData.messages
-	end
-end
-
+updateBypassButtons()
 updateList()
-print("✅ Chat Trigger Pro Loaded (With Save System)")
+print("✅ Chat Trigger Pro Loaded (With Bypass System)")
