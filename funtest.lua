@@ -1,5 +1,5 @@
--- ULTIMATE COLLISION FLING (SMART FOLLOW EDITION)
--- Works on MOVING targets with velocity prediction
+-- COMBO DESTROYER: FLING + SWORD AUTO ATTACK
+-- Fling for stationary, Sword for moving = NO ESCAPE
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -9,26 +9,31 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 -- Settings
-local flingEnabled = false
+local destroyEnabled = false
 local targetPlayer = nil
-local flingLoop = nil
 local flingCount = 0
 
 -- Power Settings
 local velocityPower = 999999
 local angularPower = 999999
 local collisionMode = "devastate"
+local teleportMultiplier = 500
 
--- Smart Follow Settings
-local predictionEnabled = true
-local velocityMatchEnabled = true
-local predictionFrames = 3  -- How many frames ahead to predict
+-- Sword Settings
+local swordSwings = 3
+local swingDelay = 0.01
+local swordReach = 15
 
 -- Toggle states
 local velocityEnabled = true
 local angularEnabled = true
 local teleportEnabled = true
 local massEnabled = true
+local swordEnabled = true
+
+-- Loops
+local flingLoop = nil
+local swordLoop = nil
 
 -- Colors
 local COLORS = {
@@ -37,7 +42,6 @@ local COLORS = {
     buttonPrimary = Color3.fromRGB(0, 120, 215),
     buttonDanger = Color3.fromRGB(220, 53, 69),
     buttonSuccess = Color3.fromRGB(40, 167, 69),
-    buttonWarning = Color3.fromRGB(255, 193, 7),
     textDark = Color3.fromRGB(33, 37, 41),
     textLight = Color3.fromRGB(255, 255, 255),
     textMuted = Color3.fromRGB(134, 142, 150),
@@ -48,7 +52,7 @@ local COLORS = {
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "UltimateCollisionFling"
+screenGui.Name = "ComboDestroyer"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
@@ -124,7 +128,7 @@ titleLabel.Size = UDim2.new(1, -50, 1, 0)
 titleLabel.Position = UDim2.new(0, 15, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = COLORS.textDark
-titleLabel.Text = "💀 SMART Collision Fling"
+titleLabel.Text = "💀 COMBO DESTROYER (Fling + Sword)"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 14
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -158,7 +162,7 @@ toggleButton.Size = UDim2.new(1, 0, 0, 40)
 toggleButton.Position = UDim2.new(0, 0, 0, 0)
 toggleButton.BackgroundColor3 = COLORS.buttonDanger
 toggleButton.TextColor3 = COLORS.textLight
-toggleButton.Text = "FLING: OFF"
+toggleButton.Text = "DESTROY: OFF"
 toggleButton.Font = Enum.Font.GothamBold
 toggleButton.TextSize = 16
 toggleButton.Parent = leftFrame
@@ -167,16 +171,16 @@ local toggleCorner = Instance.new("UICorner")
 toggleCorner.CornerRadius = UDim.new(0, 8)
 toggleCorner.Parent = toggleButton
 
--- Fling Counter
-local flingCounter = Instance.new("TextLabel")
-flingCounter.Size = UDim2.new(1, 0, 0, 18)
-flingCounter.Position = UDim2.new(0, 0, 0, 45)
-flingCounter.BackgroundTransparency = 1
-flingCounter.TextColor3 = COLORS.buttonSuccess
-flingCounter.Text = "Flings: 0"
-flingCounter.Font = Enum.Font.GothamBold
-flingCounter.TextSize = 11
-flingCounter.Parent = leftFrame
+-- Kill Counter
+local killCounter = Instance.new("TextLabel")
+killCounter.Size = UDim2.new(1, 0, 0, 18)
+killCounter.Position = UDim2.new(0, 0, 0, 45)
+killCounter.BackgroundTransparency = 1
+killCounter.TextColor3 = COLORS.buttonSuccess
+killCounter.Text = "Attacks: 0"
+killCounter.Font = Enum.Font.GothamBold
+killCounter.TextSize = 11
+killCounter.Parent = leftFrame
 
 -- Target Label
 local targetLabel = Instance.new("TextLabel")
@@ -208,7 +212,7 @@ playerLayout.Parent = playerScroll
 
 -- Status Label
 local statusLabel = Instance.new("TextLabel")
-statusLabel.Size = UDim2.new(1, 0, 0, 35)
+statusLabel.Size = UDim2.new(1, 0, 0, 18)
 statusLabel.Position = UDim2.new(0, 0, 0, 190)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = COLORS.textMuted
@@ -221,7 +225,7 @@ statusLabel.Parent = leftFrame
 -- Mode Label
 local modeLabel = Instance.new("TextLabel")
 modeLabel.Size = UDim2.new(1, 0, 0, 16)
-modeLabel.Position = UDim2.new(0, 0, 0, 230)
+modeLabel.Position = UDim2.new(0, 0, 0, 212)
 modeLabel.BackgroundTransparency = 1
 modeLabel.TextColor3 = COLORS.textDark
 modeLabel.Text = "Fling Mode:"
@@ -233,7 +237,7 @@ modeLabel.Parent = leftFrame
 -- Mode Buttons Frame
 local modesFrame = Instance.new("Frame")
 modesFrame.Size = UDim2.new(1, 0, 0, 90)
-modesFrame.Position = UDim2.new(0, 0, 0, 248)
+modesFrame.Position = UDim2.new(0, 0, 0, 230)
 modesFrame.BackgroundTransparency = 1
 modesFrame.Parent = leftFrame
 
@@ -287,94 +291,123 @@ rightFrame.Position = UDim2.new(0.5, 5, 0, 40)
 rightFrame.BackgroundTransparency = 1
 rightFrame.Parent = mainFrame
 
--- SMART FOLLOW SECTION
-local smartLabel = Instance.new("TextLabel")
-smartLabel.Size = UDim2.new(1, 0, 0, 16)
-smartLabel.Position = UDim2.new(0, 0, 0, 0)
-smartLabel.BackgroundTransparency = 1
-smartLabel.TextColor3 = COLORS.buttonWarning
-smartLabel.Text = "⚡ SMART FOLLOW (Moving Targets)"
-smartLabel.Font = Enum.Font.GothamBold
-smartLabel.TextSize = 10
-smartLabel.TextXAlignment = Enum.TextXAlignment.Left
-smartLabel.Parent = rightFrame
+-- SWORD SECTION
+local swordSectionLabel = Instance.new("TextLabel")
+swordSectionLabel.Size = UDim2.new(1, 0, 0, 16)
+swordSectionLabel.Position = UDim2.new(0, 0, 0, 0)
+swordSectionLabel.BackgroundTransparency = 1
+swordSectionLabel.TextColor3 = COLORS.buttonPrimary
+swordSectionLabel.Text = "⚔️ SWORD SETTINGS"
+swordSectionLabel.Font = Enum.Font.GothamBold
+swordSectionLabel.TextSize = 10
+swordSectionLabel.TextXAlignment = Enum.TextXAlignment.Left
+swordSectionLabel.Parent = rightFrame
 
-local predictionToggle = Instance.new("TextButton")
-predictionToggle.Size = UDim2.new(1, 0, 0, 24)
-predictionToggle.Position = UDim2.new(0, 0, 0, 18)
-predictionToggle.BackgroundColor3 = COLORS.buttonSuccess
-predictionToggle.TextColor3 = COLORS.textLight
-predictionToggle.Text = "✓ Prediction (Aim Ahead)"
-predictionToggle.Font = Enum.Font.Gotham
-predictionToggle.TextSize = 9
-predictionToggle.Parent = rightFrame
+-- Sword Toggle
+local swordToggle = Instance.new("TextButton")
+swordToggle.Size = UDim2.new(1, 0, 0, 24)
+swordToggle.Position = UDim2.new(0, 0, 0, 18)
+swordToggle.BackgroundColor3 = COLORS.buttonSuccess
+swordToggle.TextColor3 = COLORS.textLight
+swordToggle.Text = "✓ Auto Sword Attack"
+swordToggle.Font = Enum.Font.Gotham
+swordToggle.TextSize = 9
+swordToggle.Parent = rightFrame
 
-local predCorner = Instance.new("UICorner")
-predCorner.CornerRadius = UDim.new(0, 5)
-predCorner.Parent = predictionToggle
+local swordTogCorner = Instance.new("UICorner")
+swordTogCorner.CornerRadius = UDim.new(0, 5)
+swordTogCorner.Parent = swordToggle
 
-local velocityMatchToggle = Instance.new("TextButton")
-velocityMatchToggle.Size = UDim2.new(1, 0, 0, 24)
-velocityMatchToggle.Position = UDim2.new(0, 0, 0, 46)
-velocityMatchToggle.BackgroundColor3 = COLORS.buttonSuccess
-velocityMatchToggle.TextColor3 = COLORS.textLight
-velocityMatchToggle.Text = "✓ Velocity Match (Move With Target)"
-velocityMatchToggle.Font = Enum.Font.Gotham
-velocityMatchToggle.TextSize = 9
-velocityMatchToggle.Parent = rightFrame
+-- Swings Per Attack
+local swingsRow = Instance.new("Frame")
+swingsRow.Size = UDim2.new(1, 0, 0, 24)
+swingsRow.Position = UDim2.new(0, 0, 0, 46)
+swingsRow.BackgroundTransparency = 1
+swingsRow.Parent = rightFrame
 
-local velMatchCorner = Instance.new("UICorner")
-velMatchCorner.CornerRadius = UDim.new(0, 5)
-velMatchCorner.Parent = velocityMatchToggle
+local swingsLabel = Instance.new("TextLabel")
+swingsLabel.Size = UDim2.new(0, 100, 1, 0)
+swingsLabel.BackgroundTransparency = 1
+swingsLabel.TextColor3 = COLORS.textDark
+swingsLabel.Text = "Swings/Attack:"
+swingsLabel.Font = Enum.Font.Gotham
+swingsLabel.TextSize = 9
+swingsLabel.TextXAlignment = Enum.TextXAlignment.Left
+swingsLabel.Parent = swingsRow
 
--- Prediction Frames
-local predFramesRow = Instance.new("Frame")
-predFramesRow.Size = UDim2.new(1, 0, 0, 24)
-predFramesRow.Position = UDim2.new(0, 0, 0, 74)
-predFramesRow.BackgroundTransparency = 1
-predFramesRow.Parent = rightFrame
+local swingsInput = Instance.new("TextBox")
+swingsInput.Size = UDim2.new(0, 60, 1, 0)
+swingsInput.Position = UDim2.new(0, 105, 0, 0)
+swingsInput.BackgroundColor3 = COLORS.inputBg
+swingsInput.TextColor3 = COLORS.textDark
+swingsInput.Text = "3"
+swingsInput.Font = Enum.Font.Gotham
+swingsInput.TextSize = 9
+swingsInput.ClearTextOnFocus = false
+swingsInput.Parent = swingsRow
 
-local predFramesLabel = Instance.new("TextLabel")
-predFramesLabel.Size = UDim2.new(0, 100, 1, 0)
-predFramesLabel.BackgroundTransparency = 1
-predFramesLabel.TextColor3 = COLORS.textDark
-predFramesLabel.Text = "Predict Frames:"
-predFramesLabel.Font = Enum.Font.Gotham
-predFramesLabel.TextSize = 9
-predFramesLabel.TextXAlignment = Enum.TextXAlignment.Left
-predFramesLabel.Parent = predFramesRow
+local swingsCorner = Instance.new("UICorner")
+swingsCorner.CornerRadius = UDim.new(0, 5)
+swingsCorner.Parent = swingsInput
 
-local predFramesInput = Instance.new("TextBox")
-predFramesInput.Size = UDim2.new(0, 60, 1, 0)
-predFramesInput.Position = UDim2.new(0, 105, 0, 0)
-predFramesInput.BackgroundColor3 = COLORS.inputBg
-predFramesInput.TextColor3 = COLORS.textDark
-predFramesInput.Text = "3"
-predFramesInput.Font = Enum.Font.Gotham
-predFramesInput.TextSize = 9
-predFramesInput.ClearTextOnFocus = false
-predFramesInput.Parent = predFramesRow
+local swingsStroke = Instance.new("UIStroke")
+swingsStroke.Color = COLORS.border
+swingsStroke.Thickness = 1
+swingsStroke.Parent = swingsInput
 
-local predFramesCorner = Instance.new("UICorner")
-predFramesCorner.CornerRadius = UDim.new(0, 5)
-predFramesCorner.Parent = predFramesInput
+-- Reach Distance
+local reachRow = Instance.new("Frame")
+reachRow.Size = UDim2.new(1, 0, 0, 24)
+reachRow.Position = UDim2.new(0, 0, 0, 72)
+reachRow.BackgroundTransparency = 1
+reachRow.Parent = rightFrame
 
--- Power Settings Label
-local powerLabel = Instance.new("TextLabel")
-powerLabel.Size = UDim2.new(1, 0, 0, 16)
-powerLabel.Position = UDim2.new(0, 0, 0, 105)
-powerLabel.BackgroundTransparency = 1
-powerLabel.TextColor3 = COLORS.textDark
-powerLabel.Text = "Power Settings:"
-powerLabel.Font = Enum.Font.GothamBold
-powerLabel.TextSize = 10
-powerLabel.TextXAlignment = Enum.TextXAlignment.Left
-powerLabel.Parent = rightFrame
+local reachLabel = Instance.new("TextLabel")
+reachLabel.Size = UDim2.new(0, 100, 1, 0)
+reachLabel.BackgroundTransparency = 1
+reachLabel.TextColor3 = COLORS.textDark
+reachLabel.Text = "Reach Distance:"
+reachLabel.Font = Enum.Font.Gotham
+reachLabel.TextSize = 9
+reachLabel.TextXAlignment = Enum.TextXAlignment.Left
+reachLabel.Parent = reachRow
+
+local reachInput = Instance.new("TextBox")
+reachInput.Size = UDim2.new(0, 60, 1, 0)
+reachInput.Position = UDim2.new(0, 105, 0, 0)
+reachInput.BackgroundColor3 = COLORS.inputBg
+reachInput.TextColor3 = COLORS.textDark
+reachInput.Text = "15"
+reachInput.Font = Enum.Font.Gotham
+reachInput.TextSize = 9
+reachInput.ClearTextOnFocus = false
+reachInput.Parent = reachRow
+
+local reachCorner = Instance.new("UICorner")
+reachCorner.CornerRadius = UDim.new(0, 5)
+reachCorner.Parent = reachInput
+
+local reachStroke = Instance.new("UIStroke")
+reachStroke.Color = COLORS.border
+reachStroke.Thickness = 1
+reachStroke.Parent = reachInput
+
+-- FLING SECTION
+local flingSectionLabel = Instance.new("TextLabel")
+flingSectionLabel.Size = UDim2.new(1, 0, 0, 16)
+flingSectionLabel.Position = UDim2.new(0, 0, 0, 100)
+flingSectionLabel.BackgroundTransparency = 1
+flingSectionLabel.TextColor3 = COLORS.buttonDanger
+flingSectionLabel.Text = "💥 FLING SETTINGS"
+flingSectionLabel.Font = Enum.Font.GothamBold
+flingSectionLabel.TextSize = 10
+flingSectionLabel.TextXAlignment = Enum.TextXAlignment.Left
+flingSectionLabel.Parent = rightFrame
 
 -- Velocity Power
 local velocityRow = Instance.new("Frame")
 velocityRow.Size = UDim2.new(1, 0, 0, 24)
-velocityRow.Position = UDim2.new(0, 0, 0, 123)
+velocityRow.Position = UDim2.new(0, 0, 0, 118)
 velocityRow.BackgroundTransparency = 1
 velocityRow.Parent = rightFrame
 
@@ -403,10 +436,15 @@ local velocityCorner = Instance.new("UICorner")
 velocityCorner.CornerRadius = UDim.new(0, 5)
 velocityCorner.Parent = velocityInput
 
+local velocityStroke = Instance.new("UIStroke")
+velocityStroke.Color = COLORS.border
+velocityStroke.Thickness = 1
+velocityStroke.Parent = velocityInput
+
 -- Angular Power
 local angularRow = Instance.new("Frame")
 angularRow.Size = UDim2.new(1, 0, 0, 24)
-angularRow.Position = UDim2.new(0, 0, 0, 151)
+angularRow.Position = UDim2.new(0, 0, 0, 144)
 angularRow.BackgroundTransparency = 1
 angularRow.Parent = rightFrame
 
@@ -435,88 +473,90 @@ local angularCorner = Instance.new("UICorner")
 angularCorner.CornerRadius = UDim.new(0, 5)
 angularCorner.Parent = angularInput
 
--- Collision Layers Label
-local layersLabel = Instance.new("TextLabel")
-layersLabel.Size = UDim2.new(1, 0, 0, 16)
-layersLabel.Position = UDim2.new(0, 0, 0, 180)
-layersLabel.BackgroundTransparency = 1
-layersLabel.TextColor3 = COLORS.textDark
-layersLabel.Text = "Collision Layers:"
-layersLabel.Font = Enum.Font.GothamBold
-layersLabel.TextSize = 10
-layersLabel.TextXAlignment = Enum.TextXAlignment.Left
-layersLabel.Parent = rightFrame
+local angularStroke = Instance.new("UIStroke")
+angularStroke.Color = COLORS.border
+angularStroke.Thickness = 1
+angularStroke.Parent = angularInput
 
--- Collision Toggles Frame
-local layersFrame = Instance.new("Frame")
-layersFrame.Size = UDim2.new(1, 0, 0, 100)
-layersFrame.Position = UDim2.new(0, 0, 0, 198)
-layersFrame.BackgroundTransparency = 1
-layersFrame.Parent = rightFrame
+-- FLING TOGGLES
+local flingTogglesLabel = Instance.new("TextLabel")
+flingTogglesLabel.Size = UDim2.new(1, 0, 0, 16)
+flingTogglesLabel.Position = UDim2.new(0, 0, 0, 172)
+flingTogglesLabel.BackgroundTransparency = 1
+flingTogglesLabel.TextColor3 = COLORS.textDark
+flingTogglesLabel.Text = "Fling Layers:"
+flingTogglesLabel.Font = Enum.Font.GothamBold
+flingTogglesLabel.TextSize = 10
+flingTogglesLabel.TextXAlignment = Enum.TextXAlignment.Left
+flingTogglesLabel.Parent = rightFrame
 
-local velocityLayerToggle = Instance.new("TextButton")
-velocityLayerToggle.Size = UDim2.new(1, 0, 0, 22)
-velocityLayerToggle.Position = UDim2.new(0, 0, 0, 0)
-velocityLayerToggle.BackgroundColor3 = COLORS.buttonSuccess
-velocityLayerToggle.TextColor3 = COLORS.textLight
-velocityLayerToggle.Text = "✓ Velocity Burst"
-velocityLayerToggle.Font = Enum.Font.Gotham
-velocityLayerToggle.TextSize = 9
-velocityLayerToggle.Parent = layersFrame
+-- Velocity Toggle
+local velocityToggle = Instance.new("TextButton")
+velocityToggle.Size = UDim2.new(1, 0, 0, 22)
+velocityToggle.Position = UDim2.new(0, 0, 0, 190)
+velocityToggle.BackgroundColor3 = COLORS.buttonSuccess
+velocityToggle.TextColor3 = COLORS.textLight
+velocityToggle.Text = "✓ Velocity Burst"
+velocityToggle.Font = Enum.Font.Gotham
+velocityToggle.TextSize = 9
+velocityToggle.Parent = rightFrame
 
-local velLayCorner = Instance.new("UICorner")
-velLayCorner.CornerRadius = UDim.new(0, 5)
-velLayCorner.Parent = velocityLayerToggle
+local velocityTogCorner = Instance.new("UICorner")
+velocityTogCorner.CornerRadius = UDim.new(0, 5)
+velocityTogCorner.Parent = velocityToggle
 
-local angularLayerToggle = Instance.new("TextButton")
-angularLayerToggle.Size = UDim2.new(1, 0, 0, 22)
-angularLayerToggle.Position = UDim2.new(0, 0, 0, 26)
-angularLayerToggle.BackgroundColor3 = COLORS.buttonSuccess
-angularLayerToggle.TextColor3 = COLORS.textLight
-angularLayerToggle.Text = "✓ Angular Force"
-angularLayerToggle.Font = Enum.Font.Gotham
-angularLayerToggle.TextSize = 9
-angularLayerToggle.Parent = layersFrame
+-- Angular Toggle
+local angularToggle = Instance.new("TextButton")
+angularToggle.Size = UDim2.new(1, 0, 0, 22)
+angularToggle.Position = UDim2.new(0, 0, 0, 216)
+angularToggle.BackgroundColor3 = COLORS.buttonSuccess
+angularToggle.TextColor3 = COLORS.textLight
+angularToggle.Text = "✓ Angular Force"
+angularToggle.Font = Enum.Font.Gotham
+angularToggle.TextSize = 9
+angularToggle.Parent = rightFrame
 
-local angLayCorner = Instance.new("UICorner")
-angLayCorner.CornerRadius = UDim.new(0, 5)
-angLayCorner.Parent = angularLayerToggle
+local angularTogCorner = Instance.new("UICorner")
+angularTogCorner.CornerRadius = UDim.new(0, 5)
+angularTogCorner.Parent = angularToggle
 
-local teleportLayerToggle = Instance.new("TextButton")
-teleportLayerToggle.Size = UDim2.new(1, 0, 0, 22)
-teleportLayerToggle.Position = UDim2.new(0, 0, 0, 52)
-teleportLayerToggle.BackgroundColor3 = COLORS.buttonSuccess
-teleportLayerToggle.TextColor3 = COLORS.textLight
-teleportLayerToggle.Text = "✓ Rapid Teleport"
-teleportLayerToggle.Font = Enum.Font.Gotham
-teleportLayerToggle.TextSize = 9
-teleportLayerToggle.Parent = layersFrame
+-- Teleport Toggle
+local teleportToggle = Instance.new("TextButton")
+teleportToggle.Size = UDim2.new(1, 0, 0, 22)
+teleportToggle.Position = UDim2.new(0, 0, 0, 242)
+teleportToggle.BackgroundColor3 = COLORS.buttonSuccess
+teleportToggle.TextColor3 = COLORS.textLight
+teleportToggle.Text = "✓ Rapid Teleport"
+teleportToggle.Font = Enum.Font.Gotham
+teleportToggle.TextSize = 9
+teleportToggle.Parent = rightFrame
 
-local telLayCorner = Instance.new("UICorner")
-telLayCorner.CornerRadius = UDim.new(0, 5)
-telLayCorner.Parent = teleportLayerToggle
+local teleportTogCorner = Instance.new("UICorner")
+teleportTogCorner.CornerRadius = UDim.new(0, 5)
+teleportTogCorner.Parent = teleportToggle
 
-local massLayerToggle = Instance.new("TextButton")
-massLayerToggle.Size = UDim2.new(1, 0, 0, 22)
-massLayerToggle.Position = UDim2.new(0, 0, 0, 78)
-massLayerToggle.BackgroundColor3 = COLORS.buttonSuccess
-massLayerToggle.TextColor3 = COLORS.textLight
-massLayerToggle.Text = "✓ Mass Boost"
-massLayerToggle.Font = Enum.Font.Gotham
-massLayerToggle.TextSize = 9
-massLayerToggle.Parent = layersFrame
+-- Mass Toggle
+local massToggle = Instance.new("TextButton")
+massToggle.Size = UDim2.new(1, 0, 0, 22)
+massToggle.Position = UDim2.new(0, 0, 0, 268)
+massToggle.BackgroundColor3 = COLORS.buttonSuccess
+massToggle.TextColor3 = COLORS.textLight
+massToggle.Text = "✓ Mass Boost"
+massToggle.Font = Enum.Font.Gotham
+massToggle.TextSize = 9
+massToggle.Parent = rightFrame
 
-local massLayCorner = Instance.new("UICorner")
-massLayCorner.CornerRadius = UDim.new(0, 5)
-massLayCorner.Parent = massLayerToggle
+local massTogCorner = Instance.new("UICorner")
+massTogCorner.CornerRadius = UDim.new(0, 5)
+massTogCorner.Parent = massToggle
 
 -- Info
 local infoLabel = Instance.new("TextLabel")
-infoLabel.Size = UDim2.new(1, 0, 0, 70)
-infoLabel.Position = UDim2.new(0, 0, 0, 305)
+infoLabel.Size = UDim2.new(1, 0, 0, 50)
+infoLabel.Position = UDim2.new(0, 0, 0, 300)
 infoLabel.BackgroundTransparency = 1
 infoLabel.TextColor3 = COLORS.textMuted
-infoLabel.Text = "SMART FOLLOW predicts where\nmoving targets will be and\nmatches their velocity!\nWorks on running players!"
+infoLabel.Text = "ONE toggle = BOTH attacks\nFling + Sword together\nNo escape for target"
 infoLabel.Font = Enum.Font.Gotham
 infoLabel.TextSize = 9
 infoLabel.TextWrapped = true
@@ -645,40 +685,34 @@ end)
 
 -- ========== TOGGLE OPTIONS ==========
 
-predictionToggle.MouseButton1Click:Connect(function()
-    predictionEnabled = not predictionEnabled
-    predictionToggle.Text = predictionEnabled and "✓ Prediction (Aim Ahead)" or "✗ Prediction (Aim Ahead)"
-    predictionToggle.BackgroundColor3 = predictionEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
+swordToggle.MouseButton1Click:Connect(function()
+    swordEnabled = not swordEnabled
+    swordToggle.Text = swordEnabled and "✓ Auto Sword Attack" or "✗ Auto Sword Attack"
+    swordToggle.BackgroundColor3 = swordEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
 end)
 
-velocityMatchToggle.MouseButton1Click:Connect(function()
-    velocityMatchEnabled = not velocityMatchEnabled
-    velocityMatchToggle.Text = velocityMatchEnabled and "✓ Velocity Match (Move With Target)" or "✗ Velocity Match (Move With Target)"
-    velocityMatchToggle.BackgroundColor3 = velocityMatchEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
-end)
-
-velocityLayerToggle.MouseButton1Click:Connect(function()
+velocityToggle.MouseButton1Click:Connect(function()
     velocityEnabled = not velocityEnabled
-    velocityLayerToggle.Text = velocityEnabled and "✓ Velocity Burst" or "✗ Velocity Burst"
-    velocityLayerToggle.BackgroundColor3 = velocityEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
+    velocityToggle.Text = velocityEnabled and "✓ Velocity Burst" or "✗ Velocity Burst"
+    velocityToggle.BackgroundColor3 = velocityEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
 end)
 
-angularLayerToggle.MouseButton1Click:Connect(function()
+angularToggle.MouseButton1Click:Connect(function()
     angularEnabled = not angularEnabled
-    angularLayerToggle.Text = angularEnabled and "✓ Angular Force" or "✗ Angular Force"
-    angularLayerToggle.BackgroundColor3 = angularEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
+    angularToggle.Text = angularEnabled and "✓ Angular Force" or "✗ Angular Force"
+    angularToggle.BackgroundColor3 = angularEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
 end)
 
-teleportLayerToggle.MouseButton1Click:Connect(function()
+teleportToggle.MouseButton1Click:Connect(function()
     teleportEnabled = not teleportEnabled
-    teleportLayerToggle.Text = teleportEnabled and "✓ Rapid Teleport" or "✗ Rapid Teleport"
-    teleportLayerToggle.BackgroundColor3 = teleportEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
+    teleportToggle.Text = teleportEnabled and "✓ Rapid Teleport" or "✗ Rapid Teleport"
+    teleportToggle.BackgroundColor3 = teleportEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
 end)
 
-massLayerToggle.MouseButton1Click:Connect(function()
+massToggle.MouseButton1Click:Connect(function()
     massEnabled = not massEnabled
-    massLayerToggle.Text = massEnabled and "✓ Mass Boost" or "✗ Mass Boost"
-    massLayerToggle.BackgroundColor3 = massEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
+    massToggle.Text = massEnabled and "✓ Mass Boost" or "✗ Mass Boost"
+    massToggle.BackgroundColor3 = massEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
 end)
 
 -- ========== PLAYER LIST ==========
@@ -726,11 +760,45 @@ Players.PlayerRemoving:Connect(function()
 end)
 
 updatePlayerList()
-
--- ========== FLING FUNCTIONS ==========
+-- ========== HELPER FUNCTIONS ==========
 
 local function getRoot(char)
     return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+end
+
+local function getSword()
+    local character = player.Character
+    if not character then return nil end
+    
+    for _, item in pairs(character:GetChildren()) do
+        if item:IsA("Tool") then
+            return item
+        end
+    end
+    return nil
+end
+
+local function equipSword()
+    local character = player.Character
+    local backpack = player:FindFirstChild("Backpack")
+    
+    if not character or not backpack then return nil end
+    
+    local currentTool = getSword()
+    if currentTool then return currentTool end
+    
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not humanoid then return nil end
+    
+    for _, item in pairs(backpack:GetChildren()) do
+        if item:IsA("Tool") then
+            humanoid:EquipTool(item)
+            wait(0.05)
+            return item
+        end
+    end
+    
+    return nil
 end
 
 local bodyVel = nil
@@ -739,10 +807,11 @@ local angle = 0
 
 local function boostMass(char)
     if not massEnabled then return end
+    
     local root = getRoot(char)
-    if root then
-        root.CustomPhysicalProperties = PhysicalProperties.new(100, 0.5, 0.5)
-    end
+    if not root then return end
+    
+    root.CustomPhysicalProperties = PhysicalProperties.new(100, 0.5, 0.5)
 end
 
 local function resetMass(char)
@@ -752,26 +821,166 @@ local function resetMass(char)
     end
 end
 
-local function getTargetVelocity(targetRoot)
-    if not targetRoot then return Vector3.new(0, 0, 0) end
-    return targetRoot.AssemblyLinearVelocity or Vector3.new(0, 0, 0)
+-- ========== FLING FUNCTIONS ==========
+
+local function devastateFling(targetRoot, myRoot, myHumanoid)
+    velocityPower = tonumber(velocityInput.Text) or 999999
+    angularPower = tonumber(angularInput.Text) or 999999
+    
+    if massEnabled then
+        boostMass(player.Character)
+    end
+    
+    if teleportEnabled then
+        myRoot.CFrame = targetRoot.CFrame * CFrame.new(math.random(-1, 1), math.random(-1, 1), math.random(-1, 1))
+    end
+    
+    if velocityEnabled then
+        if bodyVel then bodyVel:Destroy() end
+        bodyVel = Instance.new("BodyVelocity")
+        bodyVel.Name = "CollisionBurst"
+        bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyVel.Velocity = Vector3.new(math.random(-1, 1) * velocityPower, velocityPower, math.random(-1, 1) * velocityPower)
+        bodyVel.P = math.huge
+        bodyVel.Parent = myRoot
+    end
+    
+    if angularEnabled then
+        if bodyAngVel then bodyAngVel:Destroy() end
+        bodyAngVel = Instance.new("BodyAngularVelocity")
+        bodyAngVel.Name = "CollisionSpin"
+        bodyAngVel.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        bodyAngVel.AngularVelocity = Vector3.new(angularPower, angularPower, angularPower)
+        bodyAngVel.P = math.huge
+        bodyAngVel.Parent = myRoot
+    end
+    
+    if myHumanoid then
+        myHumanoid.PlatformStand = true
+    end
 end
 
-local function predictPosition(targetRoot, frames)
-    if not targetRoot then return targetRoot.CFrame end
+local function orbitalFling(targetRoot, myRoot, myHumanoid)
+    velocityPower = tonumber(velocityInput.Text) or 999999
+    angularPower = tonumber(angularInput.Text) or 999999
+    teleportMultiplier = tonumber(teleportInput.Text) or 500
     
-    frames = frames or 3
+    angle = angle + (math.pi * 2 / teleportMultiplier)
     
-    local velocity = getTargetVelocity(targetRoot)
-    local position = targetRoot.Position
+    local offsetX = math.cos(angle) * 2
+    local offsetZ = math.sin(angle) * 2
     
-    -- Predict where target will be
-    local predictedPos = position + (velocity * (frames / 60)) -- Convert frames to seconds
+    if massEnabled then
+        boostMass(player.Character)
+    end
     
-    return CFrame.new(predictedPos) * targetRoot.Rotation
+    if teleportEnabled then
+        myRoot.CFrame = targetRoot.CFrame * CFrame.new(offsetX, 1, offsetZ)
+    end
+    
+    if velocityEnabled then
+        local direction = (targetRoot.Position - myRoot.Position).Unit
+        
+        if bodyVel then bodyVel:Destroy() end
+        bodyVel = Instance.new("BodyVelocity")
+        bodyVel.Name = "CollisionBurst"
+        bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyVel.Velocity = direction * velocityPower
+        bodyVel.P = math.huge
+        bodyVel.Parent = myRoot
+    end
+    
+    if angularEnabled then
+        if bodyAngVel then bodyAngVel:Destroy() end
+        bodyAngVel = Instance.new("BodyAngularVelocity")
+        bodyAngVel.Name = "CollisionSpin"
+        bodyAngVel.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        bodyAngVel.AngularVelocity = Vector3.new(angularPower, angularPower, angularPower)
+        bodyAngVel.P = math.huge
+        bodyAngVel.Parent = myRoot
+    end
+    
+    if myHumanoid then
+        myHumanoid.PlatformStand = true
+    end
 end
 
-local function stopFling()
+local function chaosFling(targetRoot, myRoot, myHumanoid)
+    velocityPower = tonumber(velocityInput.Text) or 999999
+    angularPower = tonumber(angularInput.Text) or 999999
+    
+    if massEnabled then
+        boostMass(player.Character)
+    end
+    
+    if teleportEnabled then
+        myRoot.CFrame = targetRoot.CFrame * CFrame.new(
+            math.random(-3, 3),
+            math.random(-2, 2),
+            math.random(-3, 3)
+        )
+    end
+    
+    if velocityEnabled then
+        if bodyVel then bodyVel:Destroy() end
+        bodyVel = Instance.new("BodyVelocity")
+        bodyVel.Name = "CollisionBurst"
+        bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyVel.Velocity = Vector3.new(
+            math.random(-1, 1) * velocityPower,
+            math.random(-1, 1) * velocityPower,
+            math.random(-1, 1) * velocityPower
+        )
+        bodyVel.P = math.huge
+        bodyVel.Parent = myRoot
+    end
+    
+    if angularEnabled then
+        if bodyAngVel then bodyAngVel:Destroy() end
+        bodyAngVel = Instance.new("BodyAngularVelocity")
+        bodyAngVel.Name = "CollisionSpin"
+        bodyAngVel.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        bodyAngVel.AngularVelocity = Vector3.new(
+            math.random(-1, 1) * angularPower,
+            math.random(-1, 1) * angularPower,
+            math.random(-1, 1) * angularPower
+        )
+        bodyAngVel.P = math.huge
+        bodyAngVel.Parent = myRoot
+    end
+    
+    if myHumanoid then
+        myHumanoid.PlatformStand = true
+    end
+end
+
+-- ========== SWORD ATTACK FUNCTION ==========
+
+local function swordAttack(targetRoot, myRoot)
+    if not swordEnabled then return end
+    
+    swordReach = tonumber(reachInput.Text) or 15
+    swordSwings = tonumber(swingsInput.Text) or 3
+    
+    local sword = getSword()
+    if not sword then
+        sword = equipSword()
+        if not sword then return end
+    end
+    
+    local distance = (targetRoot.Position - myRoot.Position).Magnitude
+    
+    if distance <= swordReach then
+        for i = 1, swordSwings do
+            sword:Activate()
+            wait(swingDelay)
+        end
+    end
+end
+
+-- ========== STOP FUNCTION ==========
+
+local function stopAll()
     if flingLoop then
         flingLoop:Disconnect()
         flingLoop = nil
@@ -805,198 +1014,15 @@ local function stopFling()
     end
 end
 
-local function devastateFling(targetRoot, myRoot, myHumanoid)
-    velocityPower = tonumber(velocityInput.Text) or 999999
-    angularPower = tonumber(angularInput.Text) or 999999
-    predictionFrames = tonumber(predFramesInput.Text) or 3
-    
-    if massEnabled then
-        boostMass(player.Character)
-    end
-    
-    -- SMART TELEPORT: Predict position if enabled
-    local targetCFrame
-    if predictionEnabled then targetCFrame = predictPosition(targetRoot, predictionFrames)
-    else
-        targetCFrame = targetRoot.CFrame
-    end
-    
-    -- TELEPORT
-    if teleportEnabled then
-        myRoot.CFrame = targetCFrame * CFrame.new(math.random(-1, 1), math.random(-1, 1), math.random(-1, 1))
-    end
-    
-    -- VELOCITY with matching
-    if velocityEnabled then
-        local targetVel = Vector3.new(0, 0, 0)
-        if velocityMatchEnabled then
-            targetVel = getTargetVelocity(targetRoot)
-        end
-        
-        if bodyVel then bodyVel:Destroy() end
-        bodyVel = Instance.new("BodyVelocity")
-        bodyVel.Name = "CollisionBurst"
-        bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyVel.Velocity = Vector3.new(
-            math.random(-1, 1) * velocityPower + targetVel.X,
-            velocityPower + targetVel.Y,
-            math.random(-1, 1) * velocityPower + targetVel.Z
-        )
-        bodyVel.P = math.huge
-        bodyVel.Parent = myRoot
-    end
-    
-    -- ANGULAR
-    if angularEnabled then
-        if bodyAngVel then bodyAngVel:Destroy() end
-        bodyAngVel = Instance.new("BodyAngularVelocity")
-        bodyAngVel.Name = "CollisionSpin"
-        bodyAngVel.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-        bodyAngVel.AngularVelocity = Vector3.new(angularPower, angularPower, angularPower)
-        bodyAngVel.P = math.huge
-        bodyAngVel.Parent = myRoot
-    end
-    
-    if myHumanoid then
-        myHumanoid.PlatformStand = true
-    end
-end
+-- ========== START FUNCTION ==========
 
-local function orbitalFling(targetRoot, myRoot, myHumanoid)
-    velocityPower = tonumber(velocityInput.Text) or 999999
-    angularPower = tonumber(angularInput.Text) or 999999
-    predictionFrames = tonumber(predFramesInput.Text) or 3
-    
-    angle = angle + (math.pi * 2 / 60)
-    
-    local offsetX = math.cos(angle) * 2
-    local offsetZ = math.sin(angle) * 2
-    
-    if massEnabled then
-        boostMass(player.Character)
-    end
-    
-    -- SMART ORBITAL: Predict where target moves
-    local targetCFrame
-    if predictionEnabled then
-        targetCFrame = predictPosition(targetRoot, predictionFrames)
-    else
-        targetCFrame = targetRoot.CFrame
-    end
-    
-    -- TELEPORT in orbit
-    if teleportEnabled then
-        myRoot.CFrame = targetCFrame * CFrame.new(offsetX, 1, offsetZ)
-    end
-    
-    -- VELOCITY toward target with matching
-    if velocityEnabled then
-        local direction = (targetRoot.Position - myRoot.Position).Unit
-        local targetVel = Vector3.new(0, 0, 0)
-        
-        if velocityMatchEnabled then
-            targetVel = getTargetVelocity(targetRoot)
-        end
-        
-        if bodyVel then bodyVel:Destroy() end
-        bodyVel = Instance.new("BodyVelocity")
-        bodyVel.Name = "CollisionBurst"
-        bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyVel.Velocity = direction * velocityPower + targetVel
-        bodyVel.P = math.huge
-        bodyVel.Parent = myRoot
-    end
-    
-    -- ANGULAR
-    if angularEnabled then
-        if bodyAngVel then bodyAngVel:Destroy() end
-        bodyAngVel = Instance.new("BodyAngularVelocity")
-        bodyAngVel.Name = "CollisionSpin"
-        bodyAngVel.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-        bodyAngVel.AngularVelocity = Vector3.new(angularPower, angularPower, angularPower)
-        bodyAngVel.P = math.huge
-        bodyAngVel.Parent = myRoot
-    end
-    
-    if myHumanoid then
-        myHumanoid.PlatformStand = true
-    end
-end
-
-local function chaosFling(targetRoot, myRoot, myHumanoid)
-    velocityPower = tonumber(velocityInput.Text) or 999999
-    angularPower = tonumber(angularInput.Text) or 999999
-    predictionFrames = tonumber(predFramesInput.Text) or 3
-    
-    if massEnabled then
-        boostMass(player.Character)
-    end
-    
-    -- SMART CHAOS: Predict random position
-    local targetCFrame
-    if predictionEnabled then
-        targetCFrame = predictPosition(targetRoot, predictionFrames)
-    else
-        targetCFrame = targetRoot.CFrame
-    end
-    
-    -- TELEPORT randomly
-    if teleportEnabled then
-        myRoot.CFrame = targetCFrame * CFrame.new(
-            math.random(-3, 3),
-            math.random(-2, 2),
-            math.random(-3, 3)
-        )
-    end
-    
-    -- VELOCITY with matching
-    if velocityEnabled then
-        local targetVel = Vector3.new(0, 0, 0)
-        
-        if velocityMatchEnabled then
-            targetVel = getTargetVelocity(targetRoot)
-        end
-        
-        if bodyVel then bodyVel:Destroy() end
-        bodyVel = Instance.new("BodyVelocity")
-        bodyVel.Name = "CollisionBurst"
-        bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyVel.Velocity = Vector3.new(
-            math.random(-1, 1) * velocityPower + targetVel.X,
-            math.random(-1, 1) * velocityPower + targetVel.Y,
-            math.random(-1, 1) * velocityPower + targetVel.Z
-        )
-        bodyVel.P = math.huge
-        bodyVel.Parent = myRoot
-    end
-    
-    -- ANGULAR
-    if angularEnabled then
-        if bodyAngVel then bodyAngVel:Destroy() end
-        bodyAngVel = Instance.new("BodyAngularVelocity")
-        bodyAngVel.Name = "CollisionSpin"
-        bodyAngVel.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-        bodyAngVel.AngularVelocity = Vector3.new(
-            math.random(-1, 1) * angularPower,
-            math.random(-1, 1) * angularPower,
-            math.random(-1, 1) * angularPower
-        )
-        bodyAngVel.P = math.huge
-        bodyAngVel.Parent = myRoot
-    end
-    
-    if myHumanoid then
-        myHumanoid.PlatformStand = true
-    end
-end
-
-local function startFling()
+local function startDestroy()
     if flingLoop then
         flingLoop:Disconnect()
     end
     
     flingLoop = RunService.Heartbeat:Connect(function()
-        if not flingEnabled then return end
+        if not destroyEnabled then return end
         
         local myChar = player.Character
         if not myChar then return end
@@ -1013,6 +1039,7 @@ local function startFling()
         local targetRoot = getRoot(targetPlayer.Character)
         if not targetRoot then return end
         
+        -- Run fling
         if collisionMode == "devastate" then
             devastateFling(targetRoot, myRoot, myHumanoid)
         elseif collisionMode == "orbital" then
@@ -1020,36 +1047,44 @@ local function startFling()
         else
             chaosFling(targetRoot, myRoot, myHumanoid)
         end
+        
+        -- Run sword attack (both run together!)
+        swordAttack(targetRoot, myRoot)
     end)
 end
 
--- ========== FLING TOGGLE ==========
+-- ========== MAIN TOGGLE ==========
 
 toggleButton.MouseButton1Click:Connect(function()
-    flingEnabled = not flingEnabled
+    destroyEnabled = not destroyEnabled
     
-    if flingEnabled then
+    if destroyEnabled then
         if not targetPlayer then
             statusLabel.Text = "Select a target first!"
-            flingEnabled = false
+            destroyEnabled = false
             return
         end
         
-        toggleButton.Text = "FLING: ON"
+        toggleButton.Text = "DESTROY: ON"
         toggleButton.BackgroundColor3 = COLORS.buttonSuccess
-        statusLabel.Text = "Flinging: " .. targetPlayer.Name .. " (" .. collisionMode:upper() .. ")"
+        statusLabel.Text = "Destroying: " .. targetPlayer.Name .. " (" .. collisionMode:upper() .. ")"
         
-        startFling()
+        -- Equip sword immediately
+        equipSword()
+        
+        -- Start both attacks
+        startDestroy()
     else
-        toggleButton.Text = "FLING: OFF"
+        toggleButton.Text = "DESTROY: OFF"
         toggleButton.BackgroundColor3 = COLORS.buttonDanger
         statusLabel.Text = targetPlayer and ("Target: " .. targetPlayer.Name) or "No target selected"
         
-        stopFling()
+        stopAll()
     end
 end)
 
--- Toggle with key
+-- ========== KEYBIND ==========
+
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.RightControl then
         if mainFrame.Visible then
@@ -1061,24 +1096,31 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Auto-restart on respawn
+-- ========== RESPAWN HANDLER ==========
+
 player.CharacterAdded:Connect(function(char)
     wait(0.3)
     
-    if flingEnabled then
+    if destroyEnabled then
         flingCount = flingCount + 1
-        flingCounter.Text = "Flings: " .. flingCount
-        startFling()
+        killCounter.Text = "Attacks: " .. flingCount
+        
+        -- Re-equip sword
+        equipSword()
+        
+        -- Restart attacks
+        startDestroy()
     end
 end)
 
 -- Cleanup on character removal
 player.CharacterRemoving:Connect(function()
-    stopFling()
+    stopAll()
 end)
 
-print("✅ SMART Collision Fling Loaded")
-print("   Works on MOVING targets!")
-print("   Prediction + Velocity Matching")
-print("   3 Modes: DEVASTATE, ORBITAL, CHAOS")
-print("   4 Layers: Velocity + Angular + Teleport + Mass")
+print("✅ COMBO DESTROYER Loaded")
+print("   Fling + Sword working together")
+print("   One toggle = Both attacks")
+print("   Stationary target = Fling destroys")
+print("   Moving target = Sword hits")
+print("   NO ESCAPE")
