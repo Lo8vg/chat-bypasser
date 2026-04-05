@@ -9,8 +9,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 -- Settings
 local MAX_CHARS = 200
-local expanded = false
-local caseMode = "normal" -- "normal", "upper", "lower"
+local caseMode = "normal"
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -172,7 +171,6 @@ caseLabel.TextSize = 11
 caseLabel.TextXAlignment = Enum.TextXAlignment.Left
 caseLabel.Parent = caseRow
 
--- Normal Button
 local normalBtn = Instance.new("TextButton")
 normalBtn.Size = UDim2.new(0, 50, 1, 0)
 normalBtn.Position = UDim2.new(0, 45, 0, 0)
@@ -187,7 +185,6 @@ local normalCorner = Instance.new("UICorner")
 normalCorner.CornerRadius = UDim.new(0, 6)
 normalCorner.Parent = normalBtn
 
--- Upper Button
 local upperBtn = Instance.new("TextButton")
 upperBtn.Size = UDim2.new(0, 45, 1, 0)
 upperBtn.Position = UDim2.new(0, 98, 0, 0)
@@ -202,7 +199,6 @@ local upperCorner = Instance.new("UICorner")
 upperCorner.CornerRadius = UDim.new(0, 6)
 upperCorner.Parent = upperBtn
 
--- Lower Button
 local lowerBtn = Instance.new("TextButton")
 lowerBtn.Size = UDim2.new(0, 50, 1, 0)
 lowerBtn.Position = UDim2.new(0, 146, 0, 0)
@@ -217,7 +213,6 @@ local lowerCorner = Instance.new("UICorner")
 lowerCorner.CornerRadius = UDim.new(0, 6)
 lowerCorner.Parent = lowerBtn
 
--- Update case buttons visually
 local function updateCaseButtons()
 	normalBtn.BackgroundColor3 = caseMode == "normal" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
 	upperBtn.BackgroundColor3 = caseMode == "upper" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
@@ -261,8 +256,8 @@ delayTextbox.Size = UDim2.new(0, 45, 1, 0)
 delayTextbox.Position = UDim2.new(0, 48, 0, 0)
 delayTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 delayTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
-delayTextbox.Text = "0.5"
-delayTextbox.PlaceholderText = "0.5"
+delayTextbox.Text = "1.1"
+delayTextbox.PlaceholderText = "1.1"
 delayTextbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 delayTextbox.Font = Enum.Font.Gotham
 delayTextbox.TextSize = 11
@@ -290,7 +285,6 @@ buttonsRow.Position = UDim2.new(0, 10, 0, 205)
 buttonsRow.BackgroundTransparency = 1
 buttonsRow.Parent = contentFrame
 
--- Clear Button
 local clearBtn = Instance.new("TextButton")
 clearBtn.Size = UDim2.new(0.38, 0, 1, 0)
 clearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
@@ -304,7 +298,6 @@ local clearCorner = Instance.new("UICorner")
 clearCorner.CornerRadius = UDim.new(0, 6)
 clearCorner.Parent = clearBtn
 
--- Send All Button
 local sendAllBtn = Instance.new("TextButton")
 sendAllBtn.Size = UDim2.new(0.58, -5, 1, 0)
 sendAllBtn.Position = UDim2.new(0.42, 5, 0, 0)
@@ -319,7 +312,6 @@ local sendAllCorner = Instance.new("UICorner")
 sendAllCorner.CornerRadius = UDim.new(0, 6)
 sendAllCorner.Parent = sendAllBtn
 
--- Status Label
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -20, 0, 16)
 statusLabel.Position = UDim2.new(0, 10, 0, 248)
@@ -331,7 +323,6 @@ statusLabel.TextSize = 10
 statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 statusLabel.Parent = contentFrame
 
--- Case Mode Display
 local caseDisplay = Instance.new("TextLabel")
 caseDisplay.Size = UDim2.new(1, -20, 0, 16)
 caseDisplay.Position = UDim2.new(0, 10, 0, 268)
@@ -408,7 +399,6 @@ end)
 -- ========== TOGGLE HUB ==========
 hubButton.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		task.wait(0.1)
 		if not dragging then
 			hubButton.Visible = false
 			mainFrame.Visible = true
@@ -490,21 +480,10 @@ local function sendMessage(msg)
 	return false
 end
 
--- ========== MOBILE FIX FOR MULTI-LINE ==========
-textbox.FocusLost:Connect(function(enterPressed)
-	if enterPressed then
-		textbox.Text = textbox.Text .. "\n"
-		task.wait()
-		textbox:CaptureFocus()
-	end
-end)
-
 -- ========== CLEAR BUTTON ==========
 clearBtn.MouseButton1Click:Connect(function()
 	textbox.Text = ""
 	statusLabel.Text = "Cleared!"
-	task.wait(0.5)
-	statusLabel.Text = "Ready"
 end)
 
 -- ========== SEND ALL BUTTON ==========
@@ -521,8 +500,8 @@ sendAllBtn.MouseButton1Click:Connect(function()
 	
 	if #lines == 0 then return end
 	
-	local delay = tonumber(delayTextbox.Text) or 0.5
-	if delay < 0.1 then delay = 0.1 end
+	local delay = tonumber(delayTextbox.Text) or 1.1
+	if delay < 0 then delay = 0 end
 	
 	sendAllBtn.Text = "Sending..."
 	sendAllBtn.BackgroundColor3 = Color3.fromRGB(255, 193, 7)
@@ -531,11 +510,11 @@ sendAllBtn.MouseButton1Click:Connect(function()
 	local caseDisplayText = caseMode == "upper" and "UPPERCASE" or caseMode == "lower" and "lowercase" or "Normal"
 	caseDisplay.Text = "Mode: "..caseDisplayText
 	
-	spawn(function()
+	task.spawn(function()
 		for i, line in ipairs(lines) do
 			sendMessage(line)
 			statusLabel.Text = "Sent "..i.."/"..#lines
-			if i < #lines then
+			if i < #lines and delay > 0 then
 				task.wait(delay)
 			end
 		end
