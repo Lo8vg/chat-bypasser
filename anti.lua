@@ -1,4 +1,4 @@
--- ULTIMATE COLLISION FLING
+-- ULTIMATE COLLISION FLING (FIXED)
 -- Multiple physics methods combined for MAXIMUM power
 
 local Players = game:GetService("Players")
@@ -18,7 +18,13 @@ local flingCount = 0
 local teleportMultiplier = 1
 local velocityPower = 999999
 local angularPower = 999999
-local collisionMode = "hybrid"
+local collisionMode = "devastate"
+
+-- Toggle states
+local velocityEnabled = true
+local angularEnabled = true
+local teleportEnabled = true
+local massEnabled = true
 
 -- Colors
 local COLORS = {
@@ -27,7 +33,6 @@ local COLORS = {
     buttonPrimary = Color3.fromRGB(0, 120, 215),
     buttonDanger = Color3.fromRGB(220, 53, 69),
     buttonSuccess = Color3.fromRGB(40, 167, 69),
-    buttonWarning = Color3.fromRGB(255, 193, 7),
     textDark = Color3.fromRGB(33, 37, 41),
     textLight = Color3.fromRGB(255, 255, 255),
     textMuted = Color3.fromRGB(134, 142, 150),
@@ -220,7 +225,7 @@ modeLabel.TextSize = 10
 modeLabel.TextXAlignment = Enum.TextXAlignment.Left
 modeLabel.Parent = leftFrame
 
--- Mode Buttons
+-- Mode Buttons Frame
 local modesFrame = Instance.new("Frame")
 modesFrame.Size = UDim2.new(1, 0, 0, 90)
 modesFrame.Position = UDim2.new(0, 0, 0, 250)
@@ -400,7 +405,7 @@ teleportStroke.Color = COLORS.border
 teleportStroke.Thickness = 1
 teleportStroke.Parent = teleportInput
 
--- Collision Layers
+-- Collision Layers Label
 local layersLabel = Instance.new("TextLabel")
 layersLabel.Size = UDim2.new(1, 0, 0, 16)
 layersLabel.Position = UDim2.new(0, 0, 0, 98)
@@ -412,7 +417,7 @@ layersLabel.TextSize = 10
 layersLabel.TextXAlignment = Enum.TextXAlignment.Left
 layersLabel.Parent = rightFrame
 
--- Collision Toggles
+-- Collision Toggles Frame
 local layersFrame = Instance.new("Frame")
 layersFrame.Size = UDim2.new(1, 0, 0, 120)
 layersFrame.Position = UDim2.new(0, 0, 0, 116)
@@ -475,12 +480,6 @@ local massTogCorner = Instance.new("UICorner")
 massTogCorner.CornerRadius = UDim.new(0, 5)
 massTogCorner.Parent = massToggle
 
--- Toggle states
-local velocityEnabled = true
-local angularEnabled = true
-local teleportEnabled = true
-local massEnabled = true
-
 -- Info
 local infoLabel = Instance.new("TextLabel")
 infoLabel.Size = UDim2.new(1, 0, 0, 50)
@@ -539,7 +538,7 @@ titleBar.InputBegan:Connect(function(input)
             if input.UserInputState == Enum.UserInputState.End then
                 hubDragging = false
             end
-        end())
+        end)
     end
 end)
 
@@ -702,12 +701,7 @@ local function boostMass(char)
     local root = getRoot(char)
     if not root then return end
     
-    -- Increase mass for more impact
-    root.CustomPhysicalProperties = PhysicalProperties.new(
-        100,    -- density (HIGH = more impact)
-        0.5,    -- friction
-        0.5     -- elasticity
-    )
+    root.CustomPhysicalProperties = PhysicalProperties.new(100, 0.5, 0.5)
 end
 
 local function resetMass(char)
@@ -723,7 +717,6 @@ local function stopFling()
         flingLoop = nil
     end
     
-    -- Remove body movers
     if bodyVel then
         bodyVel:Destroy()
         bodyVel = nil
@@ -756,32 +749,24 @@ local function devastateFling(targetRoot, myRoot, myHumanoid)
     velocityPower = tonumber(velocityInput.Text) or 999999
     angularPower = tonumber(angularInput.Text) or 999999
     
-    -- Boost mass first
     if massEnabled then
         boostMass(player.Character)
     end
     
-    -- Teleport to target
     if teleportEnabled then
         myRoot.CFrame = targetRoot.CFrame * CFrame.new(math.random(-1, 1), math.random(-1, 1), math.random(-1, 1))
     end
     
-    -- Apply velocity burst
     if velocityEnabled then
         if bodyVel then bodyVel:Destroy() end
         bodyVel = Instance.new("BodyVelocity")
         bodyVel.Name = "CollisionBurst"
         bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyVel.Velocity = Vector3.new(
-            math.random(-1, 1) * velocityPower,
-            velocityPower,
-            math.random(-1, 1) * velocityPower
-        )
+        bodyVel.Velocity = Vector3.new(math.random(-1, 1) * velocityPower, velocityPower, math.random(-1, 1) * velocityPower)
         bodyVel.P = math.huge
         bodyVel.Parent = myRoot
     end
     
-    -- Apply angular velocity
     if angularEnabled then
         if bodyAngVel then bodyAngVel:Destroy() end
         bodyAngVel = Instance.new("BodyAngularVelocity")
@@ -802,7 +787,6 @@ local function orbitalFling(targetRoot, myRoot, myHumanoid)
     angularPower = tonumber(angularInput.Text) or 999999
     teleportMultiplier = tonumber(teleportInput.Text) or 500
     
-    -- Circular orbit around target
     angle = angle + (math.pi * 2 / teleportMultiplier)
     
     local offsetX = math.cos(angle) * 2
@@ -812,12 +796,10 @@ local function orbitalFling(targetRoot, myRoot, myHumanoid)
         boostMass(player.Character)
     end
     
-    -- Teleport in circular pattern
     if teleportEnabled then
         myRoot.CFrame = targetRoot.CFrame * CFrame.new(offsetX, 1, offsetZ)
     end
     
-    -- Velocity toward target
     if velocityEnabled then
         local direction = (targetRoot.Position - myRoot.Position).Unit
         
@@ -830,7 +812,6 @@ local function orbitalFling(targetRoot, myRoot, myHumanoid)
         bodyVel.Parent = myRoot
     end
     
-    -- Angular velocity
     if angularEnabled then
         if bodyAngVel then bodyAngVel:Destroy() end
         bodyAngVel = Instance.new("BodyAngularVelocity")
@@ -854,7 +835,6 @@ local function chaosFling(targetRoot, myRoot, myHumanoid)
         boostMass(player.Character)
     end
     
-    -- Random teleport around target
     if teleportEnabled then
         myRoot.CFrame = targetRoot.CFrame * CFrame.new(
             math.random(-3, 3),
@@ -863,7 +843,6 @@ local function chaosFling(targetRoot, myRoot, myHumanoid)
         )
     end
     
-    -- Random velocity direction
     if velocityEnabled then
         if bodyVel then bodyVel:Destroy() end
         bodyVel = Instance.new("BodyVelocity")
@@ -878,7 +857,6 @@ local function chaosFling(targetRoot, myRoot, myHumanoid)
         bodyVel.Parent = myRoot
     end
     
-    -- Random angular velocity
     if angularEnabled then
         if bodyAngVel then bodyAngVel:Destroy() end
         bodyAngVel = Instance.new("BodyAngularVelocity")
@@ -921,12 +899,11 @@ local function startFling()
         local targetRoot = getRoot(targetPlayer.Character)
         if not targetRoot then return end
         
-        -- Run the selected fling mode
         if collisionMode == "devastate" then
             devastateFling(targetRoot, myRoot, myHumanoid)
         elseif collisionMode == "orbital" then
             orbitalFling(targetRoot, myRoot, myHumanoid)
-        else -- chaos
+        else
             chaosFling(targetRoot, myRoot, myHumanoid)
         end
     end)
@@ -949,7 +926,6 @@ toggleButton.MouseButton1Click:Connect(function()
         statusLabel.Text = "Flinging: " .. targetPlayer.Name .. " (" .. collisionMode:upper() .. ")"
         
         startFling()
-        
     else
         toggleButton.Text = "FLING: OFF"
         toggleButton.BackgroundColor3 = COLORS.buttonDanger
