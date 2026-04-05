@@ -1,49 +1,212 @@
--- Chat Trigger Pro (With Bypass System)
+-- NUCLEAR BYPASS SYSTEM v2.0
+-- Uses rare Unicode, mathematical symbols, ancient scripts, and format exploits
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
-local HttpService = game:GetService("HttpService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Settings
-local enabled = false
-local spamming = false
-local savedMessages = {}
-local bypassMode = "none" -- none, spaces, zero, mixed, smart
+-- ========== RARE UNICODE DATABASE ==========
 
--- Bypass characters
-local zeroWidth = "​" -- invisible character
-local specialChars = {".", ",", "-", "'", '"'}
+-- Mathematical Alphanumeric Symbols (VERY rare, barely filtered)
+local mathAlpha = {
+	A = "𝔄", B = "𝔅", C = "ℭ", D = "𝔇", E = "𝔈", F = "𝔉", G = "𝔊", H = "ℌ", I = "ℑ", J = "𝔍",
+	K = "𝔎", L = "𝔏", M = "𝔐", N = "𝔑", O = "𝔒", P = "𝔓", Q = "𝔔", R = "ℜ", S = "𝔖", T = "𝔗",
+	U = "𝔘", V = "𝔙", W = "𝔚", X = "𝔛", Y = "𝔜", Z = "ℨ",
+	a = "𝔞", b = "𝔟", c = "𝔠", d = "𝔡", e = "𝔢", f = "𝔣", g = "𝔤", h = "𝔥", i = "𝔦", j = "𝔧",
+	k = "𝔨", l = "𝔩", m = "𝔪", n = "𝔫", o = "𝔬", p = "𝔭", q = "𝔮", r = "𝔯", s = "𝔰", t = "𝔱",
+	u = "𝔲", v = "𝔳", w = "𝔴", x = "𝔵", y = "𝔶", z = "𝔷"
+}
 
--- ========== BYPASS FUNCTIONS ==========
-local function spaceBypass(text)
-	local result = ""
-	for i = 1, #text do
-		result = result .. text:sub(i, i) .. " "
-	end
-	return result:sub(1, #result - 1)
+-- Double-struck mathematical (very rare)
+local doubleStruck = {
+	A = "𝔸", B = "𝔹", C = "ℂ", D = "𝔻", E = "𝔼", F = "𝔽", G = "𝔾", H = "ℍ", I = "𝕀", J = "𝕁",
+	K = "𝕂", L = "𝕃", M = "𝕄", N = "ℕ", O = "𝕆", P = "ℙ", Q = "ℚ", R = "ℝ", S = "𝕊", T = "𝕋",
+	U = "𝕌", V = "𝕍", W = "𝕎", X = "𝕏", Y = "𝕐", Z = "ℤ",
+	a = "𝕒", b = "𝕓", c = "𝕔", d = "𝕕", e = "𝕖", f = "𝕗", g = "𝕘", h = "𝕙", i = "𝕚", j = "𝕛",
+	k = "𝕜", l = "𝕝", m = "𝕞", n = "𝕟", o = "𝕠", p = "𝕡", q = "𝕢", r = "𝕣", s = "𝕤", t = "𝕥",
+	u = "𝕦", v = "𝕧", w = "𝕨", x = "𝕩", y = "𝕪", z = "𝕫"
+}
+
+-- Fraktur bold (extremely rare)
+local frakturBold = {
+	A = "𝕬", B = "𝕭", C = "𝕮", D = "𝕯", E = "𝕰", F = "𝕱", G = "𝕲", H = "𝕳", I = "𝕴", J = "𝕵",
+	K = "𝕶", L = "𝕷", M = "𝕸", N = "𝕹", O = "𝕺", P = "𝕻", Q = "𝕼", R = "𝕽", S = "𝕾", T = "𝕿",
+	U = "𝖀", V = "𝖁", W = "𝖂", X = "𝖃", Y = "𝖄", Z = "𝖅"
+}
+
+-- Ancient Greek letters that look like English
+local greekLookalikes = {
+	A = "Α", B = "Β", E = "Ε", Z = "Ζ", H = "Η", I = "Ι", K = "Κ", M = "Μ", N = "Ν",
+	O = "Ο", P = "Ρ", T = "Τ", Y = "Υ", X = "Χ",
+	a = "α", e = "ε", i = "ι", o = "ο", u = "υ"
+}
+
+-- Coptic letters (ancient Egyptian, extremely rare in filtering)
+local coptic = {
+	A = "Ⲁ", B = "Ⲃ", C = "Ⲕ", D = "Ⲇ", E = "Ⲉ", F = "Ⲫ", G = "Ⲅ", H = "Ⲏ", I = "Ⲓ",
+	K = "Ⲕ", L = "Ⲗ", M = "Ⲙ", N = "Ⲛ", O = "Ⲟ", P = "Ⲡ", Q = "Ϙ", R = "Ⲣ", S = "Ⲥ",
+	T = "Ⲧ", U = "Ⲩ", V = "Ⲃ", X = "Ⲫ", Y = "Ⲩ", Z = "Ⲍ"
+}
+
+-- Glagolitic (oldest Slavic script, almost never filtered)
+local glagolitic = {
+	A = "Ⰰ", B = "Ⰱ", V = "Ⰲ", G = "Ⰳ", D = "Ⰴ", E = "Ⰵ", Z = "Ⰶ", I = "Ⰺ", K = "Ⰽ",
+	L = "Ⰾ", M = "Ⰿ", N = "Ⱀ", O = "Ⱁ", P = "Ⱂ", R = "Ⱃ", S = "Ⱄ", T = "Ⱅ", U = "Ⱆ",
+	F = "Ⱇ", H = "Ⱈ", C = "Ⱌ", Ch = "Ⱍ", Sh = "Ⱎ"
+}
+
+-- Armenian letters (look similar to English)
+local armenian = {
+	A = "Ա", B = "Բ", C = "Ծ", D = "Դ", E = "Ե", F = "Ֆ", G = "Գ", H = "Հ", I = "Ի",
+	K = "Կ", L = "Լ", M = "Մ", N = "Ն", O = "Օ", P = "Պ", Q = "Ք", R = "Ռ", S = "Ս",
+	T = "Տ", U = "Ո", V = "Վ", X = "Ձ", Y = "Յ", Z = "Զ"
+}
+
+-- Ethiopic (Ge'ez script, extremely rare)
+local ethiopic = {
+	A = "አ", B = "በ", C = "ቸ", D = "ደ", E = "አ", F = "ፈ", G = "ገ", H = "ሀ", I = "ኢ",
+	K = "ከ", L = "ለ", M = "መ", N = "ነ", O = "ኦ", P = "ጰ", Q = "ቀ", R = "ረ", S = "ሰ",
+	T = "ተ", U = "ኡ", V = "ቨ", W = "ወ", X = "ኀ", Y = "የ", Z = "ዘ"
+}
+
+-- Tifinagh (Berber script, North Africa)
+local tifinagh = {
+	A = "ⴰ", B = "ⴱ", C = "ⵛ", D = "ⴷ", E = "ⴻ", F = "ⴼ", G = "ⴳ", H = "ⵀ", I = "ⵉ",
+	K = "ⴽ", L = "ⵍ", M = "ⵎ", N = "ⵏ", O = "ⵓ", P = "ⵒ", Q = "ⵇ", R = "ⵔ", S = "ⵙ",
+	T = "ⵜ", U = "ⵓ", V = "ⵠ", W = "ⵡ", X = "ⵅ", Y = "ⵢ", Z = "ⵣ"
+}
+
+-- Superscript and subscript (often not filtered)
+local superscripts = {
+	A = "ᴬ", B = "ᴮ", C = "ᶜ", D = "ᴰ", E = "ᴱ", F = "ᶠ", G = "ᴳ", H = "ᴴ", I = "ᴵ",
+	J = "ᴶ", K = "ᴷ", L = "ᴸ", M = "ᴹ", N = "ᴺ", O = "ᴼ", P = "ᴾ", Q = "ᵠ", R = "ᴿ",
+	S = "ˢ", T = "ᵀ", U = "ᵁ", V = "ⱽ", W = "ᵂ", X = "ˣ", Y = "ʸ", Z = "ᶻ"
+}
+
+local subscripts = {
+	A = "ₐ", B = "ᵦ", C = "ᶜ", D = "ᵈ", E = "ₑ", F = "ᶠ", G = "ᵍ", H = "ₕ", I = "ᵢ",
+	K = "ₖ", L = "ₗ", M = "ₘ", N = "ₙ", O = "ₒ", P = "ᵖ", R = "ᵣ", S = "ₛ", T = "ᵗ",
+	U = "ᵤ", V = "ᵥ", X = "ₓ", Z = "ᶻ"
+}
+
+-- Small caps (often bypass filters)
+local smallCaps = {
+	A = "ᴀ", B = "ʙ", C = "ᴄ", D = "ᴅ", E = "ᴇ", F = "ғ", G = "ɢ", H = "ʜ", I = "ɪ",
+	J = "ᴊ", K = "ᴋ", L = "ʟ", M = "ᴍ", N = "ɴ", O = "ᴏ", P = "ᴘ", Q = "ǫ", R = "ʀ",
+	S = "s", T = "ᴛ", U = "ᴜ", V = "ᴠ", W = "ᴡ", X = "x", Y = "ʏ", Z = "ᴢ"
+}
+
+-- Regional indicator symbols (for building letters)
+local regionalIndicators = {
+	A = "🇦", B = "🇧", C = "🇨", D = "🇩", E = "🇪", F = "🇫", G = "🇬", H = "🇭", I = "🇮",
+	J = "🇯", K = "🇰", L = "🇱", M = "🇲", N = "🇳", O = "🇴", P = "🇵", Q = "🇶", R = "🇷",
+	S = "🇸", T = "🇹", U = "🇺", V = "🇻", W = "🇼", X = "🇽", Y = "🇾", Z = "🇿"
+}
+
+-- Enclosed characters (square, circle, parenthesized)
+local enclosed = {
+	square = {A = "🄰", B = "🄱", C = "🄲", D = "🄳", E = "🄴", F = "🄵", G = "🄶", H = "🄷", I = "🄸",
+		J = "🄹", K = "🄺", L = "🄻", M = "🄼", N = "🄽", O = "🄾", P = "🄿", Q = "🅀", R = "🅁",
+		S = "🅂", T = "🅃", U = "🅄", V = "🅅", W = "🅆", X = "🅇", Y = "🅈", Z = "🅉"},
+	circle = {A = "Ⓐ", B = "Ⓑ", C = "Ⓒ", D = "Ⓓ", E = "Ⓔ", F = "Ⓕ", G = "Ⓖ", H = "Ⓗ", I = "Ⓘ",
+		J = "Ⓙ", K = "Ⓚ", L = "Ⓛ", M = "Ⓜ", N = "Ⓝ", O = "Ⓞ", P = "Ⓟ", Q = "Ⓠ", R = "Ⓡ",
+		S = "Ⓢ", T = "Ⓣ", U = "Ⓤ", V = "Ⓥ", W = "Ⓦ", X = "Ⓧ", Y = "Ⓨ", Z = "Ⓩ"},
+	paren = {A = "⒜", B = "⒝", C = "⒞", D = "⒟", E = "⒠", F = "⒡", G = "⒢", H = "⒣", I = "⒤",
+		J = "⒥", K = "⒦", L = "⒧", M = "⒨", N = "⒩", O = "⒪", P = "⒫", Q = "⒬", R = "⒭",
+		S = "⒮", T = "⒯", U = "⒰", V = "⒱", W = "⒲", X = "⒳", Y = "⒴", Z = "⒵"}
+}
+
+-- Full-width characters (Asian encoding, often bypass)
+local fullWidth = {
+	A = "Ａ", B = "Ｂ", C = "Ｃ", D = "Ｄ", E = "Ｅ", F = "Ｆ", G = "Ｇ", H = "Ｈ", I = "Ｉ",
+	J = "Ｊ", K = "Ｋ", L = "Ｌ", M = "Ｍ", N = "Ｎ", O = "Ｏ", P = "Ｐ", Q = "Ｑ", R = "Ｒ",
+	S = "Ｓ", T = "Ｔ", U = "Ｕ", V = "Ｖ", W = "Ｗ", X = "Ｘ", Y = "Ｙ", Z = "Ｚ",
+	a = "ａ", b = "ｂ", c = "ｃ", d = "ｄ", e = "ｅ", f = "ｆ", g = "ｇ", h = "ｈ", i = "ｉ",
+	j = "ｊ", k = "ｋ", l = "ｌ", m = "ｍ", n = "ｎ", o = "ｏ", p = "ｐ", q = "ｑ", r = "ｒ",
+	s = "ｓ", t = "ｔ", u = "ｕ", v = "ｖ", w = "ｗ", x = "ｘ", y = "ｙ", z = "ｚ"
+}
+
+-- Format characters (invisible, extremely powerful)
+local formatChars = {
+	zeroWidthSpace = "\u{200B}",
+	zeroWidthNonJoiner = "\u{200C}",
+	zeroWidthJoiner = "\u{200D}",
+	leftToRightMark = "\u{200E}",
+	rightToLeftMark = "\u{200F}",
+	leftToRightEmbedding = "\u{202A}",
+	rightToLeftEmbedding = "\u{202B}",
+	popDirectionalFormatting = "\u{202C}",
+	leftToRightOverride = "\u{202D}",
+	rightToLeftOverride = "\u{202E}",
+	wordJoiner = "\u{2060}",
+	functionApplication = "\u{2061}",
+	invisibleSeparator = "\u{2063}",
+	invisiblePlus = "\u{2064}",
+	zeroWidthBrailleBlank = "\u{2800}",
+	tagSpace = "\u{E0020}",
+	cancelTag = "\u{E007F}"
+}
+
+-- Variation selectors (combine with other characters)
+local variationSelectors = {
+	"\u{FE00}", "\u{FE01}", "\u{FE02}", "\u{FE03}", "\u{FE04}",
+	"\u{FE05}", "\u{FE06}", "\u{FE07}", "\u{FE08}", "\u{FE09}",
+	"\u{FE0A}", "\u{FE0B}", "\u{FE0C}", "\u{FE0D}", "\u{FE0E}", "\u{FE0F}"
+}
+
+-- Combining diacritics (stack on letters)
+local combiningMarks = {
+	above = {"\u{0300}", "\u{0301}", "\u{0302}", "\u{0303}", "\u{0304}", "\u{0305}", "\u{0306}",
+		"\u{0307}", "\u{0308}", "\u{0309}", "\u{030A}", "\u{030B}", "\u{030C}", "\u{030D}",
+		"\u{030E}", "\u{030F}", "\u{0310}", "\u{0311}", "\u{0312}", "\u{0313}", "\u{0314}"},
+	below = {"\u{0316}", "\u{0317}", "\u{0318}", "\u{0319}", "\u{031A}", "\u{031B}", "\u{031C}",
+		"\u{031D}", "\u{031E}", "\u{031F}", "\u{0320}", "\u{0321}", "\u{0322}", "\u{0323}",
+		"\u{0324}", "\u{0325}", "\u{0326}", "\u{0327}", "\u{0328}", "\u{0329}", "\u{032A}"},
+	overlay = {"\u{0333}", "\u{0334}", "\u{0335}", "\u{0336}", "\u{0337}", "\u{0338}",
+		"\u{0339}", "\u{033A}", "\u{033B}", "\u{033C}", "\u{033D}", "\u{033E}", "\u{033F}"}
+}
+
+-- Tag characters (hidden text that displays differently)
+local tagChars = {}
+for i = string.byte("A"), string.byte("Z") do
+	tagChars[string.char(i)] = "\u{E0000}" .. string.char(i)
 end
 
-local function zeroWidthBypass(text)
-	local result = ""
-	for i = 1, #text do
-		result = result .. text:sub(i, i) .. zeroWidth
-	end
-	return result
-end
+-- ========== BYPASS METHODS ==========
 
-local function mixedBypass(text)
+local function rareUnicodeBypass(text, scriptType)
+	local script
+	if scriptType == "math" then script = mathAlpha
+	elseif scriptType == "double" then script = doubleStruck
+	elseif scriptType == "fraktur" then script = frakturBold
+	elseif scriptType == "greek" then script = greekLookalikes
+	elseif scriptType == "coptic" then script = coptic
+	elseif scriptType == "glagolitic" then script = glagolitic
+	elseif scriptType == "armenian" then script = armenian
+	elseif scriptType == "ethiopic" then script = ethiopic
+	elseif scriptType == "tifinagh" then script = tifinagh
+	elseif scriptType == "super" then script = superscripts
+	elseif scriptType == "sub" then script = subscripts
+	elseif scriptType == "smallcaps" then script = smallCaps
+	elseif scriptType == "fullwidth" then script = fullWidth
+	elseif scriptType == "regional" then script = regionalIndicators
+	else script = mathAlpha end
+	
 	local result = ""
 	for i = 1, #text do
-		local char = text:sub(i, i)
-		local shouldBypass = math.random(1, 3)
-		if shouldBypass == 1 then
-			result = result .. char .. zeroWidth
-		elseif shouldBypass == 2 then
-			result = result .. string.upper(char)
+		local char = string.sub(text, i, i)
+		local upper = string.upper(char)
+		if script[upper] then
+			if scriptType == "regional" then
+				result = result .. script[upper] .. " "
+			elseif char == upper then
+				result = result .. script[upper]
+			else
+				result = result .. (script[char] or script[upper]:lower() or char)
+			end
 		else
 			result = result .. char
 		end
@@ -51,513 +214,519 @@ local function mixedBypass(text)
 	return result
 end
 
-local function smartBypass(text)
-	-- Flagged words that commonly get tagged
-	local flaggedWords = {"loser", "idiot", "stupid", "dumb", "noob", "nub", "trash", 
-		"female", "girl", "woman", "head", "kill", "die", "hate", "ugly", "fat",
-		"cry", "mad", "rage", "bad", "worst", "terrible", "awful", "wtf", "omg",
-		"female", "loser", "head", "off", "haha", "lol", "ez", "easy"}
+local function enclosedBypass(text, style)
+	local encType = enclosed[style] or enclosed.square
+	local result = ""
+	for i = 1, #text do
+		local char = string.upper(string.sub(text, i, i))
+		if encType[char] then
+			result = result .. encType[char]
+		else
+			result = result .. string.sub(text, i, i)
+		end
+	end
+	return result
+end
+
+local function formatInjection(text, intensity)
+	local result = ""
+	local formats = {
+		formatChars.zeroWidthSpace, formatChars.zeroWidthNonJoiner,
+		formatChars.zeroWidthJoiner, formatChars.wordJoiner,
+		formatChars.leftToRightMark, formatChars.rightToLeftMark,
+		formatChars.invisibleSeparator
+	}
 	
-	local lowerText = string.lower(text)
-	local result = text
-	
-	for _, word in ipairs(flaggedWords) do
-		local startPos, endPos = string.find(lowerText, word)
-		while startPos do
-			local originalWord = string.sub(text, startPos, endPos)
-			local bypassed = ""
-			for i = 1, #originalWord do
-				bypassed = bypassed .. string.sub(originalWord, i, i) .. zeroWidth
+	for i = 1, #text do
+		result = result .. string.sub(text, i, i)
+		if math.random(1, 100) <= intensity then
+			result = result .. formats[math.random(1, #formats)]
+			if math.random(1, 3) == 1 then
+				result = result .. formats[math.random(1, #formats)]
 			end
-			result = string.gsub(result, originalWord, bypassed, 1)
-			startPos, endPos = string.find(lowerText, word, endPos + 1)
+		end
+	end
+	return result
+end
+
+local function zalgoStack(text, intensity)
+	local result = ""
+	for i = 1, #text do
+		local char = string.sub(text, i, i)
+		result = result .. char
+		
+		local numAbove = math.random(0, intensity)
+		local numBelow = math.random(0, math.floor(intensity / 2))
+		local numOverlay = math.random(0, math.floor(intensity / 3))
+		
+		for _ = 1, numAbove do
+			result = result .. combiningMarks.above[math.random(1, #combiningMarks.above)]
+		end
+		for _ = 1, numBelow do
+			result = result .. combiningMarks.below[math.random(1, #combiningMarks.below)]
+		end
+		for _ = 1, numOverlay do
+			result = result .. combiningMarks.overlay[math.random(1, #combiningMarks.overlay)]
+		end
+	end
+	return result
+end
+
+local function variationSelectorBypass(text)
+	local result = ""
+	for i = 1, #text do
+		result = result .. string.sub(text, i, i)
+		if math.random(1, 3) == 1 then
+			result = result .. variationSelectors[math.random(1, #variationSelectors)]
+		end
+	end
+	return result
+end
+
+local function crazyMixedBypass(text)
+	local scripts = {"math", "double", "greek", "coptic", "armenian", "tifinagh", "smallcaps", "fullwidth"}
+	local enclosures = {"square", "circle", "paren"}
+	local result = ""
+	
+	for i = 1, #text do
+		local char = string.sub(text, i, i)
+		local method = math.random(1, 10)
+		
+		if method <= 3 then
+			-- Random script
+			local script = scripts[math.random(1, #scripts)]
+			result = result .. rareUnicodeBypass(char, script)
+		elseif method <= 5 then
+			-- Enclosed
+			local style = enclosures[math.random(1, #enclosures)]
+			result = result .. enclosedBypass(char, style)
+		elseif method <= 7 then
+			-- Superscript or subscript
+			if math.random(1, 2) == 1 then
+				result = result .. rareUnicodeBypass(char, "super")
+			else
+				result = result .. rareUnicodeBypass(char, "sub")
+			end
+		else
+			-- Regular with format injection
+			result = result .. char .. formatChars.zeroWidthNonJoiner
 		end
 	end
 	
 	return result
 end
 
-local function applyBypass(text)
-	if bypassMode == "spaces" then
-		return spaceBypass(text)
-	elseif bypassMode == "zero" then
-		return zeroWidthBypass(text)
-	elseif bypassMode == "mixed" then
-		return mixedBypass(text)
-	elseif bypassMode == "smart" then
-		return smartBypass(text)
-	else
-		return text
-	end
+local function nuclearBypass(text)
+	local result = text
+	
+	-- Layer 1: Rare script conversion
+	local scripts = {"math", "coptic", "tifinagh", "armenian"}
+	result = rareUnicodeBypass(result, scripts[math.random(1, #scripts)])
+	
+	-- Layer 2: Format injection
+	result = formatInjection(result, 40)
+	
+	-- Layer 3: Zalgo
+	result = zalgoStack(result, 3)
+	
+	-- Layer 4: Variation selectors
+	result = variationSelectorBypass(result)
+	
+	return result
 end
 
--- ========== CREATE GUI ==========
+local function absoluteDestruction(text)
+	local result = ""
+	
+	for i = 1, #text do
+		local char = string.sub(text, i, i)
+		local processed = char
+		
+		-- Apply random script
+		local scripts = {"math", "double", "coptic", "ethiopic", "tifinagh"}
+		processed = rareUnicodeBypass(processed, scripts[math.random(1, #scripts)])
+		
+		-- Add zero-width formats
+		processed = processed .. formatChars.zeroWidthNonJoiner
+		if math.random(1, 2) == 1 then
+			processed = processed .. formatChars.wordJoiner
+		end
+		
+		-- Add combining marks
+		processed = processed .. combiningMarks.above[math.random(1, #combiningMarks.above)]
+		if math.random(1, 3) == 1 then
+			processed = processed .. combiningMarks.below[math.random(1, #combiningMarks.below)]
+		end
+		
+		-- Variation selector
+		if math.random(1, 4) == 1 then
+			processed = processed .. variationSelectors[math.random(1, #variationSelectors)]
+		end
+		
+		result = result .. processed
+	end
+	
+	return result
+end
+
+-- ========== GUI ==========
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ChatTriggerPro"
+screenGui.Name = "NuclearBypassV2"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Hub Button
+-- Hub
 local hubButton = Instance.new("Frame")
-hubButton.Name = "HubButton"
-hubButton.Size = UDim2.new(0, 50, 0, 50)
-hubButton.Position = UDim2.new(0, 20, 0.5, -25)
-hubButton.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+hubButton.Size = UDim2.new(0, 55, 0, 55)
+hubButton.Position = UDim2.new(0, 15, 0.5, -27)
+hubButton.BackgroundColor3 = Color3.fromRGB(5, 5, 10)
 hubButton.BorderSizePixel = 0
 hubButton.Parent = screenGui
 
 local hubCorner = Instance.new("UICorner")
-hubCorner.CornerRadius = UDim.new(0, 10)
+hubCorner.CornerRadius = UDim.new(0, 12)
 hubCorner.Parent = hubButton
 
 local hubStroke = Instance.new("UIStroke")
-hubStroke.Color = Color3.fromRGB(60, 60, 70)
-hubStroke.Thickness = 1
+hubStroke.Color = Color3.fromRGB(150, 0, 255)
+hubStroke.Thickness = 2
 hubStroke.Parent = hubButton
+
+local hubGradient = Instance.new("UIGradient")
+hubGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 0, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 150))
+})
+hubGradient.Parent = hubButton
 
 local hubIcon = Instance.new("TextLabel")
 hubIcon.Size = UDim2.new(1, 0, 1, 0)
 hubIcon.BackgroundTransparency = 1
-hubIcon.TextColor3 = Color3.fromRGB(255, 100, 100)
-hubIcon.Text = "⚡"
+hubIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+hubIcon.Text = "☠"
 hubIcon.Font = Enum.Font.GothamBold
-hubIcon.TextSize = 24
+hubIcon.TextSize = 28
 hubIcon.Parent = hubButton
 
 -- Main Frame
 local mainFrame = Instance.new("Frame")
-mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 320, 0, 420)
-mainFrame.Position = UDim2.new(0, 20, 0.5, -210)
-mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+mainFrame.Size = UDim2.new(0, 450, 0, 580)
+mainFrame.Position = UDim2.new(0.5, -225, 0.5, -290)
+mainFrame.BackgroundColor3 = Color3.fromRGB(8, 8, 15)
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
 mainFrame.Parent = screenGui
 
 local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(0, 10)
+mainCorner.CornerRadius = UDim.new(0, 14)
 mainCorner.Parent = mainFrame
 
 local mainStroke = Instance.new("UIStroke")
-mainStroke.Color = Color3.fromRGB(40, 40, 50)
+mainStroke.Color = Color3.fromRGB(150, 0, 255)
 mainStroke.Thickness = 1
 mainStroke.Parent = mainFrame
 
--- Title Bar
+-- Title
 local titleBar = Instance.new("Frame")
-titleBar.Size = UDim2.new(1, 0, 0, 35)
-titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+titleBar.Size = UDim2.new(1, 0, 0, 45)
+titleBar.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 titleBar.BorderSizePixel = 0
 titleBar.Parent = mainFrame
 
 local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 10)
+titleCorner.CornerRadius = UDim.new(0, 14)
 titleCorner.Parent = titleBar
 
+local titleGradient = Instance.new("UIGradient")
+titleGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 0, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 150))
+})
+titleGradient.Parent = titleBar
+
 local titleFix = Instance.new("Frame")
-titleFix.Size = UDim2.new(1, 0, 0, 12)
-titleFix.Position = UDim2.new(0, 0, 1, -12)
-titleFix.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+titleFix.Size = UDim2.new(1, 0, 0, 15)
+titleFix.Position = UDim2.new(0, 0, 1, -15)
+titleFix.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 titleFix.BorderSizePixel = 0
 titleFix.Parent = titleBar
 
 local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, -45, 1, 0)
+titleLabel.Size = UDim2.new(1, -50, 1, 0)
 titleLabel.Position = UDim2.new(0, 15, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-titleLabel.Text = "Chat Trigger Pro"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Text = "☠ NUCLEAR BYPASS v2.0"
 titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextSize = 14
+titleLabel.TextSize = 18
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = titleBar
 
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 28, 0, 22)
-closeBtn.Position = UDim2.new(1, -34, 0.5, -11)
-closeBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+closeBtn.Size = UDim2.new(0, 32, 0, 32)
+closeBtn.Position = UDim2.new(1, -38, 0.5, -16)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
 closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeBtn.Text = "×"
 closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 14
+closeBtn.TextSize = 18
 closeBtn.Parent = titleBar
 
 local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 5)
+closeCorner.CornerRadius = UDim.new(0, 8)
 closeCorner.Parent = closeBtn
 
--- Content Frame
-local contentFrame = Instance.new("Frame")
-contentFrame.Size = UDim2.new(1, 0, 1, -40)
-contentFrame.Position = UDim2.new(0, 0, 0, 38)
-contentFrame.BackgroundTransparency = 1
-contentFrame.Parent = mainFrame
+-- Content
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1, -20, 1, -55)
+content.Position = UDim2.new(0, 10, 0, 50)
+content.BackgroundTransparency = 1
+content.Parent = mainFrame
 
--- Trigger Section
-local triggerSection = Instance.new("Frame")
-triggerSection.Size = UDim2.new(1, -20, 0, 50)
-triggerSection.Position = UDim2.new(0, 10, 0, 5)
-triggerSection.BackgroundTransparency = 1
-triggerSection.Parent = contentFrame
+-- Original Input
+local inputLabel = Instance.new("TextLabel")
+inputLabel.Size = UDim2.new(1, 0, 0, 20)
+inputLabel.BackgroundTransparency = 1
+inputLabel.TextColor3 = Color3.fromRGB(200, 150, 255)
+inputLabel.Text = "ORIGINAL MESSAGE"
+inputLabel.Font = Enum.Font.GothamBold
+inputLabel.TextSize = 11
+inputLabel.TextXAlignment = Enum.TextXAlignment.Left
+inputLabel.Parent = content
 
-local triggerLabel = Instance.new("TextLabel")
-triggerLabel.Size = UDim2.new(1, 0, 0, 16)
-triggerLabel.BackgroundTransparency = 1
-triggerLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
-triggerLabel.Text = "TRIGGER COMMAND"
-triggerLabel.Font = Enum.Font.Gotham
-triggerLabel.TextSize = 9
-triggerLabel.TextXAlignment = Enum.TextXAlignment.Left
-triggerLabel.Parent = triggerSection
+local inputBox = Instance.new("TextBox")
+inputBox.Size = UDim2.new(1, 0, 0, 70)
+inputBox.Position = UDim2.new(0, 0, 0, 22)
+inputBox.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+inputBox.Text = ""
+inputBox.PlaceholderText = "Enter message to bypass..."
+inputBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
+inputBox.Font = Enum.Font.Code
+inputBox.TextSize = 14
+inputBox.TextXAlignment = Enum.TextXAlignment.Left
+inputBox.TextYAlignment = Enum.TextYAlignment.Top
+inputBox.ClearTextOnFocus = false
+inputBox.MultiLine = true
+inputBox.TextWrapped = true
+inputBox.Parent = content
 
-local triggerBox = Instance.new("TextBox")
-triggerBox.Size = UDim2.new(1, 0, 0, 28)
-triggerBox.Position = UDim2.new(0, 0, 0, 18)
-triggerBox.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-triggerBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-triggerBox.Text = "-die"
-triggerBox.PlaceholderText = "-die"
-triggerBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 110)
-triggerBox.Font = Enum.Font.Gotham
-triggerBox.TextSize = 12
-triggerBox.ClearTextOnFocus = false
-triggerBox.Parent = triggerSection
+local inputCorner = Instance.new("UICorner")
+inputCorner.CornerRadius = UDim.new(0, 8)
+inputCorner.Parent = inputBox
 
-local triggerCorner = Instance.new("UICorner")
-triggerCorner.CornerRadius = UDim.new(0, 6)
-triggerCorner.Parent = triggerBox
+local inputStroke = Instance.new("UIStroke")
+inputStroke.Color = Color3.fromRGB(80, 80, 100)
+inputStroke.Thickness = 1
+inputStroke.Parent = inputBox
 
-local triggerStroke = Instance.new("UIStroke")
-triggerStroke.Color = Color3.fromRGB(50, 50, 60)
-triggerStroke.Thickness = 1
-triggerStroke.Parent = triggerBox
+-- Method Selection
+local methodLabel = Instance.new("TextLabel")
+methodLabel.Size = UDim2.new(1, 0, 0, 20)
+methodLabel.Position = UDim2.new(0, 0, 0, 98)
+methodLabel.BackgroundTransparency = 1
+methodLabel.TextColor3 = Color3.fromRGB(200, 150, 255)
+methodLabel.Text = "BYPASS METHOD (Select One)"
+methodLabel.Font = Enum.Font.GothamBold
+methodLabel.TextSize = 11
+methodLabel.TextXAlignment = Enum.TextXAlignment.Left
+methodLabel.Parent = content
 
--- ========== BYPASS SECTION ==========
-local bypassSection = Instance.new("Frame")
-bypassSection.Size = UDim2.new(1, -20, 0, 75)
-bypassSection.Position = UDim2.new(0, 10, 0, 58)
-bypassSection.BackgroundTransparency = 1
-bypassSection.Parent = contentFrame
+local methodsContainer = Instance.new("ScrollingFrame")
+methodsContainer.Size = UDim2.new(1, 0, 0, 140)
+methodsContainer.Position = UDim2.new(0, 0, 0, 120)
+methodsContainer.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+methodsContainer.ScrollBarThickness = 4
+methodsContainer.ScrollBarImageColor3 = Color3.fromRGB(150, 0, 255)
+methodsContainer.Parent = content
 
-local bypassLabel = Instance.new("TextLabel")
-bypassLabel.Size = UDim2.new(1, 0, 0, 16)
-bypassLabel.BackgroundTransparency = 1
-bypassLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-bypassLabel.Text = "BYPASS MODE"
-bypassLabel.Font = Enum.Font.GothamBold
-bypassLabel.TextSize = 9
-bypassLabel.TextXAlignment = Enum.TextXAlignment.Left
-bypassLabel.Parent = bypassSection
+local methodsCorner = Instance.new("UICorner")
+methodsCorner.CornerRadius = UDim.new(0, 8)
+methodsCorner.Parent = methodsContainer
 
--- Bypass Buttons Row 1
-local bypassRow1 = Instance.new("Frame")
-bypassRow1.Size = UDim2.new(1, 0, 0, 24)
-bypassRow1.Position = UDim2.new(0, 0, 0, 18)
-bypassRow1.BackgroundTransparency = 1
-bypassRow1.Parent = bypassSection
+local methodsStroke = Instance.new("UIStroke")
+methodsStroke.Color = Color3.fromRGB(50, 50, 70)
+methodsStroke.Thickness = 1
+methodsStroke.Parent = methodsContainer
 
-local noneBtn = Instance.new("TextButton")
-noneBtn.Size = UDim2.new(0.48, 0, 1, 0)
-noneBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-noneBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-noneBtn.Text = "NONE"
-noneBtn.Font = Enum.Font.GothamBold
-noneBtn.TextSize = 10
-noneBtn.Parent = bypassRow1
+local methodsLayout = Instance.new("UIGridLayout")
+methodsLayout.CellSize = UDim2.new(0.48, 0, 0, 32)
+methodsLayout.CellPadding = UDim2.new(0, 6, 0, 6)
+methodsLayout.Parent = methodsContainer
 
-local noneCorner = Instance.new("UICorner")
-noneCorner.CornerRadius = UDim.new(0, 5)
-noneCorner.Parent = noneBtn
+local methods = {
+	{name = "MATHEMATICAL", desc = "Math symbols", func = function(t) return rareUnicodeBypass(t, "math") end},
+	{name = "DOUBLE-STRUCK", desc = "Bold math", func = function(t) return rareUnicodeBypass(t, "double") end},
+	{name = "FRAKTUR", desc = "Gothic script", func = function(t) return rareUnicodeBypass(t, "fraktur") end},
+	{name = "GREEK", desc = "Greek letters", func = function(t) return rareUnicodeBypass(t, "greek") end},
+	{name = "COPTIC", desc = "Ancient Egyptian", func = function(t) return rareUnicodeBypass(t, "coptic") end},
+	{name = "GLAGOLITIC", desc = "Old Slavic", func = function(t) return rareUnicodeBypass(t, "glagolitic") end},
+	{name = "ARMENIAN", desc = "Armenian script", func = function(t) return rareUnicodeBypass(t, "armenian") end},
+	{name = "ETHIOPIC", desc = "Ge'ez script", func = function(t) return rareUnicodeBypass(t, "ethiopic") end},
+	{name = "TIFINAGH", desc = "Berber script", func = function(t) return rareUnicodeBypass(t, "tifinagh") end},
+	{name = "SUPERSCRIPT", desc = "Small raised", func = function(t) return rareUnicodeBypass(t, "super") end},
+	{name = "SUBSCRIPT", desc = "Small lowered", func = function(t) return rareUnicodeBypass(t, "sub") end},
+	{name = "SMALL CAPS", desc = "Tiny capitals", func = function(t) return rareUnicodeBypass(t, "smallcaps") end},
+	{name = "FULL-WIDTH", desc = "Asian style", func = function(t) return rareUnicodeBypass(t, "fullwidth") end},
+	{name = "REGIONAL", desc = "Flag letters", func = function(t) return rareUnicodeBypass(t, "regional") end},
+	{name = "SQUARE", desc = "Boxed letters", func = function(t) return enclosedBypass(t, "square") end},
+	{name = "CIRCLE", desc = "Circled letters", func = function(t) return enclosedBypass(t, "circle") end},
+	{name = "PAREN", desc = "(Letter)", func = function(t) return enclosedBypass(t, "paren") end},
+	{name = "FORMAT INJECT", desc = "Invisible chars", func = function(t) return formatInjection(t, 50) end},
+	{name = "ZALGO", desc = "Stacked marks", func = function(t) return zalgoStack(t, 4) end},
+	{name = "CRAZY MIX", desc = "Random scripts", func = crazyMixedBypass},
+	{name = "NUCLEAR", desc = "Multi-layer", func = nuclearBypass},
+	{name = "ABSOLUTE", desc = "Maximum chaos", func = absoluteDestruction}
+}
 
-local spaceBtn = Instance.new("TextButton")
-spaceBtn.Size = UDim2.new(0.48, 0, 1, 0)
-spaceBtn.Position = UDim2.new(0.52, 0, 0, 0)
-spaceBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-spaceBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-spaceBtn.Text = "SPACES"
-spaceBtn.Font = Enum.Font.GothamBold
-spaceBtn.TextSize = 10
-spaceBtn.Parent = bypassRow1
+local selectedMethod = 21 -- Nuclear by default
+local methodButtons = {}
 
-local spaceCorner = Instance.new("UICorner")
-spaceCorner.CornerRadius = UDim.new(0, 5)
-spaceCorner.Parent = spaceBtn
-
--- Bypass Buttons Row 2
-local bypassRow2 = Instance.new("Frame")
-bypassRow2.Size = UDim2.new(1, 0, 0, 24)
-bypassRow2.Position = UDim2.new(0, 0, 0, 46)
-bypassRow2.BackgroundTransparency = 1
-bypassRow2.Parent = bypassSection
-
-local zeroBtn = Instance.new("TextButton")
-zeroBtn.Size = UDim2.new(0.31, 0, 1, 0)
-zeroBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-zeroBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-zeroBtn.Text = "INVISIBLE"
-zeroBtn.Font = Enum.Font.GothamBold
-zeroBtn.TextSize = 9
-zeroBtn.Parent = bypassRow2
-
-local zeroCorner = Instance.new("UICorner")
-zeroCorner.CornerRadius = UDim.new(0, 5)
-zeroCorner.Parent = zeroBtn
-
-local mixedBtn = Instance.new("TextButton")
-mixedBtn.Size = UDim2.new(0.31, 0, 1, 0)
-mixedBtn.Position = UDim2.new(0.34, 0, 0, 0)
-mixedBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-mixedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-mixedBtn.Text = "MIXED"
-mixedBtn.Font = Enum.Font.GothamBold
-mixedBtn.TextSize = 9
-mixedBtn.Parent = bypassRow2
-
-local mixedCorner = Instance.new("UICorner")
-mixedCorner.CornerRadius = UDim.new(0, 5)
-mixedCorner.Parent = mixedBtn
-
-local smartBtn = Instance.new("TextButton")
-smartBtn.Size = UDim2.new(0.31, 0, 1, 0)
-smartBtn.Position = UDim2.new(0.68, 0, 0, 0)
-smartBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-smartBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-smartBtn.Text = "SMART"
-smartBtn.Font = Enum.Font.GothamBold
-smartBtn.TextSize = 9
-smartBtn.Parent = bypassRow2
-
-local smartCorner = Instance.new("UICorner")
-smartCorner.CornerRadius = UDim.new(0, 5)
-smartCorner.Parent = smartBtn
-
--- Bypass status
-local bypassStatus = Instance.new("TextLabel")
-bypassStatus.Size = UDim2.new(1, 0, 0, 14)
-bypassStatus.Position = UDim2.new(0, 0, 0, 72)
-bypassStatus.BackgroundTransparency = 1
-bypassStatus.TextColor3 = Color3.fromRGB(100, 200, 255)
-bypassStatus.Text = "Current: None (No bypass)"
-bypassStatus.Font = Enum.Font.Gotham
-bypassStatus.TextSize = 8
-bypassStatus.TextXAlignment = Enum.TextXAlignment.Left
-bypassStatus.Parent = bypassSection
-
--- ========== UPDATE BYPASS BUTTONS ==========
-local function updateBypassButtons()
-	noneBtn.BackgroundColor3 = bypassMode == "none" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 60)
-	spaceBtn.BackgroundColor3 = bypassMode == "spaces" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 60)
-	zeroBtn.BackgroundColor3 = bypassMode == "zero" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 60)
-	mixedBtn.BackgroundColor3 = bypassMode == "mixed" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 60)
-	smartBtn.BackgroundColor3 = bypassMode == "smart" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 60)
+for i, method in ipairs(methods) do
+	local btn = Instance.new("TextButton")
+	btn.BackgroundColor3 = i == selectedMethod and Color3.fromRGB(150, 0, 255) or Color3.fromRGB(30, 30, 45)
+	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btn.Text = method.name
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 9
+	btn.Parent = methodsContainer
 	
-	local statusText = {
-		["none"] = "None (No bypass)",
-		["spaces"] = "Spaces (Adds spaces)",
-		["zero"] = "Invisible (Hidden chars)",
-		["mixed"] = "Mixed (Random bypass)",
-		["smart"] = "Smart (Flagged words only)"
-	}
-	bypassStatus.Text = "Current: "..(statusText[bypassMode] or "None")
+	local btnCorner = Instance.new("UICorner")
+	btnCorner.CornerRadius = UDim.new(0, 6)
+	btnCorner.Parent = btn
+	
+	btn.MouseButton1Click:Connect(function()
+		selectedMethod = i
+		for j, b in ipairs(methodButtons) do
+			b.BackgroundColor3 = j == i and Color3.fromRGB(150, 0, 255) or Color3.fromRGB(30, 30, 45)
+		end
+		generatePreview()
+	end)
+	
+	methodButtons[i] = btn
 end
 
-noneBtn.MouseButton1Click:Connect(function()
-	bypassMode = "none"
-	updateBypassButtons()
+methodsContainer.CanvasSize = UDim2.new(0, 0, 0, math.ceil(#methods / 2) * 38)
+
+-- Preview
+local previewLabel = Instance.new("TextLabel")
+previewLabel.Size = UDim2.new(1, 0, 0, 20)
+previewLabel.Position = UDim2.new(0, 0, 0, 268)
+previewLabel.BackgroundTransparency = 1
+previewLabel.TextColor3 = Color3.fromRGB(0, 255, 150)
+previewLabel.Text = "PREVIEW (What gets sent)"
+previewLabel.Font = Enum.Font.GothamBold
+previewLabel.TextSize = 11
+previewLabel.TextXAlignment = Enum.TextXAlignment.Left
+previewLabel.Parent = content
+
+local previewBox = Instance.new("TextBox")
+previewBox.Size = UDim2.new(1, 0, 0, 80)
+previewBox.Position = UDim2.new(0, 0, 0, 290)
+previewBox.BackgroundColor3 = Color3.fromRGB(10, 30, 20)
+previewBox.TextColor3 = Color3.fromRGB(0, 255, 150)
+previewBox.Text = ""
+previewBox.Font = Enum.Font.Code
+previewBox.TextSize = 12
+previewBox.TextXAlignment = Enum.TextXAlignment.Left
+previewBox.TextYAlignment = Enum.TextYAlignment.Top
+previewBox.ClearTextOnFocus = false
+previewBox.MultiLine = true
+previewBox.TextWrapped = true
+previewBox.Parent = content
+
+local previewCorner = Instance.new("UICorner")
+previewCorner.CornerRadius = UDim.new(0, 8)
+previewCorner.Parent = previewBox
+
+local previewStroke = Instance.new("UIStroke")
+previewStroke.Color = Color3.fromRGB(0, 100, 50)
+previewStroke.Thickness = 1
+previewStroke.Parent = previewBox
+
+-- Info label
+local infoLabel = Instance.new("TextLabel")
+infoLabel.Size = UDim2.new(1, 0, 0, 40)
+infoLabel.Position = UDim2.new(0, 0, 0, 378)
+infoLabel.BackgroundTransparency = 1
+infoLabel.TextColor3 = Color3.fromRGB(150, 150, 170)
+infoLabel.Text = "Using rare Unicode scripts: Mathematical Alphanumeric, Coptic, Glagolitic, Ethiopic, Tifinagh, Armenian, Format Characters, Variation Selectors, and Combining Diacritical Marks."
+infoLabel.Font = Enum.Font.Gotham
+infoLabel.TextSize = 9
+infoLabel.TextWrapped = true
+infoLabel.TextXAlignment = Enum.TextXAlignment.Left
+infoLabel.TextYAlignment = Enum.TextYAlignment.Top
+infoLabel.Parent = content
+
+-- Send Button
+local sendBtn = Instance.new("TextButton")
+sendBtn.Size = UDim2.new(1, 0, 0, 45)
+sendBtn.Position = UDim2.new(0, 0, 1, -50)
+sendBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 255)
+sendBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+sendBtn.Text = "☠ SEND BYPASSED MESSAGE"
+sendBtn.Font = Enum.Font.GothamBold
+sendBtn.TextSize = 16
+sendBtn.Parent = content
+
+local sendBtnCorner = Instance.new("UICorner")
+sendBtnCorner.CornerRadius = UDim.new(0, 10)
+sendBtnCorner.Parent = sendBtn
+
+local sendBtnGradient = Instance.new("UIGradient")
+sendBtnGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 0, 255)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 150))
+})
+sendBtnGradient.Parent = sendBtn
+
+-- ========== FUNCTIONS ==========
+local function generatePreview()
+	local text = inputBox.Text
+	if text == "" then
+		previewBox.Text = ""
+		return
+	end
+	
+	local result = methods[selectedMethod].func(text)
+	previewBox.Text = result
+end
+
+inputBox:GetPropertyChangedSignal("Text"):Connect(generatePreview)
+
+local function sendMessage(msg)
+	local chatRemote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
+	
+	if chatRemote then
+		local sayMessage = chatRemote:FindFirstChild("SayMessageRequest")
+		if sayMessage then
+			sayMessage:FireServer(msg, "All")
+			return true
+		end
+	end
+	
+	local TextChatService = game:GetService("TextChatService")
+	if TextChatService then
+		local channel = TextChatService:FindFirstChild("TextChannels")
+		if channel then
+			local rbxGeneral = channel:FindFirstChild("RBXGeneral")
+			if rbxGeneral then
+				rbxGeneral:SendAsync(msg)
+				return true
+			end
+		end
+	end
+	
+	return false
+end
+
+sendBtn.MouseButton1Click:Connect(function()
+	local text = inputBox.Text
+	if text == "" then return end
+	
+	local result = methods[selectedMethod].func(text)
+	sendMessage(result)
 end)
-
-spaceBtn.MouseButton1Click:Connect(function()
-	bypassMode = "spaces"
-	updateBypassButtons()
-end)
-
-zeroBtn.MouseButton1Click:Connect(function()
-	bypassMode = "zero"
-	updateBypassButtons()
-end)
-
-mixedBtn.MouseButton1Click:Connect(function()
-	bypassMode = "mixed"
-	updateBypassButtons()
-end)
-
-smartBtn.MouseButton1Click:Connect(function()
-	bypassMode = "smart"
-	updateBypassButtons()
-end)
-
--- Messages List Section
-local listSection = Instance.new("Frame")
-listSection.Size = UDim2.new(1, -20, 0, 115)
-listSection.Position = UDim2.new(0, 10, 0, 138)
-listSection.BackgroundTransparency = 1
-listSection.Parent = contentFrame
-
-local listLabel = Instance.new("TextLabel")
-listLabel.Size = UDim2.new(1, 0, 0, 16)
-listLabel.BackgroundTransparency = 1
-listLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
-listLabel.Text = "SAVED MESSAGES"
-listLabel.Font = Enum.Font.Gotham
-listLabel.TextSize = 9
-listLabel.TextXAlignment = Enum.TextXAlignment.Left
-listLabel.Parent = listSection
-
-local listContainer = Instance.new("Frame")
-listContainer.Size = UDim2.new(1, 0, 0, 90)
-listContainer.Position = UDim2.new(0, 0, 0, 18)
-listContainer.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
-listContainer.Parent = listSection
-
-local listContainerCorner = Instance.new("UICorner")
-listContainerCorner.CornerRadius = UDim.new(0, 6)
-listContainerCorner.Parent = listContainer
-
-local listContainerStroke = Instance.new("UIStroke")
-listContainerStroke.Color = Color3.fromRGB(50, 50, 60)
-listContainerStroke.Thickness = 1
-listContainerStroke.Parent = listContainer
-
-local scrollingList = Instance.new("ScrollingFrame")
-scrollingList.Size = UDim2.new(1, -4, 1, -4)
-scrollingList.Position = UDim2.new(0, 2, 0, 2)
-scrollingList.BackgroundTransparency = 1
-scrollingList.ScrollBarThickness = 4
-scrollingList.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 120)
-scrollingList.Parent = listContainer
-
-local listLayout = Instance.new("UIListLayout")
-listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-listLayout.Padding = UDim.new(0, 4)
-listLayout.Parent = scrollingList
-
--- Add Message Section
-local addSection = Instance.new("Frame")
-addSection.Size = UDim2.new(1, -20, 0, 50)
-addSection.Position = UDim2.new(0, 10, 0, 258)
-addSection.BackgroundTransparency = 1
-addSection.Parent = contentFrame
-
-local addLabel = Instance.new("TextLabel")
-addLabel.Size = UDim2.new(1, 0, 0, 16)
-addLabel.BackgroundTransparency = 1
-addLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
-addLabel.Text = "ADD NEW MESSAGE"
-addLabel.Font = Enum.Font.Gotham
-addLabel.TextSize = 9
-addLabel.TextXAlignment = Enum.TextXAlignment.Left
-addLabel.Parent = addSection
-
-local addBox = Instance.new("TextBox")
-addBox.Size = UDim2.new(1, -70, 0, 28)
-addBox.Position = UDim2.new(0, 0, 0, 18)
-addBox.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-addBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-addBox.Text = ""
-addBox.PlaceholderText = "Type message here..."
-addBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 110)
-addBox.Font = Enum.Font.Gotham
-addBox.TextSize = 12
-addBox.ClearTextOnFocus = false
-addBox.Parent = addSection
-
-local addBoxCorner = Instance.new("UICorner")
-addBoxCorner.CornerRadius = UDim.new(0, 6)
-addBoxCorner.Parent = addBox
-
-local addBoxStroke = Instance.new("UIStroke")
-addBoxStroke.Color = Color3.fromRGB(50, 50, 60)
-addBoxStroke.Thickness = 1
-addBoxStroke.Parent = addBox
-
-local addBtn = Instance.new("TextButton")
-addBtn.Size = UDim2.new(0, 60, 0, 28)
-addBtn.Position = UDim2.new(1, -60, 0, 18)
-addBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
-addBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-addBtn.Text = "Add"
-addBtn.Font = Enum.Font.GothamBold
-addBtn.TextSize = 11
-addBtn.Parent = addSection
-
-local addBtnCorner = Instance.new("UICorner")
-addBtnCorner.CornerRadius = UDim.new(0, 6)
-addBtnCorner.Parent = addBtn
-
--- Settings Row
-local settingsRow = Instance.new("Frame")
-settingsRow.Size = UDim2.new(1, -20, 0, 30)
-settingsRow.Position = UDim2.new(0, 10, 0, 313)
-settingsRow.BackgroundTransparency = 1
-settingsRow.Parent = contentFrame
-
-local delayLabel = Instance.new("TextLabel")
-delayLabel.Size = UDim2.new(0, 45, 1, 0)
-delayLabel.BackgroundTransparency = 1
-delayLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
-delayLabel.Text = "Delay:"
-delayLabel.Font = Enum.Font.Gotham
-delayLabel.TextSize = 11
-delayLabel.TextXAlignment = Enum.TextXAlignment.Left
-delayLabel.Parent = settingsRow
-
-local delayBox = Instance.new("TextBox")
-delayBox.Size = UDim2.new(0, 55, 0, 26)
-delayBox.Position = UDim2.new(0, 48, 0, 2)
-delayBox.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-delayBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-delayBox.Text = "0.5"
-delayBox.PlaceholderText = "0.5"
-delayBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 110)
-delayBox.Font = Enum.Font.Gotham
-delayBox.TextSize = 11
-delayBox.ClearTextOnFocus = false
-delayBox.Parent = settingsRow
-
-local delayBoxCorner = Instance.new("UICorner")
-delayBoxCorner.CornerRadius = UDim.new(0, 5)
-delayBoxCorner.Parent = delayBox
-
-local delayBoxStroke = Instance.new("UIStroke")
-delayBoxStroke.Color = Color3.fromRGB(50, 50, 60)
-delayBoxStroke.Thickness = 1
-delayBoxStroke.Parent = delayBox
-
-local secLabel = Instance.new("TextLabel")
-secLabel.Size = UDim2.new(0, 20, 1, 0)
-secLabel.Position = UDim2.new(0, 108, 0, 0)
-secLabel.BackgroundTransparency = 1
-secLabel.TextColor3 = Color3.fromRGB(120, 120, 130)
-secLabel.Text = "sec"
-secLabel.Font = Enum.Font.Gotham
-secLabel.TextSize = 10
-secLabel.Parent = settingsRow
-
-local countLabel = Instance.new("TextLabel")
-countLabel.Size = UDim2.new(0, 80, 1, 0)
-countLabel.Position = UDim2.new(1, -80, 0, 0)
-countLabel.BackgroundTransparency = 1
-countLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-countLabel.Text = "0 messages"
-countLabel.Font = Enum.Font.Gotham
-countLabel.TextSize = 10
-countLabel.TextXAlignment = Enum.TextXAlignment.Right
-countLabel.Parent = settingsRow
-
--- Enable Button
-local enableBtn = Instance.new("TextButton")
-enableBtn.Size = UDim2.new(1, -20, 0, 34)
-enableBtn.Position = UDim2.new(0, 10, 0, 348)
-enableBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-enableBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-enableBtn.Text = "DISABLED - Click to Enable"
-enableBtn.Font = Enum.Font.GothamBold
-enableBtn.TextSize = 12
-enableBtn.Parent = contentFrame
-
-local enableBtnCorner = Instance.new("UICorner")
-enableBtnCorner.CornerRadius = UDim.new(0, 6)
-enableBtnCorner.Parent = enableBtn
 
 -- ========== DRAGGING ==========
 local dragging = false
@@ -590,7 +759,6 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- Main frame dragging
 local mainDragging = false
 local mainDragInput, mainDragStart, mainDragPos
 
@@ -636,176 +804,15 @@ closeBtn.MouseButton1Click:Connect(function()
 	hubButton.Visible = true
 end)
 
--- ========== UPDATE MESSAGE LIST ==========
-local function updateList()
-	for _, child in pairs(scrollingList:GetChildren()) do
-		if child:IsA("Frame") then
-			child:Destroy()
-		end
-	end
-	
-	countLabel.Text = #savedMessages.." messages"
-	
-	for i, msg in ipairs(savedMessages) do
-		local msgFrame = Instance.new("Frame")
-		msgFrame.Size = UDim2.new(1, 0, 0, 22)
-		msgFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-		msgFrame.Parent = scrollingList
-		
-		local msgCorner = Instance.new("UICorner")
-		msgCorner.CornerRadius = UDim.new(0, 4)
-		msgCorner.Parent = msgFrame
-		
-		local msgText = Instance.new("TextLabel")
-		msgText.Size = UDim2.new(1, -30, 1, 0)
-		msgText.Position = UDim2.new(0, 8, 0, 0)
-		msgText.BackgroundTransparency = 1
-		msgText.TextColor3 = Color3.fromRGB(220, 220, 230)
-		msgText.Text = msg
-		msgText.Font = Enum.Font.Gotham
-		msgText.TextSize = 10
-		msgText.TextXAlignment = Enum.TextXAlignment.Left
-		msgText.TextTruncate = Enum.TextTruncate.AtEnd
-		msgText.Parent = msgFrame
-		
-		local removeBtn = Instance.new("TextButton")
-		removeBtn.Size = UDim2.new(0, 20, 0, 20)
-		removeBtn.Position = UDim2.new(1, -24, 0.5, -10)
-		removeBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-		removeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-		removeBtn.Text = "×"
-		removeBtn.Font = Enum.Font.GothamBold
-		removeBtn.TextSize = 11
-		removeBtn.Parent = msgFrame
-		
-		local removeCorner = Instance.new("UICorner")
-		removeCorner.CornerRadius = UDim.new(0, 4)
-		removeCorner.Parent = removeBtn
-		
-		removeBtn.MouseButton1Click:Connect(function()
-			table.remove(savedMessages, i)
-			updateList()
-		end)
-	end
-	
-	scrollingList.CanvasSize = UDim2.new(0, 0, 0, #savedMessages * 26)
-end
-
--- ========== ADD MESSAGE ==========
-addBtn.MouseButton1Click:Connect(function()
-	local msg = addBox.Text:gsub("^%s+", ""):gsub("%s+$", "")
-	if msg ~= "" then
-		table.insert(savedMessages, msg)
-		addBox.Text = ""
-		updateList()
-	end
-end)
-
-addBox.FocusLost:Connect(function(enterPressed)
-	if enterPressed then
-		local msg = addBox.Text:gsub("^%s+", ""):gsub("%s+$", "")
-		if msg ~= "" then
-			table.insert(savedMessages, msg)
-			addBox.Text = ""
-			updateList()
-		end
-	end
-end)
-
--- ========== SEND MESSAGE FUNCTION ==========
-local function sendMessage(msg)
-	local message = applyBypass(msg)
-	message = message:gsub("^%s+", ""):gsub("%s+$", "")
-	
-	if message == "" then
-		return false
-	end
-	
-	local chatRemote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
-	
-	if chatRemote then
-		local sayMessage = chatRemote:FindFirstChild("SayMessageRequest")
-		if sayMessage then
-			sayMessage:FireServer(message, "All")
-			return true
-		end
-	end
-	
-	local TextChatService = game:GetService("TextChatService")
-	if TextChatService then
-		local channel = TextChatService:FindFirstChild("TextChannels")
-		if channel then
-			local rbxGeneral = channel:FindFirstChild("RBXGeneral")
-			if rbxGeneral then
-				rbxGeneral:SendAsync(message)
-				return true
-			end
-		end
-	end
-	
-	return false
-end
-
--- ========== ENABLE TOGGLE ==========
-enableBtn.MouseButton1Click:Connect(function()
-	enabled = not enabled
-	
-	if enabled then
-		enableBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
-		enableBtn.Text = "ENABLED - Listening..."
-	else
-		enableBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-		enableBtn.Text = "DISABLED - Click to Enable"
-	end
-end)
-
--- ========== CHAT DETECTION ==========
-local function onChatted(msg)
-	if not enabled then return end
-	if spamming then return end
-	
-	local trigger = triggerBox.Text:gsub("^%s+", ""):gsub("%s+$", "")
-	if trigger == "" then return end
-	
-	if msg == trigger then
-		if #savedMessages == 0 then
-			return
-		end
-		
-		local delay = tonumber(delayBox.Text) or 0.5
-		if delay < 0 then delay = 0 end
-		
-		spamming = true
-		
-		task.spawn(function()
-			for i, line in ipairs(savedMessages) do
-				sendMessage(line)
-				if i < #savedMessages and delay > 0 then
-					task.wait(delay)
-				end
-			end
-			spamming = false
-		end)
-	end
-end
-
-player.Chatted:Connect(onChatted)
-
--- ========== TOGGLE WITH RIGHT CONTROL ==========
-local guiVisible = true
-
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if input.KeyCode == Enum.KeyCode.RightControl then
 		if mainFrame.Visible then
 			mainFrame.Visible = false
-			hubButton.Visible = guiVisible
+			hubButton.Visible = true
 		else
-			guiVisible = not guiVisible
-			hubButton.Visible = guiVisible
+			hubButton.Visible = not hubButton.Visible
 		end
 	end
 end)
 
-updateBypassButtons()
-updateList()
-print("✅ Chat Trigger Pro Loaded (With Bypass System)")
+print("☠ Nuclear Bypass v2.0 Loaded - 22 Rare Unicode Methods")
