@@ -1,4 +1,4 @@
--- Multi-Line Chat Hub (Improved)
+-- Multi-Line Chat Hub (Wide Version)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -9,8 +9,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 -- Settings
 local MAX_CHARS = 200
-local expanded = false
-local caseMode = "normal" -- "normal", "upper", "lower"
+local caseMode = "normal"
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -41,11 +40,11 @@ hubIcon.Font = Enum.Font.GothamBold
 hubIcon.TextSize = 22
 hubIcon.Parent = hubButton
 
--- ========== MAIN FRAME ==========
+-- ========== MAIN FRAME (WIDE) ==========
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 220, 0, 340)
-mainFrame.Position = UDim2.new(0, 20, 0.5, -170)
+mainFrame.Size = UDim2.new(0, 380, 0, 200)
+mainFrame.Position = UDim2.new(0, 20, 0.5, -100)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BorderSizePixel = 2
 mainFrame.BorderColor3 = Color3.fromRGB(60, 60, 60)
@@ -101,123 +100,214 @@ local collapseCorner = Instance.new("UICorner")
 collapseCorner.CornerRadius = UDim.new(0, 6)
 collapseCorner.Parent = collapseBtn
 
--- Content Frame
-local contentFrame = Instance.new("Frame")
-contentFrame.Size = UDim2.new(1, 0, 1, -28)
-contentFrame.Position = UDim2.new(0, 0, 0, 28)
-contentFrame.BackgroundTransparency = 1
-contentFrame.Parent = mainFrame
+-- ========== LEFT PANEL (TEXTBOX) ==========
+local leftPanel = Instance.new("Frame")
+leftPanel.Size = UDim2.new(0.55, 0, 1, -36)
+leftPanel.Position = UDim2.new(0, 10, 0, 32)
+leftPanel.BackgroundTransparency = 1
+leftPanel.Parent = mainFrame
 
--- Textbox Label
 local textboxLabel = Instance.new("TextLabel")
-textboxLabel.Size = UDim2.new(1, -20, 0, 18)
-textboxLabel.Position = UDim2.new(0, 10, 0, 8)
+textboxLabel.Size = UDim2.new(1, 0, 0, 16)
 textboxLabel.BackgroundTransparency = 1
 textboxLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-textboxLabel.Text = "Multi-line messages (one per line)"
+textboxLabel.Text = "Messages (one per line)"
 textboxLabel.Font = Enum.Font.Gotham
 textboxLabel.TextSize = 10
 textboxLabel.TextXAlignment = Enum.TextXAlignment.Left
-textboxLabel.Parent = contentFrame
+textboxLabel.Parent = leftPanel
 
--- Multi-line Textbox
 local textbox = Instance.new("TextBox")
 textbox.Name = "MultiInput"
-textbox.Size = UDim2.new(1, -20, 0, 90)
-textbox.Position = UDim2.new(0, 10, 0, 30)
+textbox.Size = UDim2.new(1, 0, 1, -20)
+textbox.Position = UDim2.new(0, 0, 0, 18)
 textbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textbox.Text = ""
 textbox.PlaceholderText = "Message 1\nMessage 2\nMessage 3"
 textbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 textbox.Font = Enum.Font.Gotham
-textbox.TextSize = 14
+textbox.TextSize = 13
 textbox.TextXAlignment = Enum.TextXAlignment.Left
 textbox.TextYAlignment = Enum.TextYAlignment.Top
 textbox.ClearTextOnFocus = false
 textbox.MultiLine = true
 textbox.TextWrapped = true
-textbox.Parent = contentFrame
+textbox.Parent = leftPanel
 
 local textboxCorner = Instance.new("UICorner")
 textboxCorner.CornerRadius = UDim.new(0, 6)
 textboxCorner.Parent = textbox
 
--- Char Counter
-local charCounter = Instance.new("TextLabel")
-charCounter.Size = UDim2.new(1, -20, 0, 16)
-charCounter.Position = UDim2.new(0, 10, 0, 122)
-charCounter.BackgroundTransparency = 1
-charCounter.TextColor3 = Color3.fromRGB(150, 150, 150)
-charCounter.Text = "Lines: 0 | Chars: 0/200"
-charCounter.Font = Enum.Font.Gotham
-charCounter.TextSize = 10
-charCounter.TextXAlignment = Enum.TextXAlignment.Right
-charCounter.Parent = contentFrame
+-- ========== RIGHT PANEL (CONTROLS) ==========
+local rightPanel = Instance.new("Frame")
+rightPanel.Size = UDim2.new(0.42, -10, 1, -36)
+rightPanel.Position = UDim2.new(0.58, 0, 0, 32)
+rightPanel.BackgroundTransparency = 1
+rightPanel.Parent = mainFrame
 
--- ========== CASE TOGGLE ROW ==========
-local caseRow = Instance.new("Frame")
-caseRow.Size = UDim2.new(1, -20, 0, 28)
-caseRow.Position = UDim2.new(0, 10, 0, 140)
-caseRow.BackgroundTransparency = 1
-caseRow.Parent = contentFrame
-
+-- Case Label
 local caseLabel = Instance.new("TextLabel")
-caseLabel.Size = UDim2.new(0, 40, 1, 0)
+caseLabel.Size = UDim2.new(1, 0, 0, 16)
 caseLabel.BackgroundTransparency = 1
 caseLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-caseLabel.Text = "Case:"
+caseLabel.Text = "Case Mode:"
 caseLabel.Font = Enum.Font.Gotham
-caseLabel.TextSize = 11
+caseLabel.TextSize = 10
 caseLabel.TextXAlignment = Enum.TextXAlignment.Left
-caseLabel.Parent = caseRow
+caseLabel.Parent = rightPanel
 
--- Normal Button
+-- Case Buttons Row
+local caseRow = Instance.new("Frame")
+caseRow.Size = UDim2.new(1, 0, 0, 26)
+caseRow.Position = UDim2.new(0, 0, 0, 18)
+caseRow.BackgroundTransparency = 1
+caseRow.Parent = rightPanel
+
 local normalBtn = Instance.new("TextButton")
-normalBtn.Size = UDim2.new(0, 50, 1, 0)
-normalBtn.Position = UDim2.new(0, 45, 0, 0)
+normalBtn.Size = UDim2.new(0.33, 0, 1, 0)
 normalBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 normalBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 normalBtn.Text = "Normal"
 normalBtn.Font = Enum.Font.GothamBold
-normalBtn.TextSize = 10
+normalBtn.TextSize = 9
 normalBtn.Parent = caseRow
 
 local normalCorner = Instance.new("UICorner")
-normalCorner.CornerRadius = UDim.new(0, 6)
+normalCorner.CornerRadius = UDim.new(0, 5)
 normalCorner.Parent = normalBtn
 
--- Upper Button
 local upperBtn = Instance.new("TextButton")
-upperBtn.Size = UDim2.new(0, 45, 1, 0)
-upperBtn.Position = UDim2.new(0, 98, 0, 0)
+upperBtn.Size = UDim2.new(0.33, 0, 1, 0)
+upperBtn.Position = UDim2.new(0.34, 0, 0, 0)
 upperBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 upperBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 upperBtn.Text = "UPPER"
 upperBtn.Font = Enum.Font.GothamBold
-upperBtn.TextSize = 10
+upperBtn.TextSize = 9
 upperBtn.Parent = caseRow
 
 local upperCorner = Instance.new("UICorner")
-upperCorner.CornerRadius = UDim.new(0, 6)
+upperCorner.CornerRadius = UDim.new(0, 5)
 upperCorner.Parent = upperBtn
 
--- Lower Button
 local lowerBtn = Instance.new("TextButton")
-lowerBtn.Size = UDim2.new(0, 50, 1, 0)
-lowerBtn.Position = UDim2.new(0, 146, 0, 0)
+lowerBtn.Size = UDim2.new(0.33, 0, 1, 0)
+lowerBtn.Position = UDim2.new(0.67, 0, 0, 0)
 lowerBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 lowerBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 lowerBtn.Text = "lower"
 lowerBtn.Font = Enum.Font.GothamBold
-lowerBtn.TextSize = 10
+lowerBtn.TextSize = 9
 lowerBtn.Parent = caseRow
 
 local lowerCorner = Instance.new("UICorner")
-lowerCorner.CornerRadius = UDim.new(0, 6)
+lowerCorner.CornerRadius = UDim.new(0, 5)
 lowerCorner.Parent = lowerBtn
 
--- Update case buttons visually
+-- Delay Row
+local delayRow = Instance.new("Frame")
+delayRow.Size = UDim2.new(1, 0, 0, 26)
+delayRow.Position = UDim2.new(0, 0, 0, 50)
+delayRow.BackgroundTransparency = 1
+delayRow.Parent = rightPanel
+
+local delayLabel = Instance.new("TextLabel")
+delayLabel.Size = UDim2.new(0.35, 0, 1, 0)
+delayLabel.BackgroundTransparency = 1
+delayLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+delayLabel.Text = "Delay:"
+delayLabel.Font = Enum.Font.Gotham
+delayLabel.TextSize = 10
+delayLabel.TextXAlignment = Enum.TextXAlignment.Left
+delayLabel.Parent = delayRow
+
+local delayTextbox = Instance.new("TextBox")
+delayTextbox.Size = UDim2.new(0.4, 0, 1, 0)
+delayTextbox.Position = UDim2.new(0.36, 0, 0, 0)
+delayTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+delayTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+delayTextbox.Text = "0.5"
+delayTextbox.PlaceholderText = "0.5"
+delayTextbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+delayTextbox.Font = Enum.Font.Gotham
+delayTextbox.TextSize = 10
+delayTextbox.ClearTextOnFocus = false
+delayTextbox.Parent = delayRow
+
+local delayCorner = Instance.new("UICorner")
+delayCorner.CornerRadius = UDim.new(0, 5)
+delayCorner.Parent = delayTextbox
+
+local secLabel = Instance.new("TextLabel")
+secLabel.Size = UDim2.new(0.2, 0, 1, 0)
+secLabel.Position = UDim2.new(0.78, 0, 0, 0)
+secLabel.BackgroundTransparency = 1
+secLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+secLabel.Text = "sec"
+secLabel.Font = Enum.Font.Gotham
+secLabel.TextSize = 10
+secLabel.Parent = delayRow
+
+-- Buttons Row
+local buttonsRow = Instance.new("Frame")
+buttonsRow.Size = UDim2.new(1, 0, 0, 30)
+buttonsRow.Position = UDim2.new(0, 0, 0, 82)
+buttonsRow.BackgroundTransparency = 1
+buttonsRow.Parent = rightPanel
+
+local clearBtn = Instance.new("TextButton")
+clearBtn.Size = UDim2.new(0.35, 0, 1, 0)
+clearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+clearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+clearBtn.Text = "Clear"
+clearBtn.Font = Enum.Font.GothamBold
+clearBtn.TextSize = 11
+clearBtn.Parent = buttonsRow
+
+local clearCorner = Instance.new("UICorner")
+clearCorner.CornerRadius = UDim.new(0, 5)
+clearCorner.Parent = clearBtn
+
+local sendAllBtn = Instance.new("TextButton")
+sendAllBtn.Size = UDim2.new(0.6, -5, 1, 0)
+sendAllBtn.Position = UDim2.new(0.4, 5, 0, 0)
+sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+sendAllBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+sendAllBtn.Text = "Send All"
+sendAllBtn.Font = Enum.Font.GothamBold
+sendAllBtn.TextSize = 11
+sendAllBtn.Parent = buttonsRow
+
+local sendAllCorner = Instance.new("UICorner")
+sendAllCorner.CornerRadius = UDim.new(0, 5)
+sendAllCorner.Parent = sendAllBtn
+
+-- Char Counter
+local charCounter = Instance.new("TextLabel")
+charCounter.Size = UDim2.new(1, 0, 0, 16)
+charCounter.Position = UDim2.new(0, 0, 0, 118)
+charCounter.BackgroundTransparency = 1
+charCounter.TextColor3 = Color3.fromRGB(150, 150, 150)
+charCounter.Text = "Lines: 0 | Chars: 0/200"
+charCounter.Font = Enum.Font.Gotham
+charCounter.TextSize = 9
+charCounter.TextXAlignment = Enum.TextXAlignment.Left
+charCounter.Parent = rightPanel
+
+-- Status
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, 0, 0, 16)
+statusLabel.Position = UDim2.new(0, 0, 0, 136)
+statusLabel.BackgroundTransparency = 1
+statusLabel.TextColor3 = Color3.fromRGB(100, 180, 255)
+statusLabel.Text = "Ready"
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextSize = 9
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.Parent = rightPanel
+
+-- ========== UPDATE CASE BUTTONS ==========
 local function updateCaseButtons()
 	normalBtn.BackgroundColor3 = caseMode == "normal" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
 	upperBtn.BackgroundColor3 = caseMode == "upper" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
@@ -239,111 +329,7 @@ lowerBtn.MouseButton1Click:Connect(function()
 	updateCaseButtons()
 end)
 
--- ========== DELAY ROW ==========
-local delayRow = Instance.new("Frame")
-delayRow.Size = UDim2.new(1, -20, 0, 28)
-delayRow.Position = UDim2.new(0, 10, 0, 172)
-delayRow.BackgroundTransparency = 1
-delayRow.Parent = contentFrame
-
-local delayLabel = Instance.new("TextLabel")
-delayLabel.Size = UDim2.new(0, 45, 1, 0)
-delayLabel.BackgroundTransparency = 1
-delayLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-delayLabel.Text = "Delay:"
-delayLabel.Font = Enum.Font.Gotham
-delayLabel.TextSize = 11
-delayLabel.TextXAlignment = Enum.TextXAlignment.Left
-delayLabel.Parent = delayRow
-
-local delayTextbox = Instance.new("TextBox")
-delayTextbox.Size = UDim2.new(0, 45, 1, 0)
-delayTextbox.Position = UDim2.new(0, 48, 0, 0)
-delayTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-delayTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
-delayTextbox.Text = "0.5"
-delayTextbox.PlaceholderText = "0.5"
-delayTextbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
-delayTextbox.Font = Enum.Font.Gotham
-delayTextbox.TextSize = 11
-delayTextbox.ClearTextOnFocus = false
-delayTextbox.Parent = delayRow
-
-local delayCorner = Instance.new("UICorner")
-delayCorner.CornerRadius = UDim.new(0, 6)
-delayCorner.Parent = delayTextbox
-
-local secLabel = Instance.new("TextLabel")
-secLabel.Size = UDim2.new(0, 25, 1, 0)
-secLabel.Position = UDim2.new(0, 98, 0, 0)
-secLabel.BackgroundTransparency = 1
-secLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-secLabel.Text = "sec"
-secLabel.Font = Enum.Font.Gotham
-secLabel.TextSize = 10
-secLabel.Parent = delayRow
-
--- ========== BUTTONS ROW ==========
-local buttonsRow = Instance.new("Frame")
-buttonsRow.Size = UDim2.new(1, -20, 0, 36)
-buttonsRow.Position = UDim2.new(0, 10, 0, 205)
-buttonsRow.BackgroundTransparency = 1
-buttonsRow.Parent = contentFrame
-
--- Clear Button
-local clearBtn = Instance.new("TextButton")
-clearBtn.Size = UDim2.new(0.38, 0, 1, 0)
-clearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-clearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-clearBtn.Text = "Clear"
-clearBtn.Font = Enum.Font.GothamBold
-clearBtn.TextSize = 13
-clearBtn.Parent = buttonsRow
-
-local clearCorner = Instance.new("UICorner")
-clearCorner.CornerRadius = UDim.new(0, 6)
-clearCorner.Parent = clearBtn
-
--- Send All Button
-local sendAllBtn = Instance.new("TextButton")
-sendAllBtn.Size = UDim2.new(0.58, -5, 1, 0)
-sendAllBtn.Position = UDim2.new(0.42, 5, 0, 0)
-sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-sendAllBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-sendAllBtn.Text = "Send All"
-sendAllBtn.Font = Enum.Font.GothamBold
-sendAllBtn.TextSize = 13
-sendAllBtn.Parent = buttonsRow
-
-local sendAllCorner = Instance.new("UICorner")
-sendAllCorner.CornerRadius = UDim.new(0, 6)
-sendAllCorner.Parent = sendAllBtn
-
--- Status Label
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Size = UDim2.new(1, -20, 0, 16)
-statusLabel.Position = UDim2.new(0, 10, 0, 248)
-statusLabel.BackgroundTransparency = 1
-statusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-statusLabel.Text = "Ready"
-statusLabel.Font = Enum.Font.Gotham
-statusLabel.TextSize = 10
-statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-statusLabel.Parent = contentFrame
-
--- Case Mode Display
-local caseDisplay = Instance.new("TextLabel")
-caseDisplay.Size = UDim2.new(1, -20, 0, 16)
-caseDisplay.Position = UDim2.new(0, 10, 0, 268)
-caseDisplay.BackgroundTransparency = 1
-caseDisplay.TextColor3 = Color3.fromRGB(100, 180, 255)
-caseDisplay.Text = "Mode: Normal"
-caseDisplay.Font = Enum.Font.Gotham
-caseDisplay.TextSize = 10
-caseDisplay.TextXAlignment = Enum.TextXAlignment.Left
-caseDisplay.Parent = contentFrame
-
--- ========== DRAGGING FOR HUB BUTTON ==========
+-- ========== DRAGGING ==========
 local dragging = false
 local dragInput, dragStart, startPos
 
@@ -374,7 +360,7 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- ========== DRAGGING FOR MAIN FRAME ==========
+-- Main frame dragging
 local mainDragging = false
 local mainDragInput, mainDragStart, mainDragPos
 
@@ -405,7 +391,7 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- ========== TOGGLE HUB ==========
+-- ========== TOGGLE ==========
 hubButton.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		task.wait(0.1)
@@ -442,7 +428,7 @@ textbox:GetPropertyChangedSignal("Text"):Connect(function()
 	end
 end)
 
--- ========== SEND MESSAGE FUNCTION ==========
+-- ========== SEND MESSAGE ==========
 local function applyCaseTransform(msg)
 	if caseMode == "upper" then
 		return string.upper(msg)
@@ -490,15 +476,6 @@ local function sendMessage(msg)
 	return false
 end
 
--- ========== MOBILE FIX FOR MULTI-LINE ==========
-textbox.FocusLost:Connect(function(enterPressed)
-	if enterPressed then
-		textbox.Text = textbox.Text .. "\n"
-		task.wait()
-		textbox:CaptureFocus()
-	end
-end)
-
 -- ========== CLEAR BUTTON ==========
 clearBtn.MouseButton1Click:Connect(function()
 	textbox.Text = ""
@@ -507,7 +484,7 @@ clearBtn.MouseButton1Click:Connect(function()
 	statusLabel.Text = "Ready"
 end)
 
--- ========== SEND ALL BUTTON ==========
+-- ========== SEND ALL ==========
 sendAllBtn.MouseButton1Click:Connect(function()
 	local text = textbox.Text
 	if text == "" then return end
@@ -526,10 +503,7 @@ sendAllBtn.MouseButton1Click:Connect(function()
 	
 	sendAllBtn.Text = "Sending..."
 	sendAllBtn.BackgroundColor3 = Color3.fromRGB(255, 193, 7)
-	statusLabel.Text = "Sending "..#lines.." messages..."
-	
-	local caseDisplayText = caseMode == "upper" and "UPPERCASE" or caseMode == "lower" and "lowercase" or "Normal"
-	caseDisplay.Text = "Mode: "..caseDisplayText
+	statusLabel.Text = "Sending "..#lines.."..."
 	
 	spawn(function()
 		for i, line in ipairs(lines) do
@@ -541,7 +515,7 @@ sendAllBtn.MouseButton1Click:Connect(function()
 		end
 		sendAllBtn.Text = "Send All"
 		sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-		statusLabel.Text = "Done! Sent "..#lines.." messages"
+		statusLabel.Text = "Done! "..#lines.." sent"
 	end)
 end)
 
@@ -560,4 +534,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	end
 end)
 
-print("✅ Multi-Line Chat Hub Loaded (Improved)")
+print("✅ Multi-Line Chat Hub Loaded (Wide)")
