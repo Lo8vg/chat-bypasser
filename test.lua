@@ -1,8 +1,9 @@
--- Chat Trigger Pro
+-- Chat Trigger Pro (With Save System)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -11,14 +12,46 @@ local playerGui = player:WaitForChild("PlayerGui")
 local enabled = false
 local spamming = false
 local savedMessages = {}
+local FILE_NAME = "ChatTriggerPro_Save.json"
 
--- Create ScreenGui
+-- ========== SAVE/LOAD FUNCTIONS ==========
+local function saveData()
+	local data = {
+		trigger = triggerBox.Text,
+		delay = delayBox.Text,
+		messages = savedMessages
+	}
+	local success, encoded = pcall(function()
+		return HttpService:JSONEncode(data)
+	end)
+	if success and encoded then
+		writefile(FILE_NAME, encoded)
+	end
+end
+
+local function loadData()
+	local success, content = pcall(function()
+		return readfile(FILE_NAME)
+	end)
+	if success and content then
+		local data = HttpService:JSONDecode(content)
+		if data then
+			if data.messages then
+				savedMessages = data.messages
+			end
+			return data
+		end
+	end
+	return nil
+end
+
+-- ========== CREATE GUI ==========
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ChatTriggerPro"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- ========== HUB BUTTON ==========
+-- Hub Button
 local hubButton = Instance.new("Frame")
 hubButton.Name = "HubButton"
 hubButton.Size = UDim2.new(0, 50, 0, 50)
@@ -45,7 +78,7 @@ hubIcon.Font = Enum.Font.GothamBold
 hubIcon.TextSize = 24
 hubIcon.Parent = hubButton
 
--- ========== MAIN FRAME ==========
+-- Main Frame
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(0, 280, 0, 350)
@@ -114,7 +147,7 @@ contentFrame.Position = UDim2.new(0, 0, 0, 38)
 contentFrame.BackgroundTransparency = 1
 contentFrame.Parent = mainFrame
 
--- ========== TRIGGER SECTION ==========
+-- Trigger Section
 local triggerSection = Instance.new("Frame")
 triggerSection.Size = UDim2.new(1, -20, 0, 50)
 triggerSection.Position = UDim2.new(0, 10, 0, 5)
@@ -153,7 +186,7 @@ triggerStroke.Color = Color3.fromRGB(50, 50, 60)
 triggerStroke.Thickness = 1
 triggerStroke.Parent = triggerBox
 
--- ========== MESSAGES LIST SECTION ==========
+-- Messages List Section
 local listSection = Instance.new("Frame")
 listSection.Size = UDim2.new(1, -20, 0, 145)
 listSection.Position = UDim2.new(0, 10, 0, 60)
@@ -170,7 +203,6 @@ listLabel.TextSize = 9
 listLabel.TextXAlignment = Enum.TextXAlignment.Left
 listLabel.Parent = listSection
 
--- Scrolling Frame Container
 local listContainer = Instance.new("Frame")
 listContainer.Size = UDim2.new(1, 0, 0, 105)
 listContainer.Position = UDim2.new(0, 0, 0, 18)
@@ -186,7 +218,6 @@ listContainerStroke.Color = Color3.fromRGB(50, 50, 60)
 listContainerStroke.Thickness = 1
 listContainerStroke.Parent = listContainer
 
--- Scrolling Frame
 local scrollingList = Instance.new("ScrollingFrame")
 scrollingList.Size = UDim2.new(1, -4, 1, -4)
 scrollingList.Position = UDim2.new(0, 2, 0, 2)
@@ -200,7 +231,7 @@ listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 listLayout.Padding = UDim.new(0, 4)
 listLayout.Parent = scrollingList
 
--- ========== ADD MESSAGE SECTION ==========
+-- Add Message Section
 local addSection = Instance.new("Frame")
 addSection.Size = UDim2.new(1, -20, 0, 50)
 addSection.Position = UDim2.new(0, 10, 0, 210)
@@ -253,7 +284,7 @@ local addBtnCorner = Instance.new("UICorner")
 addBtnCorner.CornerRadius = UDim.new(0, 6)
 addBtnCorner.Parent = addBtn
 
--- ========== SETTINGS ROW ==========
+-- Settings Row
 local settingsRow = Instance.new("Frame")
 settingsRow.Size = UDim2.new(1, -20, 0, 30)
 settingsRow.Position = UDim2.new(0, 10, 0, 265)
@@ -313,7 +344,7 @@ countLabel.TextSize = 10
 countLabel.TextXAlignment = Enum.TextXAlignment.Right
 countLabel.Parent = settingsRow
 
--- ========== ENABLE BUTTON ==========
+-- Enable Button
 local enableBtn = Instance.new("TextButton")
 enableBtn.Size = UDim2.new(1, -20, 0, 34)
 enableBtn.Position = UDim2.new(0, 10, 0, 300)
@@ -457,10 +488,12 @@ local function updateList()
 		removeBtn.MouseButton1Click:Connect(function()
 			table.remove(savedMessages, i)
 			updateList()
+			saveData()
 		end)
 	end
 	
 	scrollingList.CanvasSize = UDim2.new(0, 0, 0, #savedMessages * 30)
+	saveData()
 end
 
 -- ========== ADD MESSAGE ==========
@@ -483,6 +516,15 @@ addBox.FocusLost:Connect(function(enterPressed)
 			updateList()
 		end
 	end
+end)
+
+-- Save on trigger/delay change
+triggerBox.FocusLost:Connect(function()
+	saveData()
+end)
+
+delayBox.FocusLost:Connect(function()
+	saveData()
 end)
 
 -- ========== SEND MESSAGE FUNCTION ==========
@@ -531,7 +573,7 @@ enableBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- ========== CHAT DETECTION =---------
+-- ========== CHAT DETECTION ==========
 local function onChatted(msg)
 	if not enabled then return end
 	if spamming then return end
@@ -578,5 +620,19 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	end
 end)
 
+-- ========== LOAD SAVED DATA ON START ==========
+local loadedData = loadData()
+if loadedData then
+	if loadedData.trigger then
+		triggerBox.Text = loadedData.trigger
+	end
+	if loadedData.delay then
+		delayBox.Text = loadedData.delay
+	end
+	if loadedData.messages then
+		savedMessages = loadedData.messages
+	end
+end
+
 updateList()
-print("✅ Chat Trigger Pro Loaded")
+print("✅ Chat Trigger Pro Loaded (With Save System)")
