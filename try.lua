@@ -7,6 +7,8 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
+print("✅ MULTI-TOOL HUB Loading...")
+
 -- Colors (Shared across all tabs)
 local COLORS = {
     background = Color3.fromRGB(245, 245, 245),
@@ -60,7 +62,15 @@ hubButtonIcon.Font = Enum.Font.GothamBold
 hubButtonIcon.TextSize = 22
 hubButtonIcon.Parent = hubButton
 
--- ========== MAIN FRAME (Wide, Not Tall) ==========
+-- Hub Button Click Detection (for mobile tap)
+local hubButtonTouch = Instance.new("TextButton")
+hubButtonTouch.Name = "TouchButton"
+hubButtonTouch.Size = UDim2.new(1, 0, 1, 0)
+hubButtonTouch.BackgroundTransparency = 1
+hubButtonTouch.Text = ""
+hubButtonTouch.Parent = hubButton
+
+-- ========== MAIN FRAME ==========
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
@@ -163,7 +173,7 @@ for i, name in ipairs(tabNames) do
     currentX = currentX + tabWidths[i]
 end
 
--- ========== CONTENT FRAME (where tab UIs appear) ==========
+-- ========== CONTENT FRAME ==========
 
 local contentFrame = Instance.new("Frame")
 contentFrame.Size = UDim2.new(1, -20, 1, -80)
@@ -1181,12 +1191,22 @@ killButtonCorner.Parent = killButton
 
 local dragging = false
 local dragInput, dragStart, startPos
+local dragDistance = 0
+
+hubButtonTouch.MouseButton1Click:Connect(function()
+    if dragDistance < 10 then
+        hubButton.Visible = false
+        mainFrame.Visible = true
+    end
+    dragDistance = 0
+end)
 
 hubButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
         startPos = hubButton.Position
+        dragDistance = 0
         
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
@@ -1205,6 +1225,7 @@ end)
 UserInputService.InputChanged:Connect(function(input)
     if input == dragInput and dragging then
         local delta = input.Position - dragStart
+        dragDistance = delta.Magnitude
         hubButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
@@ -1217,39 +1238,25 @@ titleBar.InputBegan:Connect(function(input)
         hubDragging = true
         hubDragStart = input.Position
         hubDragPos = mainFrame.Position
-        
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                hubDragging = false
-            end
-        end)
     end
 end)
 
-titleBar.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        hubDragInput = input
+titleBar.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        hubDragging = false
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if input == hubDragInput and hubDragging then
-        local delta = input.Position - hubDragStart
-        mainFrame.Position = UDim2.new(hubDragPos.X.Scale, hubDragPos.X.Offset + delta.X, hubDragPos.Y.Scale, hubDragPos.Y.Offset + delta.Y)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        if hubDragging then
+            local delta = input.Position - hubDragStart
+            mainFrame.Position = UDim2.new(hubDragPos.X.Scale, hubDragPos.X.Offset + delta.X, hubDragPos.Y.Scale, hubDragPos.Y.Offset + delta.Y)
+        end
     end
 end)
 
 -- ========== TOGGLE HUB ==========
-
-hubButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        wait(0.1)
-        if not dragging then
-            hubButton.Visible = false
-            mainFrame.Visible = true
-        end
-    end
-end)
 
 collapseButton.MouseButton1Click:Connect(function()
     mainFrame.Visible = false
@@ -1288,21 +1295,21 @@ end
 
 local targetPlayer = nil
 local playerLists = {playerScroll1, playerScroll2, playerScroll3, playerScroll4}
-local playerButtons = {}
 
 -- ========== PLAYER LIST UPDATE ==========
 
 local function updateAllPlayerLists()
     for scrollIdx, scroll in ipairs(playerLists) do
-        for _, btn in pairs(scroll:GetChildren()) do
-            if btn:IsA("TextButton") then
-                btn:Destroy()
+        for _, child in pairs(scroll:GetChildren()) do
+            if child:IsA("TextButton") then
+                child:Destroy()
             end
         end
     end
-    playerButtons = {}
     
-    for _, plr in pairs(Players:GetPlayers()) do
+    local players = Players:GetPlayers()
+    
+    for _, plr in pairs(players) do
         if plr ~= player then
             for scrollIdx, scroll in ipairs(playerLists) do
                 local btn = Instance.new("TextButton")
@@ -1330,8 +1337,17 @@ local function updateAllPlayerLists()
         end
     end
     
-    for _, scroll in ipairs(playerLists) do
-        scroll.CanvasSize = UDim2.new(0, 0, 0, scroll:GetChildren()[1] and 22 or 0)
+    for scrollIdx, scroll in ipairs(playerLists) do
+        local listLayout = scroll:FindFirstChild("UIListLayout")
+        if listLayout then
+            local contentHeight = 0
+            for _, child in pairs(scroll:GetChildren()) do
+                if child:IsA("TextButton") then
+                    contentHeight = contentHeight + 22
+                end
+            end
+            scroll.CanvasSize = UDim2.new(0, 0, 0, contentHeight)
+        end
     end
 end
 
@@ -1969,6 +1985,7 @@ toggle3.MouseButton1Click:Connect(function()
         stopFling3()
     end
 end)
+
 -- ========== TAB 4: COMBO DESTROYER ==========
 
 local fling4Enabled = false
@@ -2183,7 +2200,6 @@ local function startFling4()
         local targetRoot = getRoot(targetPlayer.Character)
         if not targetRoot then return end
         
-        -- Run fling based on mode
         if collisionMode4 == "devastate" then
             devastateFling4(targetRoot, myRoot, myHumanoid)
         elseif collisionMode4 == "orbital" then
@@ -2192,7 +2208,6 @@ local function startFling4()
             chaosFling4(targetRoot, myRoot, myHumanoid)
         end
         
-        -- Run sword attack (both run together)
         swordAttack4(targetRoot, myRoot)
     end)
 end
@@ -2211,7 +2226,6 @@ toggle4.MouseButton1Click:Connect(function()
         toggle4.BackgroundColor3 = COLORS.buttonSuccess
         status4.Text = "Destroying: " .. targetPlayer.Name .. " (" .. collisionMode4:upper() .. ")"
         
-        -- Equip sword immediately
         equipSword()
         
         startFling4()
@@ -2223,7 +2237,6 @@ toggle4.MouseButton1Click:Connect(function()
         stopFling4()
     end
 end)
-
 -- ========== RESPAWN HANDLERS ==========
 
 player.CharacterAdded:Connect(function(char)
