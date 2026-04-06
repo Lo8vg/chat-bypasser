@@ -1,4 +1,4 @@
--- Multi-Line Chat Hub (Fixed + Clear + Case Mode Toggle)
+-- Multi-Line Chat Hub (Fixed)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -10,7 +10,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 -- Settings
 local MAX_CHARS = 200
 local expanded = false
-local caseMode = "normal"
+local caseMode = "normal" -- "upper", "lower", "normal"
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -18,7 +18,7 @@ screenGui.Name = "MultiChatHub"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- ========== HUB BUTTON ==========
+-- ========== HUB BUTTON (Collapsed State) ==========
 local hubButton = Instance.new("Frame")
 hubButton.Name = "HubButton"
 hubButton.Size = UDim2.new(0, 50, 0, 50)
@@ -41,11 +41,11 @@ hubIcon.Font = Enum.Font.GothamBold
 hubIcon.TextSize = 22
 hubIcon.Parent = hubButton
 
--- ========== MAIN FRAME ==========
+-- ========== MAIN FRAME (Expanded State) ==========
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 220, 0, 320)
-mainFrame.Position = UDim2.new(0, 20, 0.5, -160)
+mainFrame.Size = UDim2.new(0, 220, 0, 340)
+mainFrame.Position = UDim2.new(0, 20, 0.5, -170)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BorderSizePixel = 2
 mainFrame.BorderColor3 = Color3.fromRGB(60, 60, 60)
@@ -155,16 +155,15 @@ charCounter.TextSize = 10
 charCounter.TextXAlignment = Enum.TextXAlignment.Right
 charCounter.Parent = contentFrame
 
--- Case Mode Row
+-- ========== CASE MODE BUTTONS ==========
 local caseRow = Instance.new("Frame")
-caseRow.Size = UDim2.new(1, -20, 0, 28)
+caseRow.Size = UDim2.new(1, -20, 0, 24)
 caseRow.Position = UDim2.new(0, 10, 0, 152)
 caseRow.BackgroundTransparency = 1
 caseRow.Parent = contentFrame
 
--- UPPER Button
 local upperBtn = Instance.new("TextButton")
-upperBtn.Size = UDim2.new(0.35, -2, 1, 0)
+upperBtn.Size = UDim2.new(0.33, -2, 1, 0)
 upperBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 upperBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 upperBtn.Text = "UPPER"
@@ -175,10 +174,9 @@ local upperCorner = Instance.new("UICorner")
 upperCorner.CornerRadius = UDim.new(0, 6)
 upperCorner.Parent = upperBtn
 
--- LOWER Button
 local lowerBtn = Instance.new("TextButton")
-lowerBtn.Size = UDim2.new(0.35, -2, 1, 0)
-lowerBtn.Position = UDim2.new(0.35, 2, 0, 0)
+lowerBtn.Size = UDim2.new(0.33, -2, 1, 0)
+lowerBtn.Position = UDim2.new(0.33, 2, 0, 0)
 lowerBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 lowerBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 lowerBtn.Text = "lower"
@@ -189,10 +187,9 @@ local lowerCorner = Instance.new("UICorner")
 lowerCorner.CornerRadius = UDim.new(0, 6)
 lowerCorner.Parent = lowerBtn
 
--- NORMAL Button
 local normalBtn = Instance.new("TextButton")
-normalBtn.Size = UDim2.new(0.3, -2, 1, 0)
-normalBtn.Position = UDim2.new(0.7, 2, 0, 0)
+normalBtn.Size = UDim2.new(0.34, -2, 1, 0)
+normalBtn.Position = UDim2.new(0.66, 2, 0, 0)
 normalBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 normalBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 normalBtn.Text = "Normal"
@@ -203,16 +200,15 @@ local normalCorner = Instance.new("UICorner")
 normalCorner.CornerRadius = UDim.new(0, 6)
 normalCorner.Parent = normalBtn
 
--- Button Row (CLR + Send All)
+-- ========== BUTTON ROW (CLEAR + SEND ALL) ==========
 local buttonRow = Instance.new("Frame")
 buttonRow.Size = UDim2.new(1, -20, 0, 32)
-buttonRow.Position = UDim2.new(0, 10, 0, 185)
+buttonRow.Position = UDim2.new(0, 10, 0, 180)
 buttonRow.BackgroundTransparency = 1
 buttonRow.Parent = contentFrame
 
--- Clear Button
 local clearBtn = Instance.new("TextButton")
-clearBtn.Size = UDim2.new(0.25, -2, 1, 0)
+clearBtn.Size = UDim2.new(0, 55, 1, 0)
 clearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 clearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 clearBtn.Text = "CLR"
@@ -223,10 +219,9 @@ local clearCorner = Instance.new("UICorner")
 clearCorner.CornerRadius = UDim.new(0, 6)
 clearCorner.Parent = clearBtn
 
--- Send All Button
 local sendAllBtn = Instance.new("TextButton")
-sendAllBtn.Size = UDim2.new(0.73, -2, 1, 0)
-sendAllBtn.Position = UDim2.new(0.27, 2, 0, 0)
+sendAllBtn.Size = UDim2.new(1, -59, 1, 0)
+sendAllBtn.Position = UDim2.new(0, 57, 0, 0)
 sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 sendAllBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 sendAllBtn.Text = "Send All"
@@ -240,7 +235,7 @@ sendAllCorner.Parent = sendAllBtn
 -- Delay Row
 local delayRow = Instance.new("Frame")
 delayRow.Size = UDim2.new(1, -20, 0, 28)
-delayRow.Position = UDim2.new(0, 10, 0, 222)
+delayRow.Position = UDim2.new(0, 10, 0, 217)
 delayRow.BackgroundTransparency = 1
 delayRow.Parent = contentFrame
 
@@ -284,7 +279,7 @@ secLabel.Parent = delayRow
 -- Status Label
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -20, 0, 16)
-statusLabel.Position = UDim2.new(0, 10, 0, 255)
+statusLabel.Position = UDim2.new(0, 10, 0, 250)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 statusLabel.Text = "Mode: Normal"
@@ -396,6 +391,7 @@ end)
 local function sendMessage(msg)
     local message = msg
     
+    -- Apply case mode
     if caseMode == "upper" then
         message = string.upper(message)
     elseif caseMode == "lower" then
