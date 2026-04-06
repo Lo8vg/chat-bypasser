@@ -1,4 +1,4 @@
--- COMBO DESTROYER: FLING + SWORD AUTO ATTACK (Compact 300x200)
+-- COMBO DESTROYER: FLING + SWORD AUTO ATTACK (300x350)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -48,8 +48,8 @@ screenGui.Parent = playerGui
 
 -- Hub Button
 local hubButton = Instance.new("Frame")
-hubButton.Size = UDim2.new(0, 40, 0, 40)
-hubButton.Position = UDim2.new(0, 10, 0.5, -20)
+hubButton.Size = UDim2.new(0, 45, 0, 45)
+hubButton.Position = UDim2.new(0, 10, 0.5, -22)
 hubButton.BackgroundColor3 = COLORS.cardBg
 hubButton.BorderSizePixel = 0
 hubButton.Parent = screenGui
@@ -62,13 +62,13 @@ hubIcon.BackgroundTransparency = 1
 hubIcon.TextColor3 = COLORS.textDark
 hubIcon.Text = "💀"
 hubIcon.Font = Enum.Font.GothamBold
-hubIcon.TextSize = 18
+hubIcon.TextSize = 20
 hubIcon.Parent = hubButton
 
 -- Main Frame
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 300, 0, 200)
-mainFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+mainFrame.Size = UDim2.new(0, 300, 0, 350)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -175)
 mainFrame.BackgroundColor3 = COLORS.background
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -79,32 +79,32 @@ mfCorner.Parent = mainFrame
 
 -- Title Bar
 local titleBar = Instance.new("Frame")
-titleBar.Size = UDim2.new(1, 0, 0, 24)
+titleBar.Size = UDim2.new(1, 0, 0, 28)
 titleBar.BackgroundColor3 = COLORS.header
 titleBar.Parent = mainFrame
 local tbCorner = Instance.new("UICorner")
 tbCorner.CornerRadius = UDim.new(0, 10)
 tbCorner.Parent = titleBar
 local tbFix = Instance.new("Frame")
-tbFix.Size = UDim2.new(1, 0, 0, 10)
-tbFix.Position = UDim2.new(0, 0, 1, -10)
+tbFix.Size = UDim2.new(1, 0, 0, 12)
+tbFix.Position = UDim2.new(0, 0, 1, -12)
 tbFix.BackgroundColor3 = COLORS.header
 tbFix.BorderSizePixel = 0
 tbFix.Parent = titleBar
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -60, 1, 0)
-title.Position = UDim2.new(0, 8, 0, 0)
+title.Position = UDim2.new(0, 10, 0, 0)
 title.BackgroundTransparency = 1
 title.TextColor3 = COLORS.textDark
 title.Text = "💀 COMBO DESTROYER"
 title.Font = Enum.Font.GothamBold
-title.TextSize = 11
+title.TextSize = 12
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = titleBar
 
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 22, 0, 18)
-closeBtn.Position = UDim2.new(1, -48, 0.5, -9)
+closeBtn.Size = UDim2.new(0, 24, 0, 20)
+closeBtn.Position = UDim2.new(1, -52, 0.5, -10)
 closeBtn.BackgroundColor3 = COLORS.buttonDanger
 closeBtn.TextColor3 = COLORS.textLight
 closeBtn.Text = "✕"
@@ -112,12 +112,12 @@ closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 10
 closeBtn.Parent = titleBar
 local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 4)
+closeCorner.CornerRadius = UDim.new(0, 5)
 closeCorner.Parent = closeBtn
 
 local killBtn = Instance.new("TextButton")
-killBtn.Size = UDim2.new(0, 22, 0, 18)
-killBtn.Position = UDim2.new(1, -24, 0.5, -9)
+killBtn.Size = UDim2.new(0, 24, 0, 20)
+killBtn.Position = UDim2.new(1, -26, 0.5, -10)
 killBtn.BackgroundColor3 = Color3.fromRGB(139, 0, 0)
 killBtn.TextColor3 = COLORS.textLight
 killBtn.Text = "☠"
@@ -125,243 +125,259 @@ killBtn.Font = Enum.Font.GothamBold
 killBtn.TextSize = 10
 killBtn.Parent = titleBar
 local killCorner = Instance.new("UICorner")
-killCorner.CornerRadius = UDim.new(0, 4)
+killCorner.CornerRadius = UDim.new(0, 5)
 killCorner.Parent = killBtn
 
 -- Content
 local content = Instance.new("Frame")
-content.Size = UDim2.new(1, -10, 1, -28)
-content.Position = UDim2.new(0, 5, 0, 26)
+content.Size = UDim2.new(1, -12, 1, -32)
+content.Position = UDim2.new(0, 6, 0, 30)
 content.BackgroundTransparency = 1
 content.Parent = mainFrame
 
--- Left Side
-local leftSide = Instance.new("Frame")
-leftSide.Size = UDim2.new(0.48, 0, 1, 0)
-leftSide.BackgroundTransparency = 1
-leftSide.Parent = content
-
+-- Toggle Button
 local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(1, 0, 0, 22)
+toggleBtn.Size = UDim2.new(1, 0, 0, 32)
 toggleBtn.BackgroundColor3 = COLORS.buttonDanger
 toggleBtn.TextColor3 = COLORS.textLight
 toggleBtn.Text = "DESTROY: OFF"
 toggleBtn.Font = Enum.Font.GothamBold
-toggleBtn.TextSize = 10
-toggleBtn.Parent = leftSide
+toggleBtn.TextSize = 14
+toggleBtn.Parent = content
 local togCorner = Instance.new("UICorner")
-togCorner.CornerRadius = UDim.new(0, 5)
+togCorner.CornerRadius = UDim.new(0, 6)
 togCorner.Parent = toggleBtn
 
 local statusLbl = Instance.new("TextLabel")
-statusLbl.Size = UDim2.new(1, 0, 0, 14)
-statusLbl.Position = UDim2.new(0, 0, 0, 24)
+statusLbl.Size = UDim2.new(1, 0, 0, 16)
+statusLbl.Position = UDim2.new(0, 0, 0, 35)
 statusLbl.BackgroundTransparency = 1
 statusLbl.TextColor3 = COLORS.textMuted
-statusLbl.Text = "No target"
+statusLbl.Text = "No target selected"
 statusLbl.Font = Enum.Font.Gotham
-statusLbl.TextSize = 8
-statusLbl.Parent = leftSide
+statusLbl.TextSize = 9
+statusLbl.Parent = content
+
+-- Target Section
+local targetLbl = Instance.new("TextLabel")
+targetLbl.Size = UDim2.new(1, 0, 0, 14)
+targetLbl.Position = UDim2.new(0, 0, 0, 55)
+targetLbl.BackgroundTransparency = 1
+targetLbl.TextColor3 = COLORS.textDark
+targetLbl.Text = "Select Target:"
+targetLbl.Font = Enum.Font.GothamBold
+targetLbl.TextSize = 9
+targetLbl.TextXAlignment = Enum.TextXAlignment.Left
+targetLbl.Parent = content
 
 local playerList = Instance.new("ScrollingFrame")
-playerList.Size = UDim2.new(1, 0, 0, 70)
-playerList.Position = UDim2.new(0, 0, 0, 40)
+playerList.Size = UDim2.new(1, 0, 0, 80)
+playerList.Position = UDim2.new(0, 0, 0, 72)
 playerList.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
 playerList.ScrollBarThickness = 3
-playerList.Parent = leftSide
+playerList.Parent = content
 local plCorner = Instance.new("UICorner")
-plCorner.CornerRadius = UDim.new(0, 4)
+plCorner.CornerRadius = UDim.new(0, 5)
 plCorner.Parent = playerList
 local plLayout = Instance.new("UIListLayout")
-plLayout.Padding = UDim.new(0, 1)
+plLayout.Padding = UDim.new(0, 2)
 plLayout.Parent = playerList
 
+-- Mode Section
 local modeLbl = Instance.new("TextLabel")
-modeLbl.Size = UDim2.new(1, 0, 0, 12)
-modeLbl.Position = UDim2.new(0, 0, 0, 114)
+modeLbl.Size = UDim2.new(1, 0, 0, 14)
+modeLbl.Position = UDim2.new(0, 0, 0, 158)
 modeLbl.BackgroundTransparency = 1
 modeLbl.TextColor3 = COLORS.textDark
-modeLbl.Text = "Mode:"
+modeLbl.Text = "Fling Mode:"
 modeLbl.Font = Enum.Font.GothamBold
-modeLbl.TextSize = 8
+modeLbl.TextSize = 9
 modeLbl.TextXAlignment = Enum.TextXAlignment.Left
-modeLbl.Parent = leftSide
+modeLbl.Parent = content
 
 local devBtn = Instance.new("TextButton")
-devBtn.Size = UDim2.new(0.33, -1, 0, 18)
+devBtn.Size = UDim2.new(0.33, -2, 0, 22)
+devBtn.Position = UDim2.new(0, 0, 0, 174)
 devBtn.BackgroundColor3 = COLORS.buttonSuccess
 devBtn.TextColor3 = COLORS.textLight
-devBtn.Text = "DEV"
+devBtn.Text = "✓ DEVASTATE"
 devBtn.Font = Enum.Font.GothamBold
 devBtn.TextSize = 8
-devBtn.Parent = leftSide
+devBtn.Parent = content
 local devCorner = Instance.new("UICorner")
-devCorner.CornerRadius = UDim.new(0, 3)
+devCorner.CornerRadius = UDim.new(0, 4)
 devCorner.Parent = devBtn
 
 local orbBtn = Instance.new("TextButton")
-orbBtn.Size = UDim2.new(0.33, -1, 0, 18)
-orbBtn.Position = UDim2.new(0.33, 1, 0, 0)
+orbBtn.Size = UDim2.new(0.33, -2, 0, 22)
+orbBtn.Position = UDim2.new(0.33, 2, 0, 174)
 orbBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
 orbBtn.TextColor3 = COLORS.textDark
-orbBtn.Text = "ORB"
+orbBtn.Text = "ORBITAL"
 orbBtn.Font = Enum.Font.Gotham
 orbBtn.TextSize = 8
-orbBtn.Parent = leftSide
+orbBtn.Parent = content
 local orbCorner = Instance.new("UICorner")
-orbCorner.CornerRadius = UDim.new(0, 3)
+orbCorner.CornerRadius = UDim.new(0, 4)
 orbCorner.Parent = orbBtn
 
 local chaosBtn = Instance.new("TextButton")
-chaosBtn.Size = UDim2.new(0.34, -1, 0, 18)
-chaosBtn.Position = UDim2.new(0.66, 2, 0, 0)
+chaosBtn.Size = UDim2.new(0.34, -2, 0, 22)
+chaosBtn.Position = UDim2.new(0.66, 4, 0, 174)
 chaosBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
 chaosBtn.TextColor3 = COLORS.textDark
 chaosBtn.Text = "CHAOS"
 chaosBtn.Font = Enum.Font.Gotham
 chaosBtn.TextSize = 8
-chaosBtn.Parent = leftSide
+chaosBtn.Parent = content
 local chaosCorner = Instance.new("UICorner")
-chaosCorner.CornerRadius = UDim.new(0, 3)
+chaosCorner.CornerRadius = UDim.new(0, 4)
 chaosCorner.Parent = chaosBtn
 
--- Right Side
-local rightSide = Instance.new("Frame")
-rightSide.Size = UDim2.new(0.52, -5, 1, 0)
-rightSide.Position = UDim2.new(0.48, 5, 0, 0)
-rightSide.BackgroundTransparency = 1
-rightSide.Parent = content
+-- Toggles Section
+local toggleLbl = Instance.new("TextLabel")
+toggleLbl.Size = UDim2.new(1, 0, 0, 14)
+toggleLbl.Position = UDim2.new(0, 0, 0, 202)
+toggleLbl.BackgroundTransparency = 1
+toggleLbl.TextColor3 = COLORS.textDark
+toggleLbl.Text = "Options:"
+toggleLbl.Font = Enum.Font.GothamBold
+toggleLbl.TextSize = 9
+toggleLbl.TextXAlignment = Enum.TextXAlignment.Left
+toggleLbl.Parent = content
 
 local swordTog = Instance.new("TextButton")
-swordTog.Size = UDim2.new(1, 0, 0, 16)
+swordTog.Size = UDim2.new(0.5, -2, 0, 20)
+swordTog.Position = UDim2.new(0, 0, 0, 218)
 swordTog.BackgroundColor3 = COLORS.buttonSuccess
 swordTog.TextColor3 = COLORS.textLight
 swordTog.Text = "✓ Sword"
 swordTog.Font = Enum.Font.Gotham
 swordTog.TextSize = 8
-swordTog.Parent = rightSide
+swordTog.Parent = content
 local stCorner = Instance.new("UICorner")
-stCorner.CornerRadius = UDim.new(0, 3)
+stCorner.CornerRadius = UDim.new(0, 4)
 stCorner.Parent = swordTog
 
 local velTog = Instance.new("TextButton")
-velTog.Size = UDim2.new(0.5, -1, 0, 16)
-velTog.Position = UDim2.new(0, 0, 0, 18)
+velTog.Size = UDim2.new(0.5, -2, 0, 20)
+velTog.Position = UDim2.new(0.5, 2, 0, 218)
 velTog.BackgroundColor3 = COLORS.buttonSuccess
 velTog.TextColor3 = COLORS.textLight
-velTog.Text = "✓ Vel"
+velTog.Text = "✓ Velocity"
 velTog.Font = Enum.Font.Gotham
 velTog.TextSize = 8
-velTog.Parent = rightSide
+velTog.Parent = content
 local vtCorner = Instance.new("UICorner")
-vtCorner.CornerRadius = UDim.new(0, 3)
+vtCorner.CornerRadius = UDim.new(0, 4)
 vtCorner.Parent = velTog
 
 local angTog = Instance.new("TextButton")
-angTog.Size = UDim2.new(0.5, -1, 0, 16)
-angTog.Position = UDim2.new(0.5, 1, 0, 18)
+angTog.Size = UDim2.new(0.5, -2, 0, 20)
+angTog.Position = UDim2.new(0, 0, 0, 241)
 angTog.BackgroundColor3 = COLORS.buttonSuccess
 angTog.TextColor3 = COLORS.textLight
-angTog.Text = "✓ Ang"
+angTog.Text = "✓ Angular"
 angTog.Font = Enum.Font.Gotham
 angTog.TextSize = 8
-angTog.Parent = rightSide
+angTog.Parent = content
 local atCorner = Instance.new("UICorner")
-atCorner.CornerRadius = UDim.new(0, 3)
+atCorner.CornerRadius = UDim.new(0, 4)
 atCorner.Parent = angTog
 
 local tpTog = Instance.new("TextButton")
-tpTog.Size = UDim2.new(0.5, -1, 0, 16)
-tpTog.Position = UDim2.new(0, 0, 0, 36)
+tpTog.Size = UDim2.new(0.5, -2, 0, 20)
+tpTog.Position = UDim2.new(0.5, 2, 0, 241)
 tpTog.BackgroundColor3 = COLORS.buttonSuccess
 tpTog.TextColor3 = COLORS.textLight
-tpTog.Text = "✓ TP"
+tpTog.Text = "✓ Teleport"
 tpTog.Font = Enum.Font.Gotham
 tpTog.TextSize = 8
-tpTog.Parent = rightSide
+tpTog.Parent = content
 local tpCorner = Instance.new("UICorner")
-tpCorner.CornerRadius = UDim.new(0, 3)
+tpCorner.CornerRadius = UDim.new(0, 4)
 tpCorner.Parent = tpTog
 
 local massTog = Instance.new("TextButton")
-massTog.Size = UDim2.new(0.5, -1, 0, 16)
-massTog.Position = UDim2.new(0.5, 1, 0, 36)
+massTog.Size = UDim2.new(0.5, -2, 0, 20)
+massTog.Position = UDim2.new(0, 0, 0, 264)
 massTog.BackgroundColor3 = COLORS.buttonSuccess
 massTog.TextColor3 = COLORS.textLight
 massTog.Text = "✓ Mass"
 massTog.Font = Enum.Font.Gotham
 massTog.TextSize = 8
-massTog.Parent = rightSide
+massTog.Parent = content
 local mtCorner = Instance.new("UICorner")
-mtCorner.CornerRadius = UDim.new(0, 3)
+mtCorner.CornerRadius = UDim.new(0, 4)
 mtCorner.Parent = massTog
 
+-- Settings Inputs
+local settingsLbl = Instance.new("TextLabel")
+settingsLbl.Size = UDim2.new(1, 0, 0, 14)
+settingsLbl.Position = UDim2.new(0, 0, 0, 288)
+settingsLbl.BackgroundTransparency = 1
+settingsLbl.TextColor3 = COLORS.textDark
+settingsLbl.Text = "Settings:"
+settingsLbl.Font = Enum.Font.GothamBold
+settingsLbl.TextSize = 9
+settingsLbl.TextXAlignment = Enum.TextXAlignment.Left
+settingsLbl.Parent = content
+
 local velInput = Instance.new("TextBox")
-velInput.Size = UDim2.new(0.5, -1, 0, 18)
-velInput.Position = UDim2.new(0, 0, 0, 56)
+velInput.Size = UDim2.new(0.5, -2, 0, 20)
+velInput.Position = UDim2.new(0, 0, 0, 304)
 velInput.BackgroundColor3 = COLORS.inputBg
 velInput.TextColor3 = COLORS.textDark
 velInput.Text = "999999"
 velInput.Font = Enum.Font.Gotham
-velInput.TextSize = 8
-velInput.PlaceholderText = "Vel"
-velInput.Parent = rightSide
+velInput.TextSize = 9
+velInput.PlaceholderText = "Vel Power"
+velInput.Parent = content
 local viCorner = Instance.new("UICorner")
-viCorner.CornerRadius = UDim.new(0, 3)
+viCorner.CornerRadius = UDim.new(0, 4)
 viCorner.Parent = velInput
 
 local angInput = Instance.new("TextBox")
-angInput.Size = UDim2.new(0.5, -1, 0, 18)
-angInput.Position = UDim2.new(0.5, 1, 0, 56)
+angInput.Size = UDim2.new(0.5, -2, 0, 20)
+angInput.Position = UDim2.new(0.5, 2, 0, 304)
 angInput.BackgroundColor3 = COLORS.inputBg
 angInput.TextColor3 = COLORS.textDark
 angInput.Text = "999999"
 angInput.Font = Enum.Font.Gotham
-angInput.TextSize = 8
-angInput.PlaceholderText = "Ang"
-angInput.Parent = rightSide
+angInput.TextSize = 9
+angInput.PlaceholderText = "Ang Power"
+angInput.Parent = content
 local aiCorner = Instance.new("UICorner")
-aiCorner.CornerRadius = UDim.new(0, 3)
+aiCorner.CornerRadius = UDim.new(0, 4)
 aiCorner.Parent = angInput
 
 local swingInput = Instance.new("TextBox")
-swingInput.Size = UDim2.new(0.5, -1, 0, 18)
-swingInput.Position = UDim2.new(0, 0, 0, 76)
+swingInput.Size = UDim2.new(0.5, -2, 0, 20)
+swingInput.Position = UDim2.new(0, 0, 0, 327)
 swingInput.BackgroundColor3 = COLORS.inputBg
 swingInput.TextColor3 = COLORS.textDark
 swingInput.Text = "3"
 swingInput.Font = Enum.Font.Gotham
-swingInput.TextSize = 8
-swingInput.PlaceholderText = "Swing"
-swingInput.Parent = rightSide
+swingInput.TextSize = 9
+swingInput.PlaceholderText = "Swings"
+swingInput.Parent = content
 local siCorner = Instance.new("UICorner")
-siCorner.CornerRadius = UDim.new(0, 3)
+siCorner.CornerRadius = UDim.new(0, 4)
 siCorner.Parent = swingInput
 
 local reachInput = Instance.new("TextBox")
-reachInput.Size = UDim2.new(0.5, -1, 0, 18)
-reachInput.Position = UDim2.new(0.5, 1, 0, 76)
+reachInput.Size = UDim2.new(0.5, -2, 0, 20)
+reachInput.Position = UDim2.new(0.5, 2, 0, 327)
 reachInput.BackgroundColor3 = COLORS.inputBg
 reachInput.TextColor3 = COLORS.textDark
 reachInput.Text = "15"
 reachInput.Font = Enum.Font.Gotham
-reachInput.TextSize = 8
+reachInput.TextSize = 9
 reachInput.PlaceholderText = "Reach"
-reachInput.Parent = rightSide
+reachInput.Parent = content
 local riCorner = Instance.new("UICorner")
-riCorner.CornerRadius = UDim.new(0, 3)
+riCorner.CornerRadius = UDim.new(0, 4)
 riCorner.Parent = reachInput
-
-local infoLbl = Instance.new("TextLabel")
-infoLbl.Size = UDim2.new(1, 0, 0, 30)
-infoLbl.Position = UDim2.new(0, 0, 0, 98)
-infoLbl.BackgroundTransparency = 1
-infoLbl.TextColor3 = COLORS.textMuted
-infoLbl.Text = "Fling + Sword combo\nNo escape"
-infoLbl.Font = Enum.Font.Gotham
-infoLbl.TextSize = 7
-infoLbl.TextWrapped = true
-infoLbl.Parent = rightSide
 
 -- Dragging
 local dragging = false
@@ -450,10 +466,10 @@ end)
 -- Mode Buttons
 devBtn.MouseButton1Click:Connect(function()
     collisionMode = "devastate"
-    devBtn.Text = "DEV"
+    devBtn.Text = "✓ DEVASTATE"
     devBtn.BackgroundColor3 = COLORS.buttonSuccess
     devBtn.TextColor3 = COLORS.textLight
-    orbBtn.Text = "ORB"
+    orbBtn.Text = "ORBITAL"
     orbBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
     orbBtn.TextColor3 = COLORS.textDark
     chaosBtn.Text = "CHAOS"
@@ -463,10 +479,10 @@ end)
 
 orbBtn.MouseButton1Click:Connect(function()
     collisionMode = "orbital"
-    orbBtn.Text = "ORB"
+    orbBtn.Text = "✓ ORBITAL"
     orbBtn.BackgroundColor3 = COLORS.buttonSuccess
     orbBtn.TextColor3 = COLORS.textLight
-    devBtn.Text = "DEV"
+    devBtn.Text = "DEVASTATE"
     devBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
     devBtn.TextColor3 = COLORS.textDark
     chaosBtn.Text = "CHAOS"
@@ -476,13 +492,13 @@ end)
 
 chaosBtn.MouseButton1Click:Connect(function()
     collisionMode = "chaos"
-    chaosBtn.Text = "CHAOS"
+    chaosBtn.Text = "✓ CHAOS"
     chaosBtn.BackgroundColor3 = COLORS.buttonSuccess
     chaosBtn.TextColor3 = COLORS.textLight
-    devBtn.Text = "DEV"
+    devBtn.Text = "DEVASTATE"
     devBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
     devBtn.TextColor3 = COLORS.textDark
-    orbBtn.Text = "ORB"
+    orbBtn.Text = "ORBITAL"
     orbBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
     orbBtn.TextColor3 = COLORS.textDark
 end)
@@ -496,19 +512,19 @@ end)
 
 velTog.MouseButton1Click:Connect(function()
     velocityEnabled = not velocityEnabled
-    velTog.Text = velocityEnabled and "✓ Vel" or "✗ Vel"
+    velTog.Text = velocityEnabled and "✓ Velocity" or "✗ Velocity"
     velTog.BackgroundColor3 = velocityEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
 end)
 
 angTog.MouseButton1Click:Connect(function()
     angularEnabled = not angularEnabled
-    angTog.Text = angularEnabled and "✓ Ang" or "✗ Ang"
+    angTog.Text = angularEnabled and "✓ Angular" or "✗ Angular"
     angTog.BackgroundColor3 = angularEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
 end)
 
 tpTog.MouseButton1Click:Connect(function()
     teleportEnabled = not teleportEnabled
-    tpTog.Text = teleportEnabled and "✓ TP" or "✗ TP"
+    tpTog.Text = teleportEnabled and "✓ Teleport" or "✗ Teleport"
     tpTog.BackgroundColor3 = teleportEnabled and COLORS.buttonSuccess or COLORS.buttonDanger
 end)
 
@@ -530,15 +546,15 @@ local function updatePlayerList()
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= player then
             local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, 0, 0, 18)
+            btn.Size = UDim2.new(1, 0, 0, 20)
             btn.BackgroundColor3 = targetPlayer == plr and COLORS.buttonPrimary or Color3.fromRGB(240, 240, 240)
             btn.TextColor3 = targetPlayer == plr and COLORS.textLight or COLORS.textDark
             btn.Text = plr.Name
             btn.Font = Enum.Font.Gotham
-            btn.TextSize = 8
+            btn.TextSize = 9
             btn.Parent = playerList
             local btnCorner = Instance.new("UICorner")
-            btnCorner.CornerRadius = UDim.new(0, 3)
+            btnCorner.CornerRadius = UDim.new(0, 4)
             btnCorner.Parent = btn
             
             btn.MouseButton1Click:Connect(function()
@@ -551,7 +567,7 @@ local function updatePlayerList()
         end
     end
     
-    playerList.CanvasSize = UDim2.new(0, 0, 0, #playerButtons * 19)
+    playerList.CanvasSize = UDim2.new(0, 0, 0, #playerButtons * 22)
 end
 
 Players.PlayerAdded:Connect(updatePlayerList)
@@ -770,7 +786,7 @@ toggleBtn.MouseButton1Click:Connect(function()
     destroyEnabled = not destroyEnabled
     if destroyEnabled then
         if not targetPlayer then
-            statusLbl.Text = "Select target!"
+            statusLbl.Text = "Select a target first!"
             destroyEnabled = false
             return
         end
@@ -782,7 +798,7 @@ toggleBtn.MouseButton1Click:Connect(function()
     else
         toggleBtn.Text = "DESTROY: OFF"
         toggleBtn.BackgroundColor3 = COLORS.buttonDanger
-        statusLbl.Text = targetPlayer and ("Target: " .. targetPlayer.Name) or "No target"
+        statusLbl.Text = targetPlayer and ("Target: " .. targetPlayer.Name) or "No target selected"
         stopAll()
     end
 end)
@@ -813,4 +829,4 @@ player.CharacterRemoving:Connect(function()
     stopAll()
 end)
 
-print("✅ COMBO DESTROYER Loaded (Compact)")
+print("✅ COMBO DESTROYER Loaded (300x350)")
