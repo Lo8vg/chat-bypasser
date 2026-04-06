@@ -17,7 +17,6 @@ local flingCount = 0
 local velocityPower = 999999
 local angularPower = 999999
 local collisionMode = "devastate"
-local teleportMultiplier = 500
 
 -- Sword Settings
 local swordSwings = 3
@@ -33,7 +32,6 @@ local swordEnabled = true
 
 -- Loops
 local flingLoop = nil
-local swordLoop = nil
 
 -- Colors
 local COLORS = {
@@ -651,7 +649,6 @@ end)
 
 hubButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        wait(0.1)
         if not dragging then
             hubButton.Visible = false
             mainFrame.Visible = true
@@ -667,7 +664,6 @@ end)
 -- ========== KILL BUTTON ==========
 
 killButton.MouseButton1Click:Connect(function()
-    -- Stop all attacks
     destroyEnabled = false
     if flingLoop then
         flingLoop:Disconnect()
@@ -684,7 +680,6 @@ killButton.MouseButton1Click:Connect(function()
         bodyAngVel = nil
     end
     
-    -- Kill the GUI
     screenGui:Destroy()
 end)
 
@@ -806,6 +801,7 @@ Players.PlayerRemoving:Connect(function()
 end)
 
 updatePlayerList()
+
 -- ========== HELPER FUNCTIONS ==========
 
 local function getRoot(char)
@@ -909,9 +905,8 @@ end
 local function orbitalFling(targetRoot, myRoot, myHumanoid)
     velocityPower = tonumber(velocityInput.Text) or 999999
     angularPower = tonumber(angularInput.Text) or 999999
-    teleportMultiplier = tonumber(teleportInput.Text) or 500
     
-    angle = angle + (math.pi * 2 / teleportMultiplier)
+    angle = angle + (math.pi * 2 / 500)
     
     local offsetX = math.cos(angle) * 2
     local offsetZ = math.sin(angle) * 2
