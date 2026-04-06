@@ -92,7 +92,7 @@ tbFix.BackgroundColor3 = COLORS.header
 tbFix.BorderSizePixel = 0
 tbFix.Parent = titleBar
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -60, 1, 0)
+title.Size = UDim2.new(1, -20, 1, 0)
 title.Position = UDim2.new(0, 10, 0, 0)
 title.BackgroundTransparency = 1
 title.TextColor3 = COLORS.textDark
@@ -104,7 +104,7 @@ title.Parent = titleBar
 
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 22, 0, 18)
-closeBtn.Position = UDim2.new(1, -48, 0.5, -9)
+closeBtn.Position = UDim2.new(1, -24, 0.5, -9)
 closeBtn.BackgroundColor3 = COLORS.buttonDanger
 closeBtn.TextColor3 = COLORS.textLight
 closeBtn.Text = "✕"
@@ -114,19 +114,6 @@ closeBtn.Parent = titleBar
 local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(0, 4)
 closeCorner.Parent = closeBtn
-
-local killBtn = Instance.new("TextButton")
-killBtn.Size = UDim2.new(0, 22, 0, 18)
-killBtn.Position = UDim2.new(1, -24, 0.5, -9)
-killBtn.BackgroundColor3 = Color3.fromRGB(139, 0, 0)
-killBtn.TextColor3 = COLORS.textLight
-killBtn.Text = "☠"
-killBtn.Font = Enum.Font.GothamBold
-killBtn.TextSize = 9
-killBtn.Parent = titleBar
-local killCorner = Instance.new("UICorner")
-killCorner.CornerRadius = UDim.new(0, 4)
-killCorner.Parent = killBtn
 
 -- Content (3 columns)
 local content = Instance.new("Frame")
@@ -388,7 +375,7 @@ infoLbl.Font = Enum.Font.Gotham
 infoLbl.TextSize = 7
 infoLbl.Parent = col2
 
--- Column 3: Extra info
+-- Column 3: Extra info + Kill Button
 local col3 = Instance.new("Frame")
 col3.Size = UDim2.new(0.32, -8, 1, 0)
 col3.Position = UDim2.new(0.68, 4, 0, 0)
@@ -439,81 +426,97 @@ comboInfo.TextXAlignment = Enum.TextXAlignment.Left
 comboInfo.TextWrapped = true
 comboInfo.Parent = col3
 
+-- KILL GUI BUTTON (separate, deliberate click needed)
+local killGuiBtn = Instance.new("TextButton")
+killGuiBtn.Size = UDim2.new(1, 0, 0, 24)
+killGuiBtn.Position = UDim2.new(0, 0, 0, 114)
+killGuiBtn.BackgroundColor3 = Color3.fromRGB(139, 0, 0)
+killGuiBtn.TextColor3 = COLORS.textLight
+killGuiBtn.Text = "☠ KILL GUI"
+killGuiBtn.Font = Enum.Font.GothamBold
+killGuiBtn.TextSize = 10
+killGuiBtn.Parent = col3
+local killGuiCorner = Instance.new("UICorner")
+killGuiCorner.CornerRadius = UDim.new(0, 5)
+killGuiCorner.Parent = killGuiBtn
+
 local keyLbl = Instance.new("TextLabel")
 keyLbl.Size = UDim2.new(1, 0, 0, 14)
-keyLbl.Position = UDim2.new(0, 0, 0, 114)
+keyLbl.Position = UDim2.new(0, 0, 0, 142)
 keyLbl.BackgroundTransparency = 1
 keyLbl.TextColor3 = COLORS.buttonPrimary
-keyLbl.Text = "Press RightCtrl to toggle GUI"
+keyLbl.Text = "RightCtrl = Toggle GUI"
 keyLbl.Font = Enum.Font.Gotham
 keyLbl.TextSize = 7
 keyLbl.Parent = col3
 
--- Dragging
-local dragging = false
-local dragInput, dragStart, startPos
+-- ========== DRAGGING LOGIC ==========
+
+-- Hub button dragging (separate from clicking)
+local hubDragging = false
+local hubDragStart = nil
+local hubDragStartPos = nil
+local hubDragDistance = 0
 
 hubButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = hubButton.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
+        hubDragging = true
+        hubDragStart = input.Position
+        hubDragStartPos = hubButton.Position
+        hubDragDistance = 0
     end
 end)
 
 hubButton.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
+        if hubDragging then
+            local delta = input.Position - hubDragStart
+            hubDragDistance = delta.Magnitude
+            hubButton.Position = UDim2.new(hubDragStartPos.X.Scale, hubDragStartPos.X.Offset + delta.X, hubDragStartPos.Y.Scale, hubDragStartPos.Y.Offset + delta.Y)
+        end
     end
 end)
 
-UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        local delta = input.Position - dragStart
-        hubButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if hubDragging then
+            hubDragging = false
+            -- If we barely moved, treat it as a click
+            if hubDragDistance < 10 then
+                hubButton.Visible = false
+                mainFrame.Visible = true
+            end
+        end
     end
 end)
 
-local hubDragging = false
-local hubDragInput, hubDragStart, hubDragPos
+-- Main frame dragging (title bar)
+local mfDragging = false
+local mfDragInput, mfDragStart, mfDragPos
 
 titleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        hubDragging = true
-        hubDragStart = input.Position
-        hubDragPos = mainFrame.Position
+        mfDragging = true
+        mfDragStart = input.Position
+        mfDragPos = mainFrame.Position
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
-                hubDragging = false
+                mfDragging = false
             end
- end)
+        end)
     end
 end)
 
 titleBar.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        hubDragInput = input
+        mfDragInput = input
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if input == hubDragInput and hubDragging then
-        local delta = input.Position - hubDragStart
-        mainFrame.Position = UDim2.new(hubDragPos.X.Scale, hubDragPos.X.Offset + delta.X, hubDragPos.Y.Scale, hubDragPos.Y.Offset + delta.Y)
-    end
-end)
-
-hubButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        if not dragging then
-            hubButton.Visible = false
-            mainFrame.Visible = true
-        end
+    if input == mfDragInput and mfDragging then
+        local delta = input.Position - mfDragStart
+        mainFrame.Position = UDim2.new(mfDragPos.X.Scale, mfDragPos.X.Offset + delta.X, mfDragPos.Y.Scale, mfDragPos.Y.Offset + delta.Y)
     end
 end)
 
@@ -522,7 +525,7 @@ closeBtn.MouseButton1Click:Connect(function()
     hubButton.Visible = true
 end)
 
-killBtn.MouseButton1Click:Connect(function()
+killGuiBtn.MouseButton1Click:Connect(function()
     destroyEnabled = false
     if flingLoop then
         flingLoop:Disconnect()
