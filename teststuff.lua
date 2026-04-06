@@ -30,6 +30,9 @@ btnCorner.Parent = button
 
 -- Variables
 local isAutoWalking = false
+local lastDirection = nil
+local stuckTimer = 0
+local lastPosition = nil
 
 -- Dragging (Mobile + PC)
 local dragging = false
@@ -60,44 +63,70 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -- Raycast obstacle check
-local function checkForObstacles(direction, hrp)
+local function checkForObstacles(direction, hrp, distance)
     local params = RaycastParams.new()
     params.FilterDescendantsInstances = {player.Character}
     params.FilterType = Enum.RaycastFilterType.Exclude
     
-    local result = workspace:Raycast(hrp.Position, direction * 15, params)
+    local result = workspace:Raycast(hrp.Position, direction * distance, params)
     return result ~= nil
 end
 
--- Calculate clear path
+-- Calculate clear path with proper perpendicular directions
 local function calculateClearPath(direction, hrp)
-    if not checkForObstacles(direction, hrp) then
+    -- Proper perpendicular directions (relative to facing direction)
+    local rightDir = Vector3.new(direction.Z, 0, -direction.X)  -- 90° right
+    local leftDir = Vector3.new(-direction.Z, 0, direction.X)   -- 90° left
+    
+    -- Check forward
+    if not checkForObstacles(direction, hrp, 15) then
+        lastDirection = nil
         return direction
     end
     
-    -- Try left
-    local leftDir = (direction + Vector3.new(-1, 0, 0)).Unit
-    if not checkForObstacles(leftDir, hrp) then
-        return leftDir
-    end
+    -- Check diagonals first (45° angles) - better for corners
+    local forwardLeft = (direction + leftDir).Unit
+    local forwardRight = (direction + rightDir).Unit
     
-    -- Try right
-    local rightDir = (direction + Vector3.new(1, 0, 0)).Unit
-    if not checkForObstacles(rightDir, hrp) then
+    local blockedFL = checkForObstacles(forwardLeft, hrp, 12)
+    local blockedFR = checkForObstacles(forwardRight, hrp, 12)
+    local blockedL = checkForObstacles(leftDir, hrp, 12)
+    local blockedR = checkForObstacles(rightDir, hrp, 12)
+    
+    -- Prefer the direction we were already going (commitment)
+    if lastDirection == "left" and not blockedL then
+        return leftDir
+    elseif lastDirection == "right" and not blockedR then
         return rightDir
     end
     
-    -- Try back
-    local backDir = -direction
-    if not checkForObstacles(backDir, hrp) then
-        return backDir
+    -- Pick best available direction
+    if not blockedFL then
+        lastDirection = "left"
+        return forwardLeft
+    elseif not blockedFR then
+        lastDirection = "right"
+        return forwardRight
+    elseif not blockedL then
+        lastDirection = "left"
+        return leftDir
+    elseif not blockedR then
+        lastDirection = "right"
+        return rightDir
     end
     
-    -- Random diagonal
-    return Vector3.new(math.random(-1, 1), 0, math.random(-1, 1)).Unit
+    -- Try backward
+    if not checkForObstacles(-direction, hrp, 15) then
+        lastDirection = nil
+        return -direction
+    end
+    
+    -- Fully stuck, try any direction
+    lastDirection = nil
+    return leftDir
 end
 
--- Auto-walk loop (YOUR ORIGINAL LOGIC)
+-- Auto-walk loop
 local function autoWalkLoop()
     while isAutoWalking and player.Character do
         local hrp = player.Character:FindFirstChild("HumanoidRootPart")
@@ -105,6 +134,23 @@ local function autoWalkLoop()
         local camera = workspace.CurrentCamera
         
         if hrp and humanoid and camera then
+            -- Anti-stuck detection
+            if lastPosition then
+                local moved = (hrp.Position - lastPosition).Magnitude
+                if moved < 0.5 then
+                    stuckTimer = stuckTimer + 0.1
+                else
+                    stuckTimer = 0
+                end
+            end
+            lastPosition = hrp.Position
+            
+            -- If stuck for too long, force a direction change
+            if stuckTimer > 1 then
+                lastDirection = nil
+                stuckTimer = 0
+            end
+            
             local lookVector = camera.CFrame.LookVector
             local moveDirection = Vector3.new(lookVector.X, 0, lookVector.Z).Unit
             
@@ -127,12 +173,18 @@ button.MouseButton1Click:Connect(function()
     else
         button.Text = "Auto-Walk: OFF"
         button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        lastDirection = nil
+        stuckTimer = 0
+        lastPosition = nil
     end
 end)
 
 -- Respawn
 player.CharacterAdded:Connect(function()
     if isAutoWalking then
+        lastDirection = nil
+        stuckTimer = 0
+        lastPosition = nil
         autoWalkLoop()
     end
 end)
