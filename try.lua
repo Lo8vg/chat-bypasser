@@ -1,5 +1,5 @@
--- Combined Hub: Original Fling + TP Kill
--- Two tabs in one interface
+-- Combined Hub: Fling + TP Kill (No Logic Changes)
+-- Two separate tabs, each works independently
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -8,9 +8,6 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Shared Settings
-local targetPlayer = nil
-
 -- Colors
 local COLORS = {
     background = Color3.fromRGB(245, 245, 245),
@@ -18,6 +15,7 @@ local COLORS = {
     buttonPrimary = Color3.fromRGB(0, 120, 215),
     buttonDanger = Color3.fromRGB(220, 53, 69),
     buttonSuccess = Color3.fromRGB(40, 167, 69),
+    buttonWarning = Color3.fromRGB(255, 193, 7),
     textDark = Color3.fromRGB(33, 37, 41),
     textLight = Color3.fromRGB(255, 255, 255),
     textMuted = Color3.fromRGB(134, 142, 150),
@@ -63,8 +61,8 @@ hubButtonShadow.Parent = hubButton
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 380, 0, 320)
-mainFrame.Position = UDim2.new(0.5, -190, 0.5, -160)
+mainFrame.Size = UDim2.new(0, 420, 0, 350)
+mainFrame.Position = UDim2.new(0.5, -210, 0.5, -175)
 mainFrame.BackgroundColor3 = COLORS.background
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -81,7 +79,7 @@ mainFrameShadow.Parent = mainFrame
 
 -- Title Bar
 local titleBar = Instance.new("Frame")
-titleBar.Size = UDim2.new(1, 0, 0, 38)
+titleBar.Size = UDim2.new(1, 0, 0, 40)
 titleBar.BackgroundColor3 = COLORS.header
 titleBar.BorderSizePixel = 0
 titleBar.Parent = mainFrame
@@ -126,7 +124,7 @@ collapseCorner.Parent = collapseButton
 
 local tabButtonsFrame = Instance.new("Frame")
 tabButtonsFrame.Size = UDim2.new(1, -20, 0, 32)
-tabButtonsFrame.Position = UDim2.new(0, 10, 0, 42)
+tabButtonsFrame.Position = UDim2.new(0, 10, 0, 44)
 tabButtonsFrame.BackgroundTransparency = 1
 tabButtonsFrame.Parent = mainFrame
 
@@ -158,42 +156,40 @@ local tab2Corner = Instance.new("UICorner")
 tab2Corner.CornerRadius = UDim.new(0, 6)
 tab2Corner.Parent = tab2Button
 
--- ========== TAB 1: ORIGINAL FLING ==========
+-- ========== TAB 1: FLING (ORIGINAL SCRIPT) ==========
 
 local tab1Content = Instance.new("Frame")
 tab1Content.Size = UDim2.new(1, -20, 1, -82)
-tab1Content.Position = UDim2.new(0, 10, 0, 78)
+tab1Content.Position = UDim2.new(0, 10, 0, 80)
 tab1Content.BackgroundTransparency = 1
 tab1Content.Visible = true
 tab1Content.Parent = mainFrame
 
--- Left Frame
+-- Left Frame (Fling)
 local leftFrame1 = Instance.new("Frame")
-leftFrame1.Size = UDim2.new(0.5, -5, 1, 0)
+leftFrame1.Size = UDim2.new(0.5, -8, 1, 0)
 leftFrame1.Position = UDim2.new(0, 0, 0, 0)
 leftFrame1.BackgroundTransparency = 1
 leftFrame1.Parent = tab1Content
 
--- Fling Toggle
-local flingToggle = Instance.new("TextButton")
-flingToggle.Name = "FlingToggle"
-flingToggle.Size = UDim2.new(1, 0, 0, 32)
-flingToggle.Position = UDim2.new(0, 0, 0, 0)
-flingToggle.BackgroundColor3 = COLORS.buttonDanger
-flingToggle.TextColor3 = COLORS.textLight
-flingToggle.Text = "FLING: OFF"
-flingToggle.Font = Enum.Font.GothamBold
-flingToggle.TextSize = 13
-flingToggle.Parent = leftFrame1
+-- Toggle Button
+local toggleButton1 = Instance.new("TextButton")
+toggleButton1.Size = UDim2.new(1, 0, 0, 32)
+toggleButton1.Position = UDim2.new(0, 0, 0, 0)
+toggleButton1.BackgroundColor3 = COLORS.buttonDanger
+toggleButton1.TextColor3 = COLORS.textLight
+toggleButton1.Text = "FLING: OFF"
+toggleButton1.Font = Enum.Font.GothamBold
+toggleButton1.TextSize = 13
+toggleButton1.Parent = leftFrame1
 
-local flingToggleCorner = Instance.new("UICorner")
-flingToggleCorner.CornerRadius = UDim.new(0, 6)
-flingToggleCorner.Parent = flingToggle
+local toggleCorner1 = Instance.new("UICorner")
+toggleCorner1.CornerRadius = UDim.new(0, 6)
+toggleCorner1.Parent = toggleButton1
 
--- Counter
+-- Fling Counter
 local flingCounter = Instance.new("TextLabel")
-flingCounter.Name = "FlingCounter"
-flingCounter.Size = UDim2.new(1, 0, 0, 18)
+flingCounter.Size = UDim2.new(1, 0, 0, 16)
 flingCounter.Position = UDim2.new(0, 0, 0, 36)
 flingCounter.BackgroundTransparency = 1
 flingCounter.TextColor3 = COLORS.buttonSuccess
@@ -204,8 +200,8 @@ flingCounter.Parent = leftFrame1
 
 -- Target Label
 local targetLabel1 = Instance.new("TextLabel")
-targetLabel1.Size = UDim2.new(1, 0, 0, 16)
-targetLabel1.Position = UDim2.new(0, 0, 0, 56)
+targetLabel1.Size = UDim2.new(1, 0, 0, 14)
+targetLabel1.Position = UDim2.new(0, 0, 0, 54)
 targetLabel1.BackgroundTransparency = 1
 targetLabel1.TextColor3 = COLORS.textDark
 targetLabel1.Text = "Select Target:"
@@ -214,27 +210,26 @@ targetLabel1.TextSize = 10
 targetLabel1.TextXAlignment = Enum.TextXAlignment.Left
 targetLabel1.Parent = leftFrame1
 
--- Player Scroll
+-- Player List
 local playerScroll1 = Instance.new("ScrollingFrame")
-playerScroll1.Size = UDim2.new(1, 0, 0, 85)
-playerScroll1.Position = UDim2.new(0, 0, 0, 74)
+playerScroll1.Size = UDim2.new(1, 0, 0, 100)
+playerScroll1.Position = UDim2.new(0, 0, 0, 70)
 playerScroll1.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
 playerScroll1.ScrollBarThickness = 4
 playerScroll1.Parent = leftFrame1
 
-local playerScroll1Corner = Instance.new("UICorner")
-playerScroll1Corner.CornerRadius = UDim.new(0, 6)
-playerScroll1Corner.Parent = playerScroll1
+local playerScrollCorner1 = Instance.new("UICorner")
+playerScrollCorner1.CornerRadius = UDim.new(0, 6)
+playerScrollCorner1.Parent = playerScroll1
 
 local playerLayout1 = Instance.new("UIListLayout")
 playerLayout1.Padding = UDim.new(0, 2)
 playerLayout1.Parent = playerScroll1
 
--- Status
+-- Status Label
 local statusLabel1 = Instance.new("TextLabel")
-statusLabel1.Name = "StatusLabel1"
 statusLabel1.Size = UDim2.new(1, 0, 0, 16)
-statusLabel1.Position = UDim2.new(0, 0, 0, 162)
+statusLabel1.Position = UDim2.new(0, 0, 0, 172)
 statusLabel1.BackgroundTransparency = 1
 statusLabel1.TextColor3 = COLORS.textMuted
 statusLabel1.Text = "No target selected"
@@ -243,122 +238,118 @@ statusLabel1.TextSize = 9
 statusLabel1.TextWrapped = true
 statusLabel1.Parent = leftFrame1
 
--- Right Frame
+-- Right Frame (Fling)
 local rightFrame1 = Instance.new("Frame")
-rightFrame1.Size = UDim2.new(0.5, -5, 1, 0)
-rightFrame1.Position = UDim2.new(0.5, 5, 0, 0)
+rightFrame1.Size = UDim2.new(0.5, -8, 1, 0)
+rightFrame1.Position = UDim2.new(0.5, 8, 0, 0)
 rightFrame1.BackgroundTransparency = 1
 rightFrame1.Parent = tab1Content
 
 -- Spin Power
-local spinLabel1 = Instance.new("TextLabel")
-spinLabel1.Size = UDim2.new(1, 0, 0, 14)
-spinLabel1.Position = UDim2.new(0, 0, 0, 0)
-spinLabel1.BackgroundTransparency = 1
-spinLabel1.TextColor3 = COLORS.textDark
-spinLabel1.Text = "Spin Power:"
-spinLabel1.Font = Enum.Font.GothamBold
-spinLabel1.TextSize = 10
-spinLabel1.TextXAlignment = Enum.TextXAlignment.Left
-spinLabel1.Parent = rightFrame1
+local spinLabel = Instance.new("TextLabel")
+spinLabel.Size = UDim2.new(1, 0, 0, 14)
+spinLabel.Position = UDim2.new(0, 0, 0, 0)
+spinLabel.BackgroundTransparency = 1
+spinLabel.TextColor3 = COLORS.textDark
+spinLabel.Text = "Spin Power:"
+spinLabel.Font = Enum.Font.GothamBold
+spinLabel.TextSize = 10
+spinLabel.TextXAlignment = Enum.TextXAlignment.Left
+spinLabel.Parent = rightFrame1
 
-local spinInput1 = Instance.new("TextBox")
-spinInput1.Name = "SpinInput1"
-spinInput1.Size = UDim2.new(1, 0, 0, 24)
-spinInput1.Position = UDim2.new(0, 0, 0, 16)
-spinInput1.BackgroundColor3 = COLORS.inputBg
-spinInput1.TextColor3 = COLORS.textDark
-spinInput1.Text = "999999"
-spinInput1.Font = Enum.Font.Gotham
-spinInput1.TextSize = 11
-spinInput1.ClearTextOnFocus = false
-spinInput1.Parent = rightFrame1
+local spinInput = Instance.new("TextBox")
+spinInput.Size = UDim2.new(1, 0, 0, 24)
+spinInput.Position = UDim2.new(0, 0, 0, 16)
+spinInput.BackgroundColor3 = COLORS.inputBg
+spinInput.TextColor3 = COLORS.textDark
+spinInput.Text = "999999"
+spinInput.Font = Enum.Font.Gotham
+spinInput.TextSize = 10
+spinInput.ClearTextOnFocus = false
+spinInput.Parent = rightFrame1
 
-local spinInput1Corner = Instance.new("UICorner")
-spinInput1Corner.CornerRadius = UDim.new(0, 5)
-spinInput1Corner.Parent = spinInput1
+local spinCorner = Instance.new("UICorner")
+spinCorner.CornerRadius = UDim.new(0, 5)
+spinCorner.Parent = spinInput
 
-local spinInput1Stroke = Instance.new("UIStroke")
-spinInput1Stroke.Color = COLORS.border
-spinInput1Stroke.Thickness = 1
-spinInput1Stroke.Parent = spinInput1
+local spinStroke = Instance.new("UIStroke")
+spinStroke.Color = COLORS.border
+spinStroke.Thickness = 1
+spinStroke.Parent = spinInput
 
 -- Launch Power
-local launchLabel1 = Instance.new("TextLabel")
-launchLabel1.Size = UDim2.new(1, 0, 0, 14)
-launchLabel1.Position = UDim2.new(0, 0, 0, 46)
-launchLabel1.BackgroundTransparency = 1
-launchLabel1.TextColor3 = COLORS.textDark
-launchLabel1.Text = "Launch Power:"
-launchLabel1.Font = Enum.Font.GothamBold
-launchLabel1.TextSize = 10
-launchLabel1.TextXAlignment = Enum.TextXAlignment.Left
-launchLabel1.Parent = rightFrame1
+local launchLabel = Instance.new("TextLabel")
+launchLabel.Size = UDim2.new(1, 0, 0, 14)
+launchLabel.Position = UDim2.new(0, 0, 0, 44)
+launchLabel.BackgroundTransparency = 1
+launchLabel.TextColor3 = COLORS.textDark
+launchLabel.Text = "Launch Power:"
+launchLabel.Font = Enum.Font.GothamBold
+launchLabel.TextSize = 10
+launchLabel.TextXAlignment = Enum.TextXAlignment.Left
+launchLabel.Parent = rightFrame1
 
-local launchInput1 = Instance.new("TextBox")
-launchInput1.Name = "LaunchInput1"
-launchInput1.Size = UDim2.new(1, 0, 0, 24)
-launchInput1.Position = UDim2.new(0, 0, 0, 62)
-launchInput1.BackgroundColor3 = COLORS.inputBg
-launchInput1.TextColor3 = COLORS.textDark
-launchInput1.Text = "999999"
-launchInput1.Font = Enum.Font.Gotham
-launchInput1.TextSize = 11
-launchInput1.ClearTextOnFocus = false
-launchInput1.Parent = rightFrame1
+local launchInput = Instance.new("TextBox")
+launchInput.Size = UDim2.new(1, 0, 0, 24)
+launchInput.Position = UDim2.new(0, 0, 0, 60)
+launchInput.BackgroundColor3 = COLORS.inputBg
+launchInput.TextColor3 = COLORS.textDark
+launchInput.Text = "999999"
+launchInput.Font = Enum.Font.Gotham
+launchInput.TextSize = 10
+launchInput.ClearTextOnFocus = false
+launchInput.Parent = rightFrame1
 
-local launchInput1Corner = Instance.new("UICorner")
-launchInput1Corner.CornerRadius = UDim.new(0, 5)
-launchInput1Corner.Parent = launchInput1
+local launchCorner = Instance.new("UICorner")
+launchCorner.CornerRadius = UDim.new(0, 5)
+launchCorner.Parent = launchInput
 
-local launchInput1Stroke = Instance.new("UIStroke")
-launchInput1Stroke.Color = COLORS.border
-launchInput1Stroke.Thickness = 1
-launchInput1Stroke.Parent = launchInput1
+local launchStroke = Instance.new("UIStroke")
+launchStroke.Color = COLORS.border
+launchStroke.Thickness = 1
+launchStroke.Parent = launchInput
 
 -- Info
 local infoLabel1 = Instance.new("TextLabel")
 infoLabel1.Size = UDim2.new(1, 0, 0, 70)
-infoLabel1.Position = UDim2.new(0, 0, 0, 92)
+infoLabel1.Position = UDim2.new(0, 0, 0, 90)
 infoLabel1.BackgroundTransparency = 1
 infoLabel1.TextColor3 = COLORS.textMuted
-infoLabel1.Text = "Uses BodyAngularVelocity +\nBodyVelocity (visible spin).\nAnti-cheat kills you = target flung."
+infoLabel1.Text = "Uses BodyAngularVelocity +\nBodyVelocity (real physics).\nYou will SPIN visibly.\nAnti-cheat kills you = target flung."
 infoLabel1.Font = Enum.Font.Gotham
 infoLabel1.TextSize = 9
 infoLabel1.TextWrapped = true
 infoLabel1.TextXAlignment = Enum.TextXAlignment.Left
 infoLabel1.Parent = rightFrame1
 
--- ========== TAB 2: TP KILL ==========
+-- ========== TAB 2: TP KILL (ORIGINAL SCRIPT) ==========
 
 local tab2Content = Instance.new("Frame")
 tab2Content.Size = UDim2.new(1, -20, 1, -82)
-tab2Content.Position = UDim2.new(0, 10, 0, 78)
+tab2Content.Position = UDim2.new(0, 10, 0, 80)
 tab2Content.BackgroundTransparency = 1
 tab2Content.Visible = false
 tab2Content.Parent = mainFrame
 
--- Kill Toggle
-local killToggle = Instance.new("TextButton")
-killToggle.Name = "KillToggle"
-killToggle.Size = UDim2.new(1, 0, 0, 32)
-killToggle.Position = UDim2.new(0, 0, 0, 0)
-killToggle.BackgroundColor3 = COLORS.buttonDanger
-killToggle.TextColor3 = COLORS.textLight
-killToggle.Text = "KILL AURA: OFF"
-killToggle.Font = Enum.Font.GothamBold
-killToggle.TextSize = 13
-killToggle.Parent = tab2Content
+-- Toggle Button
+local toggleButton2 = Instance.new("TextButton")
+toggleButton2.Size = UDim2.new(1, 0, 0, 36)
+toggleButton2.Position = UDim2.new(0, 0, 0, 0)
+toggleButton2.BackgroundColor3 = COLORS.buttonDanger
+toggleButton2.TextColor3 = COLORS.textLight
+toggleButton2.Text = "KILL AURA: OFF"
+toggleButton2.Font = Enum.Font.GothamBold
+toggleButton2.TextSize = 14
+toggleButton2.Parent = tab2Content
 
-local killToggleCorner = Instance.new("UICorner")
-killToggleCorner.CornerRadius = UDim.new(0, 6)
-killToggleCorner.Parent = killToggle
+local toggleCorner2 = Instance.new("UICorner")
+toggleCorner2.CornerRadius = UDim.new(0, 6)
+toggleCorner2.Parent = toggleButton2
 
 -- Protection Status
 local protectionLabel = Instance.new("TextLabel")
-protectionLabel.Name = "ProtectionLabel"
 protectionLabel.Size = UDim2.new(1, 0, 0, 16)
-protectionLabel.Position = UDim2.new(0, 0, 0, 36)
+protectionLabel.Position = UDim2.new(0, 0, 0, 42)
 protectionLabel.BackgroundTransparency = 1
 protectionLabel.TextColor3 = COLORS.textMuted
 protectionLabel.Text = "Protection: Waiting..."
@@ -368,8 +359,8 @@ protectionLabel.Parent = tab2Content
 
 -- Target Label
 local targetLabel2 = Instance.new("TextLabel")
-targetLabel2.Size = UDim2.new(1, 0, 0, 16)
-targetLabel2.Position = UDim2.new(0, 0, 0, 56)
+targetLabel2.Size = UDim2.new(1, 0, 0, 14)
+targetLabel2.Position = UDim2.new(0, 0, 0, 60)
 targetLabel2.BackgroundTransparency = 1
 targetLabel2.TextColor3 = COLORS.textDark
 targetLabel2.Text = "Select Target:"
@@ -378,27 +369,26 @@ targetLabel2.TextSize = 10
 targetLabel2.TextXAlignment = Enum.TextXAlignment.Left
 targetLabel2.Parent = tab2Content
 
--- Player Scroll
+-- Player List
 local playerScroll2 = Instance.new("ScrollingFrame")
-playerScroll2.Size = UDim2.new(1, 0, 0, 85)
-playerScroll2.Position = UDim2.new(0, 0, 0, 74)
+playerScroll2.Size = UDim2.new(1, 0, 0, 80)
+playerScroll2.Position = UDim2.new(0, 0, 0, 76)
 playerScroll2.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
 playerScroll2.ScrollBarThickness = 4
 playerScroll2.Parent = tab2Content
 
-local playerScroll2Corner = Instance.new("UICorner")
-playerScroll2Corner.CornerRadius = UDim.new(0, 6)
-playerScroll2Corner.Parent = playerScroll2
+local playerScrollCorner2 = Instance.new("UICorner")
+playerScrollCorner2.CornerRadius = UDim.new(0, 6)
+playerScrollCorner2.Parent = playerScroll2
 
 local playerLayout2 = Instance.new("UIListLayout")
 playerLayout2.Padding = UDim.new(0, 2)
 playerLayout2.Parent = playerScroll2
 
--- Status
+-- Status Label
 local statusLabel2 = Instance.new("TextLabel")
-statusLabel2.Name = "StatusLabel2"
 statusLabel2.Size = UDim2.new(1, 0, 0, 16)
-statusLabel2.Position = UDim2.new(0, 0, 0, 162)
+statusLabel2.Position = UDim2.new(0, 0, 0, 160)
 statusLabel2.BackgroundTransparency = 1
 statusLabel2.TextColor3 = COLORS.textMuted
 statusLabel2.Text = "No target selected"
@@ -407,121 +397,164 @@ statusLabel2.TextSize = 9
 statusLabel2.TextWrapped = true
 statusLabel2.Parent = tab2Content
 
--- Settings Frame
-local settingsFrame2 = Instance.new("Frame")
-settingsFrame2.Size = UDim2.new(1, 0, 0, 60)
-settingsFrame2.Position = UDim2.new(0, 0, 0, 182)
-settingsFrame2.BackgroundTransparency = 1
-settingsFrame2.Parent = tab2Content
+-- Delay Input
+local delayRow = Instance.new("Frame")
+delayRow.Size = UDim2.new(1, 0, 0, 24)
+delayRow.Position = UDim2.new(0, 0, 0, 180)
+delayRow.BackgroundTransparency = 1
+delayRow.Parent = tab2Content
 
--- Delay Row
-local delayLabel2 = Instance.new("TextLabel")
-delayLabel2.Size = UDim2.new(0, 80, 0, 24)
-delayLabel2.Position = UDim2.new(0, 0, 0, 0)
-delayLabel2.BackgroundTransparency = 1
-delayLabel2.TextColor3 = COLORS.textDark
-delayLabel2.Text = "Delay:"
-delayLabel2.Font = Enum.Font.Gotham
-delayLabel2.TextSize = 10
-delayLabel2.TextXAlignment = Enum.TextXAlignment.Left
-delayLabel2.Parent = settingsFrame2
+local delayLabel = Instance.new("TextLabel")
+delayLabel.Size = UDim2.new(0, 80, 1, 0)
+delayLabel.BackgroundTransparency = 1
+delayLabel.TextColor3 = COLORS.textDark
+delayLabel.Text = "Attack Delay:"
+delayLabel.Font = Enum.Font.Gotham
+delayLabel.TextSize = 10
+delayLabel.TextXAlignment = Enum.TextXAlignment.Left
+delayLabel.Parent = delayRow
 
-local delayInput2 = Instance.new("TextBox")
-delayInput2.Name = "DelayInput2"
-delayInput2.Size = UDim2.new(0, 50, 0, 24)
-delayInput2.Position = UDim2.new(0, 82, 0, 0)
-delayInput2.BackgroundColor3 = COLORS.inputBg
-delayInput2.TextColor3 = COLORS.textDark
-delayInput2.Text = "0.05"
-delayInput2.Font = Enum.Font.Gotham
-delayInput2.TextSize = 10
-delayInput2.ClearTextOnFocus = false
-delayInput2.Parent = settingsFrame2
+local delayInput = Instance.new("TextBox")
+delayInput.Size = UDim2.new(0, 50, 1, 0)
+delayInput.Position = UDim2.new(0, 85, 0, 0)
+delayInput.BackgroundColor3 = COLORS.inputBg
+delayInput.TextColor3 = COLORS.textDark
+delayInput.Text = "0.05"
+delayInput.Font = Enum.Font.Gotham
+delayInput.TextSize = 10
+delayInput.ClearTextOnFocus = false
+delayInput.Parent = delayRow
 
-local delayInput2Corner = Instance.new("UICorner")
-delayInput2Corner.CornerRadius = UDim.new(0, 5)
-delayInput2Corner.Parent = delayInput2
+local delayCorner = Instance.new("UICorner")
+delayCorner.CornerRadius = UDim.new(0, 5)
+delayCorner.Parent = delayInput
 
-local delayInput2Stroke = Instance.new("UIStroke")
-delayInput2Stroke.Color = COLORS.border
-delayInput2Stroke.Thickness = 1
-delayInput2Stroke.Parent = delayInput2
+local delayStroke = Instance.new("UIStroke")
+delayStroke.Color = COLORS.border
+delayStroke.Thickness = 1
+delayStroke.Parent = delayInput
 
--- Swings Row
-local swingsLabel2 = Instance.new("TextLabel")
-swingsLabel2.Size = UDim2.new(0, 80, 0, 24)
-swingsLabel2.Position = UDim2.new(0, 0, 0, 28)
-swingsLabel2.BackgroundTransparency = 1
-swingsLabel2.TextColor3 = COLORS.textDark
-swingsLabel2.Text = "Swings:"
-swingsLabel2.Font = Enum.Font.Gotham
-swingsLabel2.TextSize = 10
-swingsLabel2.TextXAlignment = Enum.TextXAlignment.Left
-swingsLabel2.Parent = settingsFrame2
+local delayHint = Instance.new("TextLabel")
+delayHint.Size = UDim2.new(0, 50, 1, 0)
+delayHint.Position = UDim2.new(0, 140, 0, 0)
+delayHint.BackgroundTransparency = 1
+delayHint.TextColor3 = COLORS.textMuted
+delayHint.Text = "seconds"
+delayHint.Font = Enum.Font.Gotham
+delayHint.TextSize = 9
+delayHint.TextXAlignment = Enum.TextXAlignment.Left
+delayHint.Parent = delayRow
 
-local swingsInput2 = Instance.new("TextBox")
-swingsInput2.Name = "SwingsInput2"
-swingsInput2.Size = UDim2.new(0, 50, 0, 24)
-swingsInput2.Position = UDim2.new(0, 82, 0, 28)
-swingsInput2.BackgroundColor3 = COLORS.inputBg
-swingsInput2.TextColor3 = COLORS.textDark
-swingsInput2.Text = "3"
-swingsInput2.Font = Enum.Font.Gotham
-swingsInput2.TextSize = 10
-swingsInput2.ClearTextOnFocus = false
-swingsInput2.Parent = settingsFrame2
+-- Swings Input
+local swingsRow = Instance.new("Frame")
+swingsRow.Size = UDim2.new(1, 0, 0, 24)
+swingsRow.Position = UDim2.new(0, 0, 0, 208)
+swingsRow.BackgroundTransparency = 1
+swingsRow.Parent = tab2Content
 
-local swingsInput2Corner = Instance.new("UICorner")
-swingsInput2Corner.CornerRadius = UDim.new(0, 5)
-swingsInput2Corner.Parent = swingsInput2
+local swingsLabel = Instance.new("TextLabel")
+swingsLabel.Size = UDim2.new(0, 80, 1, 0)
+swingsLabel.BackgroundTransparency = 1
+swingsLabel.TextColor3 = COLORS.textDark
+swingsLabel.Text = "Swings/Hit:"
+swingsLabel.Font = Enum.Font.Gotham
+swingsLabel.TextSize = 10
+swingsLabel.TextXAlignment = Enum.TextXAlignment.Left
+swingsLabel.Parent = swingsRow
 
-local swingsInput2Stroke = Instance.new("UIStroke")
-swingsInput2Stroke.Color = COLORS.border
-swingsInput2Stroke.Thickness = 1
-swingsInput2Stroke.Parent = swingsInput2
+local swingsInput = Instance.new("TextBox")
+swingsInput.Size = UDim2.new(0, 50, 1, 0)
+swingsInput.Position = UDim2.new(0, 85, 0, 0)
+swingsInput.BackgroundColor3 = COLORS.inputBg
+swingsInput.TextColor3 = COLORS.textDark
+swingsInput.Text = "3"
+swingsInput.Font = Enum.Font.Gotham
+swingsInput.TextSize = 10
+swingsInput.ClearTextOnFocus = false
+swingsInput.Parent = swingsRow
+
+local swingsCorner = Instance.new("UICorner")
+swingsCorner.CornerRadius = UDim.new(0, 5)
+swingsCorner.Parent = swingsInput
+
+local swingsStroke = Instance.new("UIStroke")
+swingsStroke.Color = COLORS.border
+swingsStroke.Thickness = 1
+swingsStroke.Parent = swingsInput
+
+-- Check Rate Input
+local checkRow = Instance.new("Frame")
+checkRow.Size = UDim2.new(1, 0, 0, 24)
+checkRow.Position = UDim2.new(0, 0, 0, 236)
+checkRow.BackgroundTransparency = 1
+checkRow.Parent = tab2Content
+
+local checkLabel = Instance.new("TextLabel")
+checkLabel.Size = UDim2.new(0, 80, 1, 0)
+checkLabel.BackgroundTransparency = 1
+checkLabel.TextColor3 = COLORS.textDark
+checkLabel.Text = "Check Rate:"
+checkLabel.Font = Enum.Font.Gotham
+checkLabel.TextSize = 10
+checkLabel.TextXAlignment = Enum.TextXAlignment.Left
+checkLabel.Parent = checkRow
+
+local checkInput = Instance.new("TextBox")
+checkInput.Size = UDim2.new(0, 50, 1, 0)
+checkInput.Position = UDim2.new(0, 85, 0, 0)
+checkInput.BackgroundColor3 = COLORS.inputBg
+checkInput.TextColor3 = COLORS.textDark
+checkInput.Text = "0.1"
+checkInput.Font = Enum.Font.Gotham
+checkInput.TextSize = 10
+checkInput.ClearTextOnFocus = false
+checkInput.Parent = checkRow
+
+local checkCorner = Instance.new("UICorner")
+checkCorner.CornerRadius = UDim.new(0, 5)
+checkCorner.Parent = checkInput
+
+local checkStroke = Instance.new("UIStroke")
+checkStroke.Color = COLORS.border
+checkStroke.Thickness = 1
+checkStroke.Parent = checkInput
 
 -- ========== DRAGGING ==========
 
 local dragging = false
 local dragInput, dragStart, startPos
-local dragDistance = 0
 
 hubButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
         startPos = hubButton.Position
-        dragDistance = 0
-        
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
     end
 end)
 
-hubButton.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
+hubButton.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        local delta = input.Position - dragStart
-        dragDistance = delta.Magnitude
-        hubButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        if dragging then
+            local delta = input.Position - dragStart
+            hubButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
     end
 end)
 
--- Hub Button Click
 hubButton.MouseButton1Click:Connect(function()
-    if dragDistance < 10 then
-        hubButton.Visible = false
-        mainFrame.Visible = true
-    end
-    dragDistance = 0
+    hubButton.Visible = false
+    mainFrame.Visible = true
+end)
+
+collapseButton.MouseButton1Click:Connect(function()
+    mainFrame.Visible = false
+    hubButton.Visible = true
 end)
 
 local hubDragging = false
@@ -550,155 +583,73 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Collapse Button
-collapseButton.MouseButton1Click:Connect(function()
-    mainFrame.Visible = false
-    hubButton.Visible = true
-end)
-
 -- ========== TAB SWITCHING ==========
 
-local function switchTab(tabNum)
-    if tabNum == 1 then
-        tab1Button.BackgroundColor3 = COLORS.tabActive
-        tab1Button.TextColor3 = COLORS.textLight
-        tab2Button.BackgroundColor3 = COLORS.tabInactive
-        tab2Button.TextColor3 = COLORS.textDark
-        tab1Content.Visible = true
-        tab2Content.Visible = false
-    else
-        tab1Button.BackgroundColor3 = COLORS.tabInactive
-        tab1Button.TextColor3 = COLORS.textDark
-        tab2Button.BackgroundColor3 = COLORS.tabActive
-        tab2Button.TextColor3 = COLORS.textLight
-        tab1Content.Visible = false
-        tab2Content.Visible = true
-    end
-end
-
-tab1Button.MouseButton1Click:Connect(function() switchTab(1) end)
-tab2Button.MouseButton1Click:Connect(function() switchTab(2) end)
-
--- ========== PLAYER LISTS ==========
-
-local function updatePlayerLists()
-    -- Tab 1
-    for _, child in pairs(playerScroll1:GetChildren()) do
-        if child:IsA("TextButton") then child:Destroy() end
-    end
-    
-    -- Tab 2
-    for _, child in pairs(playerScroll2:GetChildren()) do
-        if child:IsA("TextButton") then child:Destroy() end
-    end
-    
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= player then
-            -- Tab 1 Button
-            local btn1 = Instance.new("TextButton")
-            btn1.Size = UDim2.new(1, 0, 0, 22)
-            btn1.BackgroundColor3 = targetPlayer == plr and COLORS.buttonPrimary or Color3.fromRGB(240, 240, 240)
-            btn1.TextColor3 = targetPlayer == plr and COLORS.textLight or COLORS.textDark
-            btn1.Text = plr.Name
-            btn1.Font = Enum.Font.Gotham
-            btn1.TextSize = 10
-            btn1.Parent = playerScroll1
-            
-            local btn1Corner = Instance.new("UICorner")
-            btn1Corner.CornerRadius = UDim.new(0, 5)
-            btn1Corner.Parent = btn1
-            
-            btn1.MouseButton1Click:Connect(function()
-                targetPlayer = plr
-                statusLabel1.Text = "Target: " .. plr.Name
-                statusLabel2.Text = "Target: " .. plr.Name
-                updatePlayerLists()
-            end)
-            
-            -- Tab 2 Button
-            local btn2 = Instance.new("TextButton")
-            btn2.Size = UDim2.new(1, 0, 0, 22)
-            btn2.BackgroundColor3 = targetPlayer == plr and COLORS.buttonPrimary or Color3.fromRGB(240, 240, 240)
-            btn2.TextColor3 = targetPlayer == plr and COLORS.textLight or COLORS.textDark
-            btn2.Text = plr.Name
-            btn2.Font = Enum.Font.Gotham
-            btn2.TextSize = 10
-            btn2.Parent = playerScroll2
-            
-            local btn2Corner = Instance.new("UICorner")
-            btn2Corner.CornerRadius = UDim.new(0, 5)
-            btn2Corner.Parent = btn2
-            
-            btn2.MouseButton1Click:Connect(function()
-                targetPlayer = plr
-                statusLabel1.Text = "Target: " .. plr.Name
-                statusLabel2.Text = "Target: " .. plr.Name
-                updatePlayerLists()
-            end)
-        end
-    end
-    
-    -- Update canvas sizes
-    playerScroll1.CanvasSize = UDim2.new(0, 0, 0, playerLayout1.AbsoluteContentSize.Y)
-    playerScroll2.CanvasSize = UDim2.new(0, 0, 0, playerLayout2.AbsoluteContentSize.Y)
-end
-
-Players.PlayerAdded:Connect(updatePlayerLists)
-Players.PlayerRemoving:Connect(function()
-    wait(0.5)
-    updatePlayerLists()
+tab1Button.MouseButton1Click:Connect(function()
+    tab1Button.BackgroundColor3 = COLORS.tabActive
+    tab1Button.TextColor3 = COLORS.textLight
+    tab2Button.BackgroundColor3 = COLORS.tabInactive
+    tab2Button.TextColor3 = COLORS.textDark
+    tab1Content.Visible = true
+    tab2Content.Visible = false
 end)
 
-updatePlayerLists()
+tab2Button.MouseButton1Click:Connect(function()
+    tab1Button.BackgroundColor3 = COLORS.tabInactive
+    tab1Button.TextColor3 = COLORS.textDark
+    tab2Button.BackgroundColor3 = COLORS.tabActive
+    tab2Button.TextColor3 = COLORS.textLight
+    tab1Content.Visible = false
+    tab2Content.Visible = true
+end)
 
--- ========== HELPER FUNCTIONS ==========
+-- ========== FLING SCRIPT (UNCHANGED LOGIC) ==========
+
+local flingEnabled = false
+local targetPlayer1 = nil
+local flingLoop = nil
+local flingCount = 0
+local bodyAngularVel = nil
+local bodyVel = nil
+local playerButtons1 = {}
 
 local function getRoot(char)
     return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
 end
 
-local function getSword()
-    local character = player.Character
-    if not character then return nil end
+local function updatePlayerList1()
+    for _, btn in pairs(playerButtons1) do
+        btn:Destroy()
+    end
+    playerButtons1 = {}
     
-    for _, item in pairs(character:GetChildren()) do
-        if item:IsA("Tool") then
-            return item
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= player then
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(1, 0, 0, 20)
+            btn.BackgroundColor3 = targetPlayer1 == plr and COLORS.buttonPrimary or Color3.fromRGB(240, 240, 240)
+            btn.TextColor3 = targetPlayer1 == plr and COLORS.textLight or COLORS.textDark
+            btn.Text = plr.Name
+            btn.Font = Enum.Font.Gotham
+            btn.TextSize = 10
+            btn.Parent = playerScroll1
+            
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(0, 5)
+            btnCorner.Parent = btn
+            
+            btn.MouseButton1Click:Connect(function()
+                targetPlayer1 = plr
+                statusLabel1.Text = "Target: " .. plr.Name
+                updatePlayerList1()
+            end)
+            
+            table.insert(playerButtons1, btn)
         end
     end
-    return nil
+    
+    playerScroll1.CanvasSize = UDim2.new(0, 0, 0, playerLayout1.AbsoluteContentSize.Y)
 end
-
-local function equipSword()
-    local character = player.Character
-    local backpack = player:FindFirstChild("Backpack")
-    
-    if not character or not backpack then return nil end
-    
-    local currentTool = getSword()
-    if currentTool then return currentTool end
-    
-    local humanoid = character:FindFirstChild("Humanoid")
-    if not humanoid then return nil end
-    
-    for _, item in pairs(backpack:GetChildren()) do
-        if item:IsA("Tool") then
-            humanoid:EquipTool(item)
-            wait(0.1)
-            return item
-        end
-    end
-    
-    return nil
-end
-
--- ========== TAB 1: FLING LOGIC ==========
-
-local flingEnabled = false
-local flingLoop = nil
-local flingCount = 0
-local bodyAngularVel = nil
-local bodyVel = nil
 
 local function stopFling()
     if flingLoop then
@@ -737,185 +688,92 @@ local function startFling()
         flingLoop:Disconnect()
     end
     
-    local spinPower = tonumber(spinInput1.Text) or 999999
-    local launchPower = tonumber(launchInput1.Text) or 999999
+    local myChar = player.Character
+    if not myChar then return end
+    
+    local myRoot = getRoot(myChar)
+    local myHumanoid = myChar:FindFirstChild("Humanoid")
+    
+    if not myRoot then return end
+    
+    local spinPower = tonumber(spinInput.Text) or 999999
+    local launchPower = tonumber(launchInput.Text) or 999999
+    
+    if bodyAngularVel then bodyAngularVel:Destroy() end
+    bodyAngularVel = Instance.new("BodyAngularVelocity")
+    bodyAngularVel.Name = "FlingSpin"
+    bodyAngularVel.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+    bodyAngularVel.AngularVelocity = Vector3.new(spinPower, spinPower, spinPower)
+    bodyAngularVel.P = math.huge
+    bodyAngularVel.Parent = myRoot
+    
+    if bodyVel then bodyVel:Destroy() end
+    bodyVel = Instance.new("BodyVelocity")
+    bodyVel.Name = "FlingLaunch"
+    bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bodyVel.Velocity = Vector3.new(0, launchPower, 0)
+    bodyVel.P = math.huge
+    bodyVel.Parent = myRoot
+    
+    if myHumanoid then
+        myHumanoid.PlatformStand = true
+    end
     
     flingLoop = RunService.Heartbeat:Connect(function()
         if not flingEnabled then return end
         
-        local myChar = player.Character
-        if not myChar then return end
+        local char = player.Character
+        if not char then return end
         
-        local myRoot = getRoot(myChar)
-        local myHumanoid = myChar:FindFirstChild("Humanoid")
+        local root = getRoot(char)
+        if not root then return end
         
-        if not myRoot then return end
-        
-        if not targetPlayer or not targetPlayer.Character then
+        if not targetPlayer1 or not targetPlayer1.Character then
             return
         end
         
-        local targetRoot = getRoot(targetPlayer.Character)
+        local targetRoot = getRoot(targetPlayer1.Character)
         if not targetRoot then return end
         
-        -- Teleport inside target
-        myRoot.CFrame = targetRoot.CFrame
+        root.CFrame = targetRoot.CFrame
         
-        -- Create BodyAngularVelocity if needed
-        if not myRoot:FindFirstChild("FlingSpin") then
+        if not root:FindFirstChild("FlingSpin") then
             bodyAngularVel = Instance.new("BodyAngularVelocity")
             bodyAngularVel.Name = "FlingSpin"
             bodyAngularVel.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
             bodyAngularVel.AngularVelocity = Vector3.new(spinPower, spinPower, spinPower)
             bodyAngularVel.P = math.huge
-            bodyAngularVel.Parent = myRoot
+            bodyAngularVel.Parent = root
         end
         
-        -- Create BodyVelocity if needed
-        if not myRoot:FindFirstChild("FlingLaunch") then
+        if not root:FindFirstChild("FlingLaunch") then
             bodyVel = Instance.new("BodyVelocity")
             bodyVel.Name = "FlingLaunch"
             bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
             bodyVel.Velocity = Vector3.new(0, launchPower, 0)
             bodyVel.P = math.huge
-            bodyVel.Parent = myRoot
-        end
-        
-        if myHumanoid then
-            myHumanoid.PlatformStand = true
+            bodyVel.Parent = root
         end
     end)
 end
 
-flingToggle.MouseButton1Click:Connect(function()
+toggleButton1.MouseButton1Click:Connect(function()
     flingEnabled = not flingEnabled
     
     if flingEnabled then
-        if not targetPlayer then
-            statusLabel1.Text = "Select a target first!"
-            flingEnabled = false
-            return
-        end
-        
-        flingToggle.Text = "FLING: ON"
-        flingToggle.BackgroundColor3 = COLORS.buttonSuccess
-        statusLabel1.Text = "Flinging: " .. targetPlayer.Name
+        toggleButton1.Text = "FLING: ON"
+        toggleButton1.BackgroundColor3 = COLORS.buttonSuccess
+        statusLabel1.Text = targetPlayer1 and ("Flinging: " .. targetPlayer1.Name) or "No target selected"
         
         startFling()
     else
-        flingToggle.Text = "FLING: OFF"
-        flingToggle.BackgroundColor3 = COLORS.buttonDanger
-        statusLabel1.Text = targetPlayer and ("Target: " .. targetPlayer.Name) or "No target selected"
+        toggleButton1.Text = "FLING: OFF"
+        toggleButton1.BackgroundColor3 = COLORS.buttonDanger
+        statusLabel1.Text = targetPlayer1 and ("Target: " .. targetPlayer1.Name) or "No target selected"
         
         stopFling()
     end
 end)
-
--- ========== TAB 2: KILL AURA LOGIC ==========
-
-local killEnabled = false
-local killLoop = nil
-
-local function hasProtection(targetPlr)
-    if not targetPlr or not targetPlr.Character then return false end
-    local forceField = targetPlr.Character:FindFirstChild("ForceField")
-    return forceField ~= nil
-end
-
-local function stopKill()
-    if killLoop then
-        killLoop:Disconnect()
-        killLoop = nil
-    end
-end
-
-local function startKill()
-    if killLoop then
-        killLoop:Disconnect()
-    end
-    
-    local attackDelay = tonumber(delayInput2.Text) or 0.05
-    local swingsPerAttack = tonumber(swingsInput2.Text) or 3
-    
-    equipSword()
-    
-    killLoop = RunService.Heartbeat:Connect(function()
-        if not killEnabled then return end
-        
-        local myChar = player.Character
-        if not myChar then return end
-        
-        local myRoot = getRoot(myChar)
-        if not myRoot then return end
-        
-        if not targetPlayer or not targetPlayer.Character then
-            return
-        end
-        
-        local targetRoot = getRoot(targetPlayer.Character)
-        local targetHumanoid = targetPlayer.Character:FindFirstChild("Humanoid")
-        
-        if not targetRoot or not targetHumanoid then return end
-        
-        if targetHumanoid.Health <= 0 then
-            protectionLabel.Text = "Protection: Target dead"
-            protectionLabel.TextColor3 = COLORS.textMuted
-            return
-        end
-        
-        -- Check for protection
-        if hasProtection(targetPlayer) then
-            protectionLabel.Text = "Protection: TARGET PROTECTED"
-            protectionLabel.TextColor3 = Color3.fromRGB(255, 193, 7)
-            statusLabel2.Text = "Waiting for protection to end..."
-            return
-        end
-        
-        protectionLabel.Text = "Protection: TARGET VULNERABLE"
-        protectionLabel.TextColor3 = COLORS.buttonSuccess
-        statusLabel2.Text = "ATTACKING: " .. targetPlayer.Name
-        
-        -- Teleport to target
-        myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 2)
-        
-        -- Sword attack
-        local sword = getSword()
-        if sword then
-            for i = 1, swingsPerAttack do
-                sword:Activate()
-                wait(attackDelay)
-            end
-        end
-    end)
-end
-
-killToggle.MouseButton1Click:Connect(function()
-    killEnabled = not killEnabled
-    
-    if killEnabled then
-        if not targetPlayer then
-            statusLabel2.Text = "Select a target first!"
-            killEnabled = false
-            return
-        end
-        
-        killToggle.Text = "KILL AURA: ON"
-        killToggle.BackgroundColor3 = COLORS.buttonSuccess
-        statusLabel2.Text = "Hunting: " .. targetPlayer.Name
-        
-        startKill()
-    else
-        killToggle.Text = "KILL AURA: OFF"
-        killToggle.BackgroundColor3 = COLORS.buttonDanger
-        statusLabel2.Text = targetPlayer and ("Target: " .. targetPlayer.Name) or "No target selected"
-        protectionLabel.Text = "Protection: Waiting..."
-        protectionLabel.TextColor3 = COLORS.textMuted
-        
-        stopKill()
-    end
-end)
-
--- ========== RESPAWN HANDLERS ==========
 
 player.CharacterAdded:Connect(function(char)
     wait(0.3)
@@ -925,16 +783,214 @@ player.CharacterAdded:Connect(function(char)
         flingCounter.Text = "Flings: " .. flingCount
         startFling()
     end
+end)
+
+player.CharacterRemoving:Connect(function()
+    stopFling()
+end)
+
+Players.PlayerAdded:Connect(updatePlayerList1)
+Players.PlayerRemoving:Connect(function()
+    wait(0.5)
+    updatePlayerList1()
+end)
+
+updatePlayerList1()
+
+-- ========== TP KILL SCRIPT (UNCHANGED LOGIC) ==========
+
+local killEnabled = false
+local targetPlayer2 = nil
+local attackDelay = 0.05
+local swingsPerAttack = 3
+local checkRate = 0.1
+local playerButtons2 = {}
+
+local function getSword()
+    local character = player.Character
+    if not character then return nil end
     
+    for _, item in pairs(character:GetChildren()) do
+        if item:IsA("Tool") then
+            return item
+        end
+    end
+    return nil
+end
+
+local function equipSword()
+    local character = player.Character
+    local backpack = player:FindFirstChild("Backpack")
+    
+    if not character or not backpack then return nil end
+    
+    local currentTool = getSword()
+    if currentTool then return currentTool end
+    
+    for _, item in pairs(backpack:GetChildren()) do
+        if item:IsA("Tool") then
+            character.Humanoid:EquipTool(item)
+            wait(0.1)
+            return item
+        end
+    end
+    
+    return nil
+end
+
+local function hasProtection(targetPlr)
+    if not targetPlr or not targetPlr.Character then return false end
+    local forceField = targetPlr.Character:FindFirstChild("ForceField")
+    return forceField ~= nil
+end
+
+local function updatePlayerList2()
+    for _, btn in pairs(playerButtons2) do
+        btn:Destroy()
+    end
+    playerButtons2 = {}
+    
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= player then
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(1, 0, 0, 20)
+            btn.BackgroundColor3 = targetPlayer2 == plr and COLORS.buttonPrimary or Color3.fromRGB(240, 240, 240)
+            btn.TextColor3 = targetPlayer2 == plr and COLORS.textLight or COLORS.textDark
+            btn.Text = plr.Name
+            btn.Font = Enum.Font.Gotham
+            btn.TextSize = 10
+            btn.Parent = playerScroll2
+            
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(0, 5)
+            btnCorner.Parent = btn
+            
+            btn.MouseButton1Click:Connect(function()
+                targetPlayer2 = plr
+                statusLabel2.Text = "Target: " .. plr.Name
+                updatePlayerList2()
+            end)
+            
+            table.insert(playerButtons2, btn)
+        end
+    end
+    
+    playerScroll2.CanvasSize = UDim2.new(0, 0, 0, playerLayout2.AbsoluteContentSize.Y)
+end
+
+local function attackTarget()
+    if not targetPlayer2 then return end
+    
+    local myChar = player.Character
+    local myHum = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    local myHumanoid = myChar and myChar:FindFirstChild("Humanoid")
+    
+    local targetChar = targetPlayer2.Character
+    local targetHum = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+    local targetHumanoid = targetChar and targetChar:FindFirstChild("Humanoid")
+    
+    if not myHum or not myHumanoid or not targetHum or not targetHumanoid then
+        return
+    end
+    
+    if targetHumanoid.Health <= 0 then
+        return
+    end
+    
+    local sword = getSword()
+    if not sword then
+        sword = equipSword()
+    end
+    
+    myHum.CFrame = targetHum.CFrame * CFrame.new(0, 0, 2)
+    
+    if sword then
+        for i = 1, swingsPerAttack do
+            sword:Activate()
+            wait(0.01)
+        end
+    end
+end
+
+toggleButton2.MouseButton1Click:Connect(function()
+    killEnabled = not killEnabled
+    attackDelay = tonumber(delayInput.Text) or 0.05
+    if attackDelay < 0.01 then attackDelay = 0.01 end
+    
+    swingsPerAttack = tonumber(swingsInput.Text) or 3
+    if swingsPerAttack < 1 then swingsPerAttack = 1 end
+    if swingsPerAttack > 10 then swingsPerAttack = 10 end
+    
+    checkRate = tonumber(checkInput.Text) or 0.1
+    if checkRate < 0.05 then checkRate = 0.05 end
+    
+    if killEnabled then
+        toggleButton2.Text = "KILL AURA: ON"
+        toggleButton2.BackgroundColor3 = COLORS.buttonSuccess
+        statusLabel2.Text = targetPlayer2 and ("Hunting: " .. targetPlayer2.Name) or "No target selected"
+        
+        equipSword()
+        
+        spawn(function()
+            while killEnabled do
+                if targetPlayer2 and targetPlayer2.Character then
+                    local targetHumanoid = targetPlayer2.Character:FindFirstChild("Humanoid")
+                    
+                    if targetHumanoid then
+                        if targetHumanoid.Health > 0 then
+                            if hasProtection(targetPlayer2) then
+                                protectionLabel.Text = "Protection: TARGET PROTECTED"
+                                protectionLabel.TextColor3 = COLORS.buttonWarning
+                                statusLabel2.Text = "Waiting for target protection to end..."
+                            else
+                                protectionLabel.Text = "Protection: TARGET VULNERABLE"
+                                protectionLabel.TextColor3 = COLORS.buttonSuccess
+                                statusLabel2.Text = "ATTACKING!"
+                                
+                                attackTarget()
+                                wait(attackDelay)
+                            end
+                        else
+                            protectionLabel.Text = "Protection: Target dead"
+                            protectionLabel.TextColor3 = COLORS.textMuted
+                            statusLabel2.Text = "Waiting for target respawn..."
+                        end
+                    else
+                        protectionLabel.Text = "Protection: No humanoid"
+                        protectionLabel.TextColor3 = COLORS.textMuted
+                    end
+                else
+                    protectionLabel.Text = "Protection: No target"
+                    protectionLabel.TextColor3 = COLORS.textMuted
+                    statusLabel2.Text = "Target left or respawning..."
+                end
+                
+                wait(checkRate)
+            end
+        end)
+    else
+        toggleButton2.Text = "KILL AURA: OFF"
+        toggleButton2.BackgroundColor3 = COLORS.buttonDanger
+        statusLabel2.Text = targetPlayer2 and ("Target: " .. targetPlayer2.Name) or "No target selected"
+        protectionLabel.Text = "Protection: Waiting..."
+        protectionLabel.TextColor3 = COLORS.textMuted
+    end
+end)
+
+player.CharacterAdded:Connect(function()
+    wait(1)
     if killEnabled then
         equipSword()
     end
 end)
 
-player.CharacterRemoving:Connect(function()
-    stopFling()
-    stopKill()
+Players.PlayerAdded:Connect(updatePlayerList2)
+Players.PlayerRemoving:Connect(function()
+    wait(0.5)
+    updatePlayerList2()
 end)
+
+updatePlayerList2()
 
 -- ========== KEYBIND ==========
 
