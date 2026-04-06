@@ -75,8 +75,8 @@ end
 -- Calculate clear path with proper perpendicular directions
 local function calculateClearPath(direction, hrp)
     -- Proper perpendicular directions (relative to facing direction)
-    local rightDir = Vector3.new(direction.Z, 0, -direction.X)  -- 90° right
-    local leftDir = Vector3.new(-direction.Z, 0, direction.X)   -- 90° left
+    local rightDir = Vector3.new(direction.Z, 0, -direction.X)
+    local leftDir = Vector3.new(-direction.Z, 0, direction.X)
     
     -- Check forward
     if not checkForObstacles(direction, hrp, 15) then
@@ -84,7 +84,7 @@ local function calculateClearPath(direction, hrp)
         return direction
     end
     
-    -- Check diagonals first (45° angles) - better for corners
+    -- Check diagonals first
     local forwardLeft = (direction + leftDir).Unit
     local forwardRight = (direction + rightDir).Unit
     
@@ -93,7 +93,7 @@ local function calculateClearPath(direction, hrp)
     local blockedL = checkForObstacles(leftDir, hrp, 12)
     local blockedR = checkForObstacles(rightDir, hrp, 12)
     
-    -- Prefer the direction we were already going (commitment)
+    -- Prefer the direction we were already going
     if lastDirection == "left" and not blockedL then
         return leftDir
     elseif lastDirection == "right" and not blockedR then
@@ -121,7 +121,7 @@ local function calculateClearPath(direction, hrp)
         return -direction
     end
     
-    -- Fully stuck, try any direction
+    -- Fully stuck
     lastDirection = nil
     return leftDir
 end
@@ -145,7 +145,6 @@ local function autoWalkLoop()
             end
             lastPosition = hrp.Position
             
-            -- If stuck for too long, force a direction change
             if stuckTimer > 1 then
                 lastDirection = nil
                 stuckTimer = 0
@@ -155,7 +154,15 @@ local function autoWalkLoop()
             local moveDirection = Vector3.new(lookVector.X, 0, lookVector.Z).Unit
             
             local clearPath = calculateClearPath(moveDirection, hrp)
+            
+            -- Move character
             humanoid:MoveTo(hrp.Position + clearPath * moveSpeed)
+            
+            -- Rotate character (and camera) to face movement direction
+            if clearPath ~= moveDirection then
+                local targetCFrame = CFrame.new(hrp.Position, hrp.Position + clearPath)
+                hrp.CFrame = hrp.CFrame:Lerp(targetCFrame, 0.3)
+            end
         end
         
         task.wait(0.1)
