@@ -1,4 +1,5 @@
 -- Multi-Line Chat Hub (Fixed + Clear + Case Mode Toggle)
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
@@ -9,7 +10,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 -- Settings
 local MAX_CHARS = 200
 local expanded = false
-local caseMode = "normal" -- "upper", "lower", "normal"
+local caseMode = "normal"
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -17,7 +18,7 @@ screenGui.Name = "MultiChatHub"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- ========== HUB BUTTON (Collapsed State) ==========
+-- ========== HUB BUTTON ==========
 local hubButton = Instance.new("Frame")
 hubButton.Name = "HubButton"
 hubButton.Size = UDim2.new(0, 50, 0, 50)
@@ -40,7 +41,7 @@ hubIcon.Font = Enum.Font.GothamBold
 hubIcon.TextSize = 22
 hubIcon.Parent = hubButton
 
--- ========== MAIN FRAME (Expanded State) ==========
+-- ========== MAIN FRAME ==========
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(0, 220, 0, 320)
@@ -154,7 +155,7 @@ charCounter.TextSize = 10
 charCounter.TextXAlignment = Enum.TextXAlignment.Right
 charCounter.Parent = contentFrame
 
--- ========== CASE MODE ROW ==========
+-- Case Mode Row
 local caseRow = Instance.new("Frame")
 caseRow.Size = UDim2.new(1, -20, 0, 28)
 caseRow.Position = UDim2.new(0, 10, 0, 152)
@@ -202,7 +203,7 @@ local normalCorner = Instance.new("UICorner")
 normalCorner.CornerRadius = UDim.new(0, 6)
 normalCorner.Parent = normalBtn
 
--- ========== BUTTON ROW (CLEAR + SEND) ==========
+-- Button Row (CLR + Send All)
 local buttonRow = Instance.new("Frame")
 buttonRow.Size = UDim2.new(1, -20, 0, 32)
 buttonRow.Position = UDim2.new(0, 10, 0, 185)
@@ -337,7 +338,7 @@ mainFrame.InputBegan:Connect(function(input)
             if input.UserInputState == Enum.UserInputState.End then
                 mainDragging = false
             end
-        end())
+        end)
     end
 end)
 
@@ -395,7 +396,6 @@ end)
 local function sendMessage(msg)
     local message = msg
     
-    -- Apply case mode
     if caseMode == "upper" then
         message = string.upper(message)
     elseif caseMode == "lower" then
