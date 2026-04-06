@@ -1,13 +1,8 @@
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-
--- Settings
-local MOVE_SPEED = 18
-local RAY_DISTANCE = 12
 
 -- Create GUI
 local screenGui = Instance.new("ScreenGui")
@@ -15,7 +10,6 @@ screenGui.Name = "AutoWalkGUI"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Main Button
 local button = Instance.new("TextButton")
 button.Size = UDim2.new(0, 120, 0, 35)
 button.Position = UDim2.new(0.5, -60, 0.85, 0)
@@ -32,108 +26,93 @@ btnCorner.Parent = button
 
 -- Variables
 local isAutoWalking = false
-local connection = nil
+local moveSpeed = 16
 
--- Dragging (Mobile + PC)
+-- Dragging (works on mobile + PC)
 local dragging = false
 local dragStart, startPos
-local dragInput = nil
 
 button.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
         startPos = button.Position
-        dragInput = input
     end
 end)
 
 button.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = false
-        dragInput = nil
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if dragging and dragInput and input == dragInput then
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local delta = input.Position - dragStart
         button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
--- Raycast function
-local function getClearDirection(humanoidRootPart)
-    local camera = workspace.CurrentCamera
-    if not camera then return nil end
+-- Raycast check for obstacles
+local function checkForObstacles(direction, humanoidRootPart)
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterDescendantsInstances = {player.Character}
+    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
     
-    local lookVector = camera.CFrame.LookVector
-    local forward = Vector3.new(lookVector.X, 0, lookVector.Z).Unit
+    local raycastResult = workspace:Raycast(humanoidRootPart.Position, direction * 12, raycastParams)
     
-    local params = RaycastParams.new()
-    params.FilterDescendantsInstances = {player.Character}
-    params.FilterType = Enum.RaycastFilterType.Exclude
-    
-    -- Check forward
-    local forwardHit = workspace:Raycast(humanoidRootPart.Position, forward * RAY_DISTANCE, params)
-    
-    if not forwardHit then
-        return forward
+    if raycastResult and raycastResult.Instance then
+        return true
     end
-    
-    -- Check left
-    local rightVector = Vector3.new(forward.Z, 0, -forward.X)
-    local leftVector = -rightVector
-    
-    local leftHit = workspace:Raycast(humanoidRootPart.Position, leftVector * RAY_DISTANCE, params)
-    local rightHit = workspace:Raycast(humanoidRootPart.Position, rightVector * RAY_DISTANCE, params)
-    
-    if not leftHit then return leftVector end
-    if not rightHit then return rightVector end
-    
-    -- Backwards
-    local backHit = workspace:Raycast(humanoidRootPart.Position, -forward * RAY_DISTANCE, params)
-    if not backHit then return -forward end
-    
-    -- Stuck, try diagonal
-    local diag1 = (forward + leftVector).Unit
-    local diag2 = (forward + rightVector).Unit
-    
-    if not workspace:Raycast(humanoidRootPart.Position, diag1 * RAY_DISTANCE, params) then
-        return diag1
-    end
-    
-    if not workspace:Raycast(humanoidRootPart.Position, diag2 * RAY_DISTANCE, params) then
-        return diag2
-    end
-    
-    return forward
+    return false
 end
 
--- Main auto-walk loop
-local function startAutoWalk()
-    if connection then
-        connection:Disconnect()
+-- Calculate clear path
+local function calculateClearPath(direction, humanoidRootPart)
+    if not checkForObstacles(direction, humanoidRootPart) then
+        return direction
     end
     
-    connection = RunService.Heartbeat:Connect(function()
-        if not isAutoWalking then return end
+    -- Try left
+    local leftDirection = (direction + Vector3.new(-1, 0, 0)).Unit
+    if not checkForObstacles(leftDirection, humanoidRootPart) then
+        return leftDirection
+    end
+    
+    -- Try right
+    local rightDirection = (direction + Vector3.new(1, 0, 0)).Unit
+    if not checkForObstacles(rightDirection, humanoidRootPart) then
+        return rightDirection
+    end
+    
+    -- Try backwards
+    local backDirection = -direction
+    if not checkForObstacles(backDirection, humanoidRootPart) then
+        return backDirection
+    end
+    
+    -- Random diagonal
+    local randomDirection = Vector3.new(math.random(-1, 1), 0, math.random(-1, 1)).Unit
+    return randomDirection
+end
+
+-- Auto-walk loop
+local function autoWalkLoop()
+    while isAutoWalking and player.Character do
+        local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+        local humanoid = player.Character:FindFirstChild("Humanoid")
+        local camera = workspace.CurrentCamera
         
-        local character = player.Character
-        if not character then return end
-        
-        local humanoid = character:FindFirstChild("Humanoid")
-        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-        
-        if not humanoid or not humanoidRootPart then return end
-        
-        local direction = getClearDirection(humanoidRootPart)
-        if direction then
-            -- Move using MoveTo for reliability on mobile
-            local targetPos = humanoidRootPart.Position + direction * MOVE_SPEED
-            humanoid:MoveTo(targetPos)
+        if humanoidRootPart and humanoid and camera then
+            local lookVector = camera.CFrame.LookVector
+            local moveDirection = Vector3.new(lookVector.X, 0, lookVector.Z).Unit
+            
+            local clearPath = calculateClearPath(moveDirection, humanoidRootPart)
+            humanoid:MoveTo(humanoidRootPart.Position + clearPath * moveSpeed)
         end
-    end)
+        
+        wait(0.1)
+    end
 end
 
 -- Toggle
@@ -143,29 +122,17 @@ button.MouseButton1Click:Connect(function()
     if isAutoWalking then
         button.Text = "Auto-Walk: ON"
         button.BackgroundColor3 = Color3.fromRGB(0, 140, 80)
-        startAutoWalk()
+        autoWalkLoop()
     else
         button.Text = "Auto-Walk: OFF"
         button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        
-        if connection then
-            connection:Disconnect()
-            connection = nil
-        end
-        
-        -- Stop movement
-        local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid:MoveTo(humanoid.RootPart and humanoid.RootPart.Position or player.Character.HumanoidRootPart.Position)
-        end
     end
 end)
 
--- Handle respawn
+-- Respawn handling
 player.CharacterAdded:Connect(function()
-    wait(1)
     if isAutoWalking then
-        startAutoWalk()
+        autoWalkLoop()
     end
 end)
 
