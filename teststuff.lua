@@ -1,4 +1,4 @@
--- Mimic Chat GUI (Minimizable Hub)
+-- Mimic Chat GUI (Hub Style)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,58 +12,49 @@ local mimicEnabled = false
 local targetPlayer = nil
 local suffixes = {}
 local suffixIndex = 1
-local isMinimized = false
 
--- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MimicHubGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Main Frame (Container for dragging)
+-- ========== HUB BUTTON (Collapsed) ==========
+local hubButton = Instance.new("Frame")
+hubButton.Name = "HubButton"
+hubButton.Size = UDim2.new(0, 50, 0, 50)
+hubButton.Position = UDim2.new(0, 20, 0.5, -25)
+hubButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+hubButton.BorderSizePixel = 2
+hubButton.BorderColor3 = Color3.fromRGB(100, 100, 100)
+hubButton.Parent = screenGui
+
+local hubCorner = Instance.new("UICorner")
+hubCorner.CornerRadius = UDim.new(0, 8)
+hubCorner.Parent = hubButton
+
+local hubIcon = Instance.new("TextLabel")
+hubIcon.Size = UDim2.new(1, 0, 1, 0)
+hubIcon.BackgroundTransparency = 1
+hubIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+hubIcon.Text = "🎯"
+hubIcon.Font = Enum.Font.GothamBold
+hubIcon.TextSize = 22
+hubIcon.Parent = hubButton
+
+-- ========== MAIN FRAME (Expanded) ==========
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 200, 0, 250)
-mainFrame.Position = UDim2.new(0.5, -100, 0.5, -125)
+mainFrame.Size = UDim2.new(0, 200, 0, 260)
+mainFrame.Position = UDim2.new(0, 20, 0.5, -130)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BorderSizePixel = 2
 mainFrame.BorderColor3 = Color3.fromRGB(60, 60, 60)
+mainFrame.Visible = false
 mainFrame.Parent = screenGui
 
 local mainCorner = Instance.new("UICorner")
 mainCorner.CornerRadius = UDim.new(0, 8)
 mainCorner.Parent = mainFrame
-
--- Minimized Frame (Hub Icon)
-local minFrame = Instance.new("Frame")
-minFrame.Name = "MinimizedFrame"
-minFrame.Size = UDim2.new(0, 50, 0, 50)
-minFrame.Position = UDim2.new(0, 0, 0, 0)
-minFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-minFrame.BorderSizePixel = 2
-minFrame.BorderColor3 = Color3.fromRGB(100, 100, 100)
-minFrame.Visible = false
-minFrame.Parent = mainFrame
-
-local minCorner = Instance.new("UICorner")
-minCorner.CornerRadius = UDim.new(0, 8)
-minCorner.Parent = minFrame
-
-local minIcon = Instance.new("TextLabel")
-minIcon.Size = UDim2.new(1, 0, 1, 0)
-minIcon.BackgroundTransparency = 1
-minIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
-minIcon.Text = "🎯"
-minIcon.Font = Enum.Font.GothamBold
-minIcon.TextSize = 24
-minIcon.Parent = minFrame
-
--- Expanded Frame
-local expFrame = Instance.new("Frame")
-expFrame.Name = "ExpandedFrame"
-expFrame.Size = UDim2.new(1, 0, 1, 0)
-expFrame.BackgroundTransparency = 1
-expFrame.Parent = mainFrame
 
 -- Title Bar
 local titleBar = Instance.new("Frame")
@@ -71,7 +62,7 @@ titleBar.Name = "TitleBar"
 titleBar.Size = UDim2.new(1, 0, 0, 28)
 titleBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 titleBar.BorderSizePixel = 0
-titleBar.Parent = expFrame
+titleBar.Parent = mainFrame
 
 local titleCorner = Instance.new("UICorner")
 titleCorner.CornerRadius = UDim.new(0, 8)
@@ -95,22 +86,22 @@ titleLabel.TextSize = 13
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = titleBar
 
--- Minimize Button
-local minBtn = Instance.new("TextButton")
-minBtn.Size = UDim2.new(0, 24, 0, 24)
-minBtn.Position = UDim2.new(1, -54, 0.5, -12)
-minBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-minBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-minBtn.Text = "-"
-minBtn.Font = Enum.Font.GothamBold
-minBtn.TextSize = 14
-minBtn.Parent = titleBar
+-- Collapse Button (-)
+local collapseBtn = Instance.new("TextButton")
+collapseBtn.Size = UDim2.new(0, 24, 0, 24)
+collapseBtn.Position = UDim2.new(1, -54, 0.5, -12)
+collapseBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+collapseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+collapseBtn.Text = "-"
+collapseBtn.Font = Enum.Font.GothamBold
+collapseBtn.TextSize = 14
+collapseBtn.Parent = titleBar
 
-local minBtnCorner = Instance.new("UICorner")
-minBtnCorner.CornerRadius = UDim.new(0, 4)
-minBtnCorner.Parent = minBtn
+local collapseCorner = Instance.new("UICorner")
+collapseCorner.CornerRadius = UDim.new(0, 4)
+collapseCorner.Parent = collapseBtn
 
--- Kill Button
+-- Kill Button (X)
 local killBtn = Instance.new("TextButton")
 killBtn.Size = UDim2.new(0, 24, 0, 24)
 killBtn.Position = UDim2.new(1, -28, 0.5, -12)
@@ -121,9 +112,9 @@ killBtn.Font = Enum.Font.GothamBold
 killBtn.TextSize = 14
 killBtn.Parent = titleBar
 
-local killBtnCorner = Instance.new("UICorner")
-killBtnCorner.CornerRadius = UDim.new(0, 4)
-killBtnCorner.Parent = killBtn
+local killCorner = Instance.new("UICororner")
+killCorner.CornerRadius = UDim.new(0, 4)
+killCorner.Parent = killBtn
 
 -- Target Display
 local targetLabel = Instance.new("TextLabel")
@@ -134,7 +125,7 @@ targetLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 targetLabel.Text = "Target: None"
 targetLabel.Font = Enum.Font.Gotham
 targetLabel.TextSize = 12
-targetLabel.Parent = expFrame
+targetLabel.Parent = mainFrame
 
 local targetCorner = Instance.new("UICorner")
 targetCorner.CornerRadius = UDim.new(0, 6)
@@ -149,7 +140,7 @@ selectTargetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 selectTargetBtn.Text = "Select Target"
 selectTargetBtn.Font = Enum.Font.GothamBold
 selectTargetBtn.TextSize = 12
-selectTargetBtn.Parent = expFrame
+selectTargetBtn.Parent = mainFrame
 
 local selectTargetCorner = Instance.new("UICorner")
 selectTargetCorner.CornerRadius = UDim.new(0, 6)
@@ -164,7 +155,7 @@ mimicToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 mimicToggle.Text = "MIMIC: OFF"
 mimicToggle.Font = Enum.Font.GothamBold
 mimicToggle.TextSize = 14
-mimicToggle.Parent = expFrame
+mimicToggle.Parent = mainFrame
 
 local mimicToggleCorner = Instance.new("UICorner")
 mimicToggleCorner.CornerRadius = UDim.new(0, 6)
@@ -182,7 +173,7 @@ suffixInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 suffixInput.Font = Enum.Font.Gotham
 suffixInput.TextSize = 12
 suffixInput.ClearTextOnFocus = false
-suffixInput.Parent = expFrame
+suffixInput.Parent = mainFrame
 
 local suffixInputCorner = Instance.new("UICorner")
 suffixInputCorner.CornerRadius = UDim.new(0, 6)
@@ -197,7 +188,7 @@ addSuffixBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 addSuffixBtn.Text = "Add"
 addSuffixBtn.Font = Enum.Font.GothamBold
 addSuffixBtn.TextSize = 12
-addSuffixBtn.Parent = expFrame
+addSuffixBtn.Parent = mainFrame
 
 local addSuffixCorner = Instance.new("UICorner")
 addSuffixCorner.CornerRadius = UDim.new(0, 6)
@@ -208,7 +199,7 @@ local suffixListFrame = Instance.new("Frame")
 suffixListFrame.Size = UDim2.new(1, -20, 0, 80)
 suffixListFrame.Position = UDim2.new(0, 10, 0, 175)
 suffixListFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-suffixListFrame.Parent = expFrame
+suffixListFrame.Parent = mainFrame
 
 local suffixListCorner = Instance.new("UICorner")
 suffixListCorner.CornerRadius = UDim.new(0, 6)
@@ -221,9 +212,9 @@ suffixScroll.BackgroundTransparency = 1
 suffixScroll.ScrollBarThickness = 4
 suffixScroll.Parent = suffixListFrame
 
-local suffixListCorner2 = Instance.new("UICorner")
-suffixListCorner2.CornerRadius = UDim.new(0, 4)
-suffixListCorner2.Parent = suffixScroll
+local suffixScrollCorner = Instance.new("UICorner")
+suffixScrollCorner.CornerRadius = UDim.new(0, 4)
+suffixScrollCorner.Parent = suffixScroll
 
 local suffixLayout = Instance.new("UIListLayout")
 suffixLayout.Padding = UDim.new(0, 2)
@@ -236,7 +227,7 @@ dropdownFrame.Position = UDim2.new(0, 10, 0, 95)
 dropdownFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 dropdownFrame.Visible = false
 dropdownFrame.ZIndex = 10
-dropdownFrame.Parent = expFrame
+dropdownFrame.Parent = mainFrame
 
 local dropdownCorner = Instance.new("UICorner")
 dropdownCorner.CornerRadius = UDim.new(0, 6)
@@ -250,50 +241,94 @@ dropdownScroll.ScrollBarThickness = 4
 dropdownScroll.ZIndex = 10
 dropdownScroll.Parent = dropdownFrame
 
-local dropdownCorner2 = Instance.new("UICorner")
-dropdownCorner2.CornerRadius = UDim.new(0, 4)
-dropdownCorner2.Parent = dropdownScroll
+local dropdownScrollCorner = Instance.new("UICorner")
+dropdownScrollCorner.CornerRadius = UDim.new(0, 4)
+dropdownScrollCorner.Parent = dropdownScroll
 
 local dropdownLayout = Instance.new("UIListLayout")
 dropdownLayout.Padding = UDim.new(0, 2)
 dropdownLayout.Parent = dropdownScroll
 
--- Dragging
-local dragging = false
-local dragInput, dragStart, startPos
+-- ========== DRAGGING ==========
+local draggingHub = false
+local dragHubInput, dragHubStart, dragHubPos
 
-local function makeDraggable(frame)
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = mainFrame.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-
-    frame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
-end
-
-makeDraggable(titleBar)
-makeDraggable(minFrame)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        local delta = input.Position - dragStart
-        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+hubButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        draggingHub = true
+        dragHubStart = input.Position
+        dragHubPos = hubButton.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                draggingHub = false
+            end
+        end)
     end
 end)
 
--- Send message function
+hubButton.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragHubInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragHubInput and draggingHub then
+        local delta = input.Position - dragHubStart
+        hubButton.Position = UDim2.new(dragHubPos.X.Scale, dragHubPos.X.Offset + delta.X, dragHubPos.Y.Scale, dragHubPos.Y.Offset + delta.Y)
+    end
+end)
+
+local draggingMain = false
+local dragMainInput, dragMainStart, dragMainPos
+
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        draggingMain = true
+        dragMainStart = input.Position
+        dragMainPos = mainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                draggingMain = false
+            end
+        end)
+    end
+end)
+
+mainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragMainInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragMainInput and draggingMain then
+        local delta = input.Position - dragMainStart
+        mainFrame.Position = UDim2.new(dragMainPos.X.Scale, dragMainPos.X.Offset + delta.X, dragMainPos.Y.Scale, dragMainPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- ========== TOGGLE HUB ==========
+hubButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        task.wait(0.1)
+        if not draggingHub then
+            hubButton.Visible = false
+            mainFrame.Visible = true
+        end
+    end
+end)
+
+collapseBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = false
+    hubButton.Visible = true
+end)
+
+killBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+-- ========== SEND MESSAGE ==========
 local function sendMessage(msg)
     if msg == "" then return false end
     local chatRemote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
@@ -317,7 +352,7 @@ local function sendMessage(msg)
     return false
 end
 
--- Update suffix list UI
+-- ========== SUFFIX LIST ==========
 local function updateSuffixList()
     for _, child in pairs(suffixScroll:GetChildren()) do
         if child:IsA("Frame") then
@@ -371,7 +406,7 @@ local function updateSuffixList()
     suffixScroll.CanvasSize = UDim2.new(0, 0, 0, suffixLayout.AbsoluteContentSize.Y)
 end
 
--- Mimic logic
+-- ========== MIMIC LOGIC ==========
 local function onPlayerChatted(plr, msg)
     if not mimicEnabled then return end
     if targetPlayer == nil then return end
@@ -416,7 +451,7 @@ Players.PlayerRemoving:Connect(function(plr)
     end
 end)
 
--- Dropdown functions
+-- ========== DROPDOWN ==========
 local function updateDropdown()
     for _, child in pairs(dropdownScroll:GetChildren()) do
         if child:IsA("TextButton") then
@@ -451,7 +486,7 @@ local function updateDropdown()
     dropdownScroll.CanvasSize = UDim2.new(0, 0, 0, dropdownLayout.AbsoluteContentSize.Y)
 end
 
--- Buttons
+-- ========== BUTTONS ==========
 selectTargetBtn.MouseButton1Click:Connect(function()
     if dropdownFrame.Visible then
         dropdownFrame.Visible = false
@@ -486,24 +521,6 @@ addSuffixBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-minBtn.MouseButton1Click:Connect(function()
-    isMinimized = true
-    mainFrame.Size = UDim2.new(0, 50, 0, 50)
-    expFrame.Visible = false
-    minFrame.Visible = true
-end)
-
-minFrame.MouseButton1Click:Connect(function()
-    isMinimized = false
-    mainFrame.Size = UDim2.new(0, 200, 0, 250)
-    expFrame.Visible = true
-    minFrame.Visible = false
-end)
-
-killBtn.MouseButton1Click:Connect(function()
-    screenGui:Destroy()
-end)
-
 -- Close dropdown when clicking elsewhere
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -513,11 +530,16 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- RightControl toggle
+-- Toggle GUI with RightControl
 local guiVisible = true
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.RightControl then
-        guiVisible = not guiVisible
-        mainFrame.Visible = guiVisible
+        if mainFrame.Visible then
+            mainFrame.Visible = false
+            hubButton.Visible = guiVisible
+        else
+            guiVisible = not guiVisible
+            hubButton.Visible = guiVisible
+        end
     end
 end)
