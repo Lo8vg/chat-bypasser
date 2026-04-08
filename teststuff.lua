@@ -1,4 +1,4 @@
--- Custom Chat GUI (TALL + Spam Cycle Messages + Follow-Up Tab)
+-- Custom Chat GUI (TALL + Spam Cycle Messages)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,7 +16,6 @@ local spamIndex = 1
 
 -- Follow-Up Settings
 local followUpEnabled = false
-local followUpMessage = ""
 local followUpDelay = 0.5
 
 -- Premade messages list
@@ -178,7 +177,7 @@ local spamCorner = Instance.new("UICorner")
 spamCorner.CornerRadius = UDim.new(0, 6)
 spamCorner.Parent = spamButton
 
--- Tab Buttons Row
+-- Tab Row (NEW)
 local tabRow = Instance.new("Frame")
 tabRow.Size = UDim2.new(1, -20, 0, 24)
 tabRow.Position = UDim2.new(0, 10, 0, 152)
@@ -200,7 +199,7 @@ local messagesTabCorner = Instance.new("UICorner")
 messagesTabCorner.CornerRadius = UDim.new(0, 6)
 messagesTabCorner.Parent = messagesTab
 
--- Follow-Up Tab Button
+-- Follow-Up Tab Button (NEW)
 local followUpTab = Instance.new("TextButton")
 followUpTab.Size = UDim2.new(0.5, -2, 0, 24)
 followUpTab.Position = UDim2.new(0.5, 2, 0, 0)
@@ -258,7 +257,7 @@ local addMsgCorner = Instance.new("UICorner")
 addMsgCorner.CornerRadius = UDim.new(0, 6)
 addMsgCorner.Parent = addMsgButton
 
--- Follow-Up Panel (hidden by default)
+-- Follow-Up Panel (NEW - hidden by default)
 local followUpPanel = Instance.new("Frame")
 followUpPanel.Size = UDim2.new(1, -20, 0, 120)
 followUpPanel.Position = UDim2.new(0, 10, 0, 180)
@@ -285,22 +284,10 @@ local followUpToggleCorner = Instance.new("UICorner")
 followUpToggleCorner.CornerRadius = UDim.new(0, 6)
 followUpToggleCorner.Parent = followUpToggle
 
--- Follow-Up Message Input Label
-local followUpLabel = Instance.new("TextLabel")
-followUpLabel.Size = UDim2.new(1, -10, 0, 16)
-followUpLabel.Position = UDim2.new(0, 5, 0, 38)
-followUpLabel.BackgroundTransparency = 1
-followUpLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-followUpLabel.Text = "Follow-Up Message:"
-followUpLabel.Font = Enum.Font.Gotham
-followUpLabel.TextSize = 10
-followUpLabel.TextXAlignment = Enum.TextXAlignment.Left
-followUpLabel.Parent = followUpPanel
-
 -- Follow-Up Message Input
 local followUpInput = Instance.new("TextBox")
 followUpInput.Size = UDim2.new(1, -10, 0, 32)
-followUpInput.Position = UDim2.new(0, 5, 0, 56)
+followUpInput.Position = UDim2.new(0, 5, 0, 40)
 followUpInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 followUpInput.TextColor3 = Color3.fromRGB(255, 255, 255)
 followUpInput.Text = ""
@@ -315,47 +302,32 @@ local followUpInputCorner = Instance.new("UICorner")
 followUpInputCorner.CornerRadius = UDim.new(0, 6)
 followUpInputCorner.Parent = followUpInput
 
--- Follow-Up Delay Row
-local followUpDelayRow = Instance.new("Frame")
-followUpDelayRow.Size = UDim2.new(1, -10, 0, 24)
-followUpDelayRow.Position = UDim2.new(0, 5, 0, 92)
-followUpDelayRow.BackgroundTransparency = 1
-followUpDelayRow.Parent = followUpPanel
-
-local followUpDelayLabel = Instance.new("TextLabel")
-followUpDelayLabel.Size = UDim2.new(0, 60, 0, 24)
-followUpDelayLabel.BackgroundTransparency = 1
-followUpDelayLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-followUpDelayLabel.Text = "Delay:"
-followUpDelayLabel.Font = Enum.Font.Gotham
-followUpDelayLabel.TextSize = 10
-followUpDelayLabel.TextXAlignment = Enum.TextXAlignment.Left
-followUpDelayLabel.Parent = followUpDelayRow
-
+-- Follow-Up Delay Input
 local followUpDelayInput = Instance.new("TextBox")
-followUpDelayInput.Size = UDim2.new(0, 50, 0, 24)
-followUpDelayInput.Position = UDim2.new(0, 60, 0, 0)
+followUpDelayInput.Size = UDim2.new(0, 60, 0, 28)
+followUpDelayInput.Position = UDim2.new(0, 5, 0, 80)
 followUpDelayInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 followUpDelayInput.TextColor3 = Color3.fromRGB(255, 255, 255)
 followUpDelayInput.Text = "0.5"
 followUpDelayInput.Font = Enum.Font.Gotham
 followUpDelayInput.TextSize = 11
 followUpDelayInput.ClearTextOnFocus = false
-followUpDelayInput.Parent = followUpDelayRow
+followUpDelayInput.Parent = followUpPanel
 
 local followUpDelayCorner = Instance.new("UICorner")
-followUpDelayCorner.CornerRadius = UDim.new(0, 4)
+followUpDelayCorner.CornerRadius = UDim.new(0, 6)
 followUpDelayCorner.Parent = followUpDelayInput
 
-local followUpDelaySec = Instance.new("TextLabel")
-followUpDelaySec.Size = UDim2.new(0, 30, 0, 24)
-followUpDelaySec.Position = UDim2.new(0, 112, 0, 0)
-followUpDelaySec.BackgroundTransparency = 1
-followUpDelaySec.TextColor3 = Color3.fromRGB(150, 150, 150)
-followUpDelaySec.Text = "sec"
-followUpDelaySec.Font = Enum.Font.Gotham
-followUpDelaySec.TextSize = 10
-followUpDelaySec.Parent = followUpDelayRow
+-- Follow-Up Delay Label
+local followUpDelayLabel = Instance.new("TextLabel")
+followUpDelayLabel.Size = UDim2.new(0, 50, 0, 28)
+followUpDelayLabel.Position = UDim2.new(0, 70, 0, 80)
+followUpDelayLabel.BackgroundTransparency = 1
+followUpDelayLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+followUpDelayLabel.Text = "sec delay"
+followUpDelayLabel.Font = Enum.Font.Gotham
+followUpDelayLabel.TextSize = 10
+followUpDelayLabel.Parent = followUpPanel
 
 -- Dragging
 local dragging = false
@@ -446,28 +418,6 @@ local function sendMessage(msg)
     return false
 end
 
--- Send with follow-up
-local function sendWithFollowUp()
-    local msg = textbox.Text:gsub("^%s+", ""):gsub("%s+$", "")
-    if msg == "" then return end
-    
-    -- Send original message
-    sendMessage(msg)
-    textbox.Text = ""
-    
-    -- Send follow-up if enabled
-    if followUpEnabled then
-        local fuMsg = followUpInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
-        if fuMsg ~= "" then
-            local delay = tonumber(followUpDelayInput.Text) or 0.5
-            spawn(function()
-                wait(delay)
-                sendMessage(fuMsg)
-            end)
-        end
-    end
-end
-
 -- Update messages list UI
 local function updateMessagesUI()
     -- Clear existing
@@ -524,56 +474,49 @@ local function updateMessagesUI()
     messagesScroll.CanvasSize = UDim2.new(0, 0, 0, #premadeMessages * 32)
 end
 
--- Tab switching
-local currentTab = "messages"
-
-local function switchTab(tab)
-    currentTab = tab
-    
-    if tab == "messages" then
-        messagesTab.Text = "▼ Messages"
-        messagesTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        messagesTab.TextColor3 = Color3.fromRGB(255, 255, 255)
-        messagesPanel.Visible = messagesExpanded
-        
-        followUpTab.Text = "Follow-Up"
-        followUpTab.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        followUpTab.TextColor3 = Color3.fromRGB(200, 200, 200)
-        followUpPanel.Visible = false
-    else
-        followUpTab.Text = "▼ Follow-Up"
-        followUpTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        followUpTab.TextColor3 = Color3.fromRGB(255, 255, 255)
-        followUpPanel.Visible = true
-        
-        messagesTab.Text = "Messages"
-        messagesTab.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        messagesTab.TextColor3 = Color3.fromRGB(200, 200, 200)
-        messagesPanel.Visible = false
-    end
-end
-
+-- Tab switching (NEW)
 messagesTab.MouseButton1Click:Connect(function()
-    switchTab("messages")
+    messagesTab.Text = "▼ Messages"
+    messagesTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    followUpTab.Text = "Follow-Up"
+    followUpTab.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    messagesPanel.Visible = messagesExpanded
+    followUpPanel.Visible = false
 end)
 
 followUpTab.MouseButton1Click:Connect(function()
-    switchTab("followup")
+    followUpTab.Text = "▼ Follow-Up"
+    followUpTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    messagesTab.Text = "Messages"
+    messagesTab.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    followUpPanel.Visible = true
+    messagesPanel.Visible = false
 end)
 
 -- Toggle messages panel
 messagesTab.MouseButton2Click:Connect(function()
-    if currentTab == "messages" then
-        messagesExpanded = not messagesExpanded
-        messagesPanel.Visible = messagesExpanded
-        
-        if messagesExpanded then
-            messagesTab.Text = "▼ Messages"
-            frame.Size = UDim2.new(0, 200, 0, 310)
-        else
-            messagesTab.Text = "Messages"
-            frame.Size = UDim2.new(0, 200, 0, 180)
-        end
+    messagesExpanded = not messagesExpanded
+    messagesPanel.Visible = messagesExpanded
+    
+    if messagesExpanded then
+        messagesTab.Text = "▼ Messages"
+        frame.Size = UDim2.new(0, 200, 0, 310)
+    else
+        messagesTab.Text = "Messages"
+        frame.Size = UDim2.new(0, 200, 0, 180)
+    end
+end)
+
+-- Follow-Up toggle (NEW)
+followUpToggle.MouseButton1Click:Connect(function()
+    followUpEnabled = not followUpEnabled
+    
+    if followUpEnabled then
+        followUpToggle.Text = "FOLLOW-UP: ON"
+        followUpToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
+    else
+        followUpToggle.Text = "FOLLOW-UP: OFF"
+        followUpToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
     end
 end)
 
@@ -587,38 +530,55 @@ addMsgButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Follow-up toggle
-followUpToggle.MouseButton1Click:Connect(function()
-    followUpEnabled = not followUpEnabled
-    
-    if followUpEnabled then
-        followUpToggle.Text = "FOLLOW-UP: ON"
-        followUpToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
-    else
-        followUpToggle.Text = "FOLLOW-UP: OFF"
-        followUpToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-    end
-end)
-
--- Send button
+-- Send button with follow-up (MODIFIED)
 sendButton.MouseButton1Click:Connect(function()
     if textbox.Text ~= "" then
-        sendWithFollowUp()
+        sendMessage()
+        if followUpEnabled then
+            local fuMsg = followUpInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
+            if fuMsg ~= "" then
+                local delay = tonumber(followUpDelayInput.Text) or 0.5
+                spawn(function()
+                    wait(delay)
+                    sendMessage(fuMsg)
+                end)
+            end
+        end
     end
 end)
 
--- FocusLost
+-- FocusLost (MODIFIED)
 textbox.FocusLost:Connect(function(enterPressed)
     if textbox.Text ~= "" and enterPressed then
-        sendWithFollowUp()
+        sendMessage()
+        if followUpEnabled then
+            local fuMsg = followUpInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
+            if fuMsg ~= "" then
+                local delay = tonumber(followUpDelayInput.Text) or 0.5
+                spawn(function()
+                    wait(delay)
+                    sendMessage(fuMsg)
+                end)
+            end
+        end
     end
 end)
 
--- Enter key
+-- Enter key (MODIFIED)
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.Enter and textbox:IsFocused() then
         if textbox.Text ~= "" then
-            sendWithFollowUp()
+            sendMessage()
+            if followUpEnabled then
+                local fuMsg = followUpInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
+                if fuMsg ~= "" then
+                    local delay = tonumber(followUpDelayInput.Text) or 0.5
+                    spawn(function()
+                        wait(delay)
+                        sendMessage(fuMsg)
+                    end)
+                end
+            end
         end
     end
 end)
@@ -682,8 +642,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Initialize
+-- Initialize messages UI
 updateMessagesUI()
-switchTab("messages")
 
-print("✅ Custom Chat GUI Loaded (with Follow-Up Tab)")
+print("✅ Custom Chat GUI Loaded")
