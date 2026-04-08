@@ -1,4 +1,4 @@
--- Custom Chat GUI (TALL + Spam Cycle Messages)
+-- Custom Chat GUI (TALL + Spam Cycle Messages + Follow-Up)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -177,14 +177,14 @@ local spamCorner = Instance.new("UICorner")
 spamCorner.CornerRadius = UDim.new(0, 6)
 spamCorner.Parent = spamButton
 
--- Tab Row (NEW)
+-- Tab Row
 local tabRow = Instance.new("Frame")
 tabRow.Size = UDim2.new(1, -20, 0, 24)
 tabRow.Position = UDim2.new(0, 10, 0, 152)
 tabRow.BackgroundTransparency = 1
 tabRow.Parent = frame
 
--- Messages Tab Button
+-- Messages Tab
 local messagesTab = Instance.new("TextButton")
 messagesTab.Size = UDim2.new(0.5, -2, 0, 24)
 messagesTab.Position = UDim2.new(0, 0, 0, 0)
@@ -199,7 +199,7 @@ local messagesTabCorner = Instance.new("UICorner")
 messagesTabCorner.CornerRadius = UDim.new(0, 6)
 messagesTabCorner.Parent = messagesTab
 
--- Follow-Up Tab Button (NEW)
+-- Follow-Up Tab
 local followUpTab = Instance.new("TextButton")
 followUpTab.Size = UDim2.new(0.5, -2, 0, 24)
 followUpTab.Position = UDim2.new(0.5, 2, 0, 0)
@@ -257,7 +257,7 @@ local addMsgCorner = Instance.new("UICorner")
 addMsgCorner.CornerRadius = UDim.new(0, 6)
 addMsgCorner.Parent = addMsgButton
 
--- Follow-Up Panel (NEW - hidden by default)
+-- Follow-Up Panel
 local followUpPanel = Instance.new("Frame")
 followUpPanel.Size = UDim2.new(1, -20, 0, 120)
 followUpPanel.Position = UDim2.new(0, 10, 0, 180)
@@ -310,7 +310,7 @@ followUpDelayInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 followUpDelayInput.TextColor3 = Color3.fromRGB(255, 255, 255)
 followUpDelayInput.Text = "0.5"
 followUpDelayInput.Font = Enum.Font.Gotham
-followUpDelayInput.TextSize = 11
+followUpDelayInput.TextSize = 12
 followUpDelayInput.ClearTextOnFocus = false
 followUpDelayInput.Parent = followUpPanel
 
@@ -320,7 +320,7 @@ followUpDelayCorner.Parent = followUpDelayInput
 
 -- Follow-Up Delay Label
 local followUpDelayLabel = Instance.new("TextLabel")
-followUpDelayLabel.Size = UDim2.new(0, 50, 0, 28)
+followUpDelayLabel.Size = UDim2.new(0, 60, 0, 28)
 followUpDelayLabel.Position = UDim2.new(0, 70, 0, 80)
 followUpDelayLabel.BackgroundTransparency = 1
 followUpDelayLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
@@ -418,6 +418,26 @@ local function sendMessage(msg)
     return false
 end
 
+-- Send with follow-up
+local function sendWithFollowUp()
+    local msg = textbox.Text:gsub("^%s+", ""):gsub("%s+$", "")
+    if msg == "" then return end
+    
+    sendMessage(msg)
+    textbox.Text = ""
+    
+    if followUpEnabled then
+        local fuMsg = followUpInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
+        if fuMsg ~= "" then
+            local delay = tonumber(followUpDelayInput.Text) or 0.5
+            spawn(function()
+                wait(delay)
+                sendMessage(fuMsg)
+            end)
+        end
+    end
+end
+
 -- Update messages list UI
 local function updateMessagesUI()
     -- Clear existing
@@ -474,7 +494,7 @@ local function updateMessagesUI()
     messagesScroll.CanvasSize = UDim2.new(0, 0, 0, #premadeMessages * 32)
 end
 
--- Tab switching (NEW)
+-- Tab switching
 messagesTab.MouseButton1Click:Connect(function()
     messagesTab.Text = "▼ Messages"
     messagesTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
@@ -493,21 +513,23 @@ followUpTab.MouseButton1Click:Connect(function()
     messagesPanel.Visible = false
 end)
 
--- Toggle messages panel
+-- Toggle messages panel (right click)
 messagesTab.MouseButton2Click:Connect(function()
     messagesExpanded = not messagesExpanded
     messagesPanel.Visible = messagesExpanded
     
     if messagesExpanded then
-        messagesTab.Text = "▼ Messages"
+        messagesTab.Text = "▲ Messages"
         frame.Size = UDim2.new(0, 200, 0, 310)
     else
-        messagesTab.Text = "Messages"
+        messagesTab.Text = "▼ Messages"
         frame.Size = UDim2.new(0, 200, 0, 180)
     end
+    
+    updateMessagesUI()
 end)
 
--- Follow-Up toggle (NEW)
+-- Follow-Up toggle
 followUpToggle.MouseButton1Click:Connect(function()
     followUpEnabled = not followUpEnabled
     
@@ -530,55 +552,25 @@ addMsgButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Send button with follow-up (MODIFIED)
+-- Send button
 sendButton.MouseButton1Click:Connect(function()
     if textbox.Text ~= "" then
-        sendMessage()
-        if followUpEnabled then
-            local fuMsg = followUpInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
-            if fuMsg ~= "" then
-                local delay = tonumber(followUpDelayInput.Text) or 0.5
-                spawn(function()
-                    wait(delay)
-                    sendMessage(fuMsg)
-                end)
-            end
-        end
+        sendWithFollowUp()
     end
 end)
 
--- FocusLost (MODIFIED)
+-- FocusLost
 textbox.FocusLost:Connect(function(enterPressed)
     if textbox.Text ~= "" and enterPressed then
-        sendMessage()
-        if followUpEnabled then
-            local fuMsg = followUpInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
-            if fuMsg ~= "" then
-                local delay = tonumber(followUpDelayInput.Text) or 0.5
-                spawn(function()
-                    wait(delay)
-                    sendMessage(fuMsg)
-                end)
-            end
-        end
+        sendWithFollowUp()
     end
 end)
 
--- Enter key (MODIFIED)
+-- Enter key
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.Enter and textbox:IsFocused() then
         if textbox.Text ~= "" then
-            sendMessage()
-            if followUpEnabled then
-                local fuMsg = followUpInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
-                if fuMsg ~= "" then
-                    local delay = tonumber(followUpDelayInput.Text) or 0.5
-                    spawn(function()
-                        wait(delay)
-                        sendMessage(fuMsg)
-                    end)
-                end
-            end
+            sendWithFollowUp()
         end
     end
 end)
@@ -642,7 +634,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Initialize messages UI
+-- Initialize
 updateMessagesUI()
 
-print("✅ Custom Chat GUI Loaded")
+print("✅ Custom Chat GUI Loaded (with Follow-Up Tab)")
