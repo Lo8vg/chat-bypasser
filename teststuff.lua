@@ -1,4 +1,4 @@
--- Custom Chat GUI (TALL + Spam Cycle Messages + Follow-Up + Ghost)
+-- Custom Chat GUI (TALL + Spam Cycle + Follow-Up + Ghost)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,22 +13,18 @@ local spamEnabled = false
 local spamDelay = 1
 local messagesExpanded = false
 local spamIndex = 1
-
--- Follow-Up Settings
 local followUpEnabled = false
-local followUpDelay = 0.5
-
--- Ghost Settings
 local ghostEnabled = false
-local ghostLines = 5
 
--- Premade messages list
 local premadeMessages = {
     "Hello",
     "GG",
     "What's up",
     "Bye"
 }
+
+-- Zero-width space character
+local ZWSP = utf8.char(0x200B)
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -74,7 +70,7 @@ titleLabel.Size = UDim2.new(1, -10, 1, 0)
 titleLabel.Position = UDim2.new(0, 10, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.Text = "💬 Chat"
+titleLabel.Text = "Chat"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 13
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -181,7 +177,7 @@ local spamCorner = Instance.new("UICorner")
 spamCorner.CornerRadius = UDim.new(0, 6)
 spamCorner.Parent = spamButton
 
--- Tab Row (3 tabs now)
+-- Tab Row
 local tabRow = Instance.new("Frame")
 tabRow.Size = UDim2.new(1, -20, 0, 24)
 tabRow.Position = UDim2.new(0, 10, 0, 152)
@@ -194,7 +190,7 @@ messagesTab.Size = UDim2.new(0.33, -2, 0, 24)
 messagesTab.Position = UDim2.new(0, 0, 0, 0)
 messagesTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 messagesTab.TextColor3 = Color3.fromRGB(255, 255, 255)
-messagesTab.Text = "▼ Msgs"
+messagesTab.Text = "Msgs"
 messagesTab.Font = Enum.Font.GothamBold
 messagesTab.TextSize = 10
 messagesTab.Parent = tabRow
@@ -218,7 +214,7 @@ local followUpTabCorner = Instance.new("UICorner")
 followUpTabCorner.CornerRadius = UDim.new(0, 6)
 followUpTabCorner.Parent = followUpTab
 
--- Ghost Tab (NEW)
+-- Ghost Tab
 local ghostTab = Instance.new("TextButton")
 ghostTab.Size = UDim2.new(0.34, -2, 0, 24)
 ghostTab.Position = UDim2.new(0.66, 2, 0, 0)
@@ -233,7 +229,7 @@ local ghostTabCorner = Instance.new("UICorner")
 ghostTabCorner.CornerRadius = UDim.new(0, 6)
 ghostTabCorner.Parent = ghostTab
 
--- Messages Panel (hidden by default)
+-- Messages Panel
 local messagesPanel = Instance.new("Frame")
 messagesPanel.Size = UDim2.new(1, -20, 0, 120)
 messagesPanel.Position = UDim2.new(0, 10, 0, 180)
@@ -276,7 +272,7 @@ local addMsgCorner = Instance.new("UICorner")
 addMsgCorner.CornerRadius = UDim.new(0, 6)
 addMsgCorner.Parent = addMsgButton
 
--- Follow-Up Panel (hidden by default)
+-- Follow-Up Panel
 local followUpPanel = Instance.new("Frame")
 followUpPanel.Size = UDim2.new(1, -20, 0, 120)
 followUpPanel.Position = UDim2.new(0, 10, 0, 180)
@@ -303,7 +299,7 @@ local followUpToggleCorner = Instance.new("UICorner")
 followUpToggleCorner.CornerRadius = UDim.new(0, 6)
 followUpToggleCorner.Parent = followUpToggle
 
--- Follow-Up Message Input
+-- Follow-Up Input
 local followUpInput = Instance.new("TextBox")
 followUpInput.Size = UDim2.new(1, -10, 0, 32)
 followUpInput.Position = UDim2.new(0, 5, 0, 40)
@@ -348,7 +344,7 @@ followUpDelayLabel.Font = Enum.Font.Gotham
 followUpDelayLabel.TextSize = 10
 followUpDelayLabel.Parent = followUpPanel
 
--- Ghost Panel (hidden by default)
+-- Ghost Panel
 local ghostPanel = Instance.new("Frame")
 ghostPanel.Size = UDim2.new(1, -20, 0, 120)
 ghostPanel.Position = UDim2.new(0, 10, 0, 180)
@@ -403,31 +399,28 @@ local ghostLinesInputCorner = Instance.new("UICorner")
 ghostLinesInputCorner.CornerRadius = UDim.new(0, 6)
 ghostLinesInputCorner.Parent = ghostLinesInput
 
--- Ghost Info Label
-local ghostInfoLabel = Instance.new("TextLabel")
-ghostInfoLabel.Size = UDim2.new(1, -10, 0, 40)
-ghostInfoLabel.Position = UDim2.new(0, 5, 0, 75)
-ghostInfoLabel.BackgroundTransparency = 1
-ghostInfoLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-ghostInfoLabel.Text = "Adds invisible lines above\nyour message to push it down"
-ghostInfoLabel.Font = Enum.Font.Gotham
-ghostInfoLabel.TextSize = 10
-ghostInfoLabel.TextXAlignment = Enum.TextXAlignment.Left
-ghostInfoLabel.TextYAlignment = Enum.TextYAlignment.Top
-ghostInfoLabel.Parent = ghostPanel
+-- Ghost Info
+local ghostInfo = Instance.new("TextLabel")
+ghostInfo.Size = UDim2.new(1, -10, 0, 40)
+ghostInfo.Position = UDim2.new(0, 5, 0, 75)
+ghostInfo.BackgroundTransparency = 1
+ghostInfo.TextColor3 = Color3.fromRGB(150, 150, 150)
+ghostInfo.Text = "Invisible lines push message\nto bottom of chat bubble"
+ghostInfo.Font = Enum.Font.Gotham
+ghostInfo.TextSize = 10
+ghostInfo.TextXAlignment = Enum.TextXAlignment.Left
+ghostInfo.TextYAlignment = Enum.TextYAlignment.Top
+ghostInfo.Parent = ghostPanel
 
 -- Dragging
 local dragging = false
-local dragInput
-local dragStart
-local startPos
+local dragInput, dragStart, startPos
 
 frame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
         startPos = frame.Position
-        
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 dragging = false
@@ -456,7 +449,6 @@ textbox:GetPropertyChangedSignal("Text"):Connect(function()
         textbox.Text = text:sub(1, MAX_CHARS)
     end
     charCounter.Text = #textbox.Text.."/"..MAX_CHARS
-    
     if #textbox.Text >= MAX_CHARS then
         charCounter.TextColor3 = Color3.fromRGB(255, 100, 100)
     elseif #textbox.Text >= MAX_CHARS * 0.8 then
@@ -468,14 +460,11 @@ end)
 
 -- Ghost prefix function
 local function getGhostPrefix()
-    if not ghostEnabled then
-        return ""
-    end
+    if not ghostEnabled then return "" end
     local lines = tonumber(ghostLinesInput.Text) or 5
     if lines < 0 then lines = 0 end
     if lines > 50 then lines = 50 end
-    -- Zero-width space + newlines
-    return "\u200B" .. string.rep("\n", lines)
+    return ZWSP .. string.rep("\n", lines)
 end
 
 -- Send message function
@@ -483,21 +472,14 @@ local function sendMessage(msg)
     local message = msg or textbox.Text
     message = message:gsub("^%s+", ""):gsub("%s+$", "")
     message = message:gsub("\n", " ")
-    
-    if message == "" then
-        return false
-    end
-    
+    if message == "" then return false end
     if #message > MAX_CHARS then
         message = message:sub(1, MAX_CHARS)
     end
-    
-    -- Add ghost prefix
     local ghostPrefix = getGhostPrefix()
     local finalMessage = ghostPrefix .. message
     
     local chatRemote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
-    
     if chatRemote then
         local sayMessage = chatRemote:FindFirstChild("SayMessageRequest")
         if sayMessage then
@@ -517,7 +499,6 @@ local function sendMessage(msg)
             end
         end
     end
-    
     return false
 end
 
@@ -525,32 +506,24 @@ end
 local function sendWithFollowUp()
     local msg = textbox.Text:gsub("^%s+", ""):gsub("%s+$", "")
     if msg == "" then return end
-    
     sendMessage(msg)
     textbox.Text = ""
-    
     if followUpEnabled then
         local fuMsg = followUpInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
         if fuMsg ~= "" then
             local delay = tonumber(followUpDelayInput.Text) or 0.5
-            spawn(function()
-                wait(delay)
+            task.delay(delay, function()
                 sendMessage(fuMsg)
             end)
         end
     end
 end
 
--- Update messages list UI
+-- Update messages UI
 local function updateMessagesUI()
-    -- Clear existing
     for _, child in pairs(messagesScroll:GetChildren()) do
-        if child:IsA("Frame") then
-            child:Destroy()
-        end
+        if child:IsA("Frame") then child:Destroy() end
     end
-    
-    -- Add messages
     for i, msg in ipairs(premadeMessages) do
         local msgFrame = Instance.new("Frame")
         msgFrame.Size = UDim2.new(1, 0, 0, 28)
@@ -592,8 +565,6 @@ local function updateMessagesUI()
             updateMessagesUI()
         end)
     end
-    
-    -- Update canvas size
     messagesScroll.CanvasSize = UDim2.new(0, 0, 0, #premadeMessages * 32)
 end
 
@@ -602,78 +573,55 @@ local currentTab = "messages"
 
 local function switchTab(tab)
     currentTab = tab
-    
-    -- Reset all tabs
-    messagesTab.Text = "Msgs"
     messagesTab.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     messagesTab.TextColor3 = Color3.fromRGB(200, 200, 200)
-    
-    followUpTab.Text = "Follow"
+    messagesTab.Text = "Msgs"
     followUpTab.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     followUpTab.TextColor3 = Color3.fromRGB(200, 200, 200)
-    
-    ghostTab.Text = "Ghost"
+    followUpTab.Text = "Follow"
     ghostTab.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     ghostTab.TextColor3 = Color3.fromRGB(200, 200, 200)
+    ghostTab.Text = "Ghost"
     
-    -- Hide all panels
     messagesPanel.Visible = false
     followUpPanel.Visible = false
     ghostPanel.Visible = false
     
-    -- Activate selected tab
     if tab == "messages" then
-        messagesTab.Text = "▼ Msgs"
         messagesTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
         messagesTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+        messagesTab.Text = "Msgs"
         messagesPanel.Visible = messagesExpanded
     elseif tab == "followup" then
-        followUpTab.Text = "Follow"
         followUpTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
         followUpTab.TextColor3 = Color3.fromRGB(255, 255, 255)
         followUpPanel.Visible = true
     elseif tab == "ghost" then
-        ghostTab.Text = "Ghost"
         ghostTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
         ghostTab.TextColor3 = Color3.fromRGB(255, 255, 255)
         ghostPanel.Visible = true
     end
 end
 
-messagesTab.MouseButton1Click:Connect(function()
-    switchTab("messages")
-end)
+messagesTab.MouseButton1Click:Connect(function() switchTab("messages") end)
+followUpTab.MouseButton1Click:Connect(function() switchTab("followup") end)
+ghostTab.MouseButton1Click:Connect(function() switchTab("ghost") end)
 
-followUpTab.MouseButton1Click:Connect(function()
-    switchTab("followup")
-end)
-
-ghostTab.MouseButton1Click:Connect(function()
-    switchTab("ghost")
-end)
-
--- Toggle messages panel (right click)
 messagesTab.MouseButton2Click:Connect(function()
     if currentTab == "messages" then
         messagesExpanded = not messagesExpanded
         messagesPanel.Visible = messagesExpanded
-        
         if messagesExpanded then
-            messagesTab.Text = "▲ Msgs"
             frame.Size = UDim2.new(0, 200, 0, 310)
         else
-            messagesTab.Text = "▼ Msgs"
             frame.Size = UDim2.new(0, 200, 0, 180)
         end
-        
-        updateMessagesUI()
     end
 end)
 
--- Follow-Up toggle
+-- Toggles
 followUpToggle.MouseButton1Click:Connect(function()
     followUpEnabled = not followUpEnabled
-    
     if followUpEnabled then
         followUpToggle.Text = "FOLLOW-UP: ON"
         followUpToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
@@ -683,10 +631,8 @@ followUpToggle.MouseButton1Click:Connect(function()
     end
 end)
 
--- Ghost toggle
 ghostToggle.MouseButton1Click:Connect(function()
     ghostEnabled = not ghostEnabled
-    
     if ghostEnabled then
         ghostToggle.Text = "GHOST: ON"
         ghostToggle.BackgroundColor3 = Color3.fromRGB(157, 77, 255)
@@ -696,7 +642,7 @@ ghostToggle.MouseButton1Click:Connect(function()
     end
 end)
 
--- Add current message to list
+-- Buttons
 addMsgButton.MouseButton1Click:Connect(function()
     local msg = textbox.Text:gsub("^%s+", ""):gsub("%s+$", "")
     if msg ~= "" then
@@ -706,67 +652,43 @@ addMsgButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Send button
 sendButton.MouseButton1Click:Connect(function()
-    if textbox.Text ~= "" then
-        sendWithFollowUp()
-    end
+    if textbox.Text ~= "" then sendWithFollowUp() end
 end)
 
--- FocusLost
 textbox.FocusLost:Connect(function(enterPressed)
-    if textbox.Text ~= "" and enterPressed then
-        sendWithFollowUp()
-    end
+    if textbox.Text ~= "" and enterPressed then sendWithFollowUp() end
 end)
 
--- Enter key
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.Enter and textbox:IsFocused() then
-        if textbox.Text ~= "" then
-            sendWithFollowUp()
-        end
+        if textbox.Text ~= "" then sendWithFollowUp() end
     end
 end)
 
 -- Spam toggle
 local function toggleSpam()
     spamEnabled = not spamEnabled
-    
     if spamEnabled then
         spamDelay = tonumber(delayTextbox.Text) or 1
-        if spamDelay < 0.1 then
-            spamDelay = 0.1
-        end
-        
+        if spamDelay < 0.1 then spamDelay = 0.1 end
         spamButton.Text = "SPAM: ON"
         spamButton.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
-        
-        -- Check if we have premade messages
         if #premadeMessages > 0 then
             spamIndex = 1
-            spawn(function()
+            task.spawn(function()
                 while spamEnabled do
-                    local msg = premadeMessages[spamIndex]
-                    if msg then
-                        sendMessage(msg)
-                    end
+                    sendMessage(premadeMessages[spamIndex])
                     spamIndex = spamIndex + 1
-                    if spamIndex > #premadeMessages then
-                        spamIndex = 1
-                    end
-                    wait(spamDelay)
+                    if spamIndex > #premadeMessages then spamIndex = 1 end
+                    task.wait(spamDelay)
                 end
             end)
         else
-            -- Use textbox message if no premade messages
-            spawn(function()
+            task.spawn(function()
                 while spamEnabled do
-                    local msg = textbox.Text
-                    if msg ~= "" then
-                        sendMessage(msg)
-                    end
-                    wait(spamDelay)
+                    if textbox.Text ~= "" then sendMessage() end
+                    task.wait(spamDelay)
                 end
             end)
         end
@@ -778,9 +700,8 @@ end
 
 spamButton.MouseButton1Click:Connect(toggleSpam)
 
--- Toggle GUI with RightControl
+-- Toggle GUI
 local guiVisible = true
-
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.RightControl then
         guiVisible = not guiVisible
@@ -788,8 +709,8 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Initialize
+-- Init
 updateMessagesUI()
 switchTab("messages")
 
-print("✅ Custom Chat GUI Loaded (with Ghost)")
+print("Chat GUI Loaded - RightControl to toggle")
