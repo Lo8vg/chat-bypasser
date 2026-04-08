@@ -1,4 +1,4 @@
--- Custom Chat GUI (TALL + Spam Cycle Messages + Follow-Up)
+-- Custom Chat GUI (TALL + Spam Cycle Messages + Follow-Up + Ghost)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -17,6 +17,10 @@ local spamIndex = 1
 -- Follow-Up Settings
 local followUpEnabled = false
 local followUpDelay = 0.5
+
+-- Ghost Settings
+local ghostEnabled = false
+local ghostLines = 5
 
 -- Premade messages list
 local premadeMessages = {
@@ -177,7 +181,7 @@ local spamCorner = Instance.new("UICorner")
 spamCorner.CornerRadius = UDim.new(0, 6)
 spamCorner.Parent = spamButton
 
--- Tab Row
+-- Tab Row (3 tabs now)
 local tabRow = Instance.new("Frame")
 tabRow.Size = UDim2.new(1, -20, 0, 24)
 tabRow.Position = UDim2.new(0, 10, 0, 152)
@@ -186,13 +190,13 @@ tabRow.Parent = frame
 
 -- Messages Tab
 local messagesTab = Instance.new("TextButton")
-messagesTab.Size = UDim2.new(0.5, -2, 0, 24)
+messagesTab.Size = UDim2.new(0.33, -2, 0, 24)
 messagesTab.Position = UDim2.new(0, 0, 0, 0)
 messagesTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 messagesTab.TextColor3 = Color3.fromRGB(255, 255, 255)
-messagesTab.Text = "▼ Messages"
+messagesTab.Text = "▼ Msgs"
 messagesTab.Font = Enum.Font.GothamBold
-messagesTab.TextSize = 11
+messagesTab.TextSize = 10
 messagesTab.Parent = tabRow
 
 local messagesTabCorner = Instance.new("UICorner")
@@ -201,18 +205,33 @@ messagesTabCorner.Parent = messagesTab
 
 -- Follow-Up Tab
 local followUpTab = Instance.new("TextButton")
-followUpTab.Size = UDim2.new(0.5, -2, 0, 24)
-followUpTab.Position = UDim2.new(0.5, 2, 0, 0)
+followUpTab.Size = UDim2.new(0.33, -2, 0, 24)
+followUpTab.Position = UDim2.new(0.33, 2, 0, 0)
 followUpTab.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 followUpTab.TextColor3 = Color3.fromRGB(200, 200, 200)
-followUpTab.Text = "Follow-Up"
+followUpTab.Text = "Follow"
 followUpTab.Font = Enum.Font.GothamBold
-followUpTab.TextSize = 11
+followUpTab.TextSize = 10
 followUpTab.Parent = tabRow
 
 local followUpTabCorner = Instance.new("UICorner")
 followUpTabCorner.CornerRadius = UDim.new(0, 6)
 followUpTabCorner.Parent = followUpTab
+
+-- Ghost Tab (NEW)
+local ghostTab = Instance.new("TextButton")
+ghostTab.Size = UDim2.new(0.34, -2, 0, 24)
+ghostTab.Position = UDim2.new(0.66, 2, 0, 0)
+ghostTab.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ghostTab.TextColor3 = Color3.fromRGB(200, 200, 200)
+ghostTab.Text = "Ghost"
+ghostTab.Font = Enum.Font.GothamBold
+ghostTab.TextSize = 10
+ghostTab.Parent = tabRow
+
+local ghostTabCorner = Instance.new("UICorner")
+ghostTabCorner.CornerRadius = UDim.new(0, 6)
+ghostTabCorner.Parent = ghostTab
 
 -- Messages Panel (hidden by default)
 local messagesPanel = Instance.new("Frame")
@@ -257,7 +276,7 @@ local addMsgCorner = Instance.new("UICorner")
 addMsgCorner.CornerRadius = UDim.new(0, 6)
 addMsgCorner.Parent = addMsgButton
 
--- Follow-Up Panel
+-- Follow-Up Panel (hidden by default)
 local followUpPanel = Instance.new("Frame")
 followUpPanel.Size = UDim2.new(1, -20, 0, 120)
 followUpPanel.Position = UDim2.new(0, 10, 0, 180)
@@ -329,6 +348,74 @@ followUpDelayLabel.Font = Enum.Font.Gotham
 followUpDelayLabel.TextSize = 10
 followUpDelayLabel.Parent = followUpPanel
 
+-- Ghost Panel (hidden by default)
+local ghostPanel = Instance.new("Frame")
+ghostPanel.Size = UDim2.new(1, -20, 0, 120)
+ghostPanel.Position = UDim2.new(0, 10, 0, 180)
+ghostPanel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+ghostPanel.Visible = false
+ghostPanel.Parent = frame
+
+local ghostPanelCorner = Instance.new("UICorner")
+ghostPanelCorner.CornerRadius = UDim.new(0, 6)
+ghostPanelCorner.Parent = ghostPanel
+
+-- Ghost Toggle
+local ghostToggle = Instance.new("TextButton")
+ghostToggle.Size = UDim2.new(1, -10, 0, 28)
+ghostToggle.Position = UDim2.new(0, 5, 0, 5)
+ghostToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+ghostToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+ghostToggle.Text = "GHOST: OFF"
+ghostToggle.Font = Enum.Font.GothamBold
+ghostToggle.TextSize = 12
+ghostToggle.Parent = ghostPanel
+
+local ghostToggleCorner = Instance.new("UICorner")
+ghostToggleCorner.CornerRadius = UDim.new(0, 6)
+ghostToggleCorner.Parent = ghostToggle
+
+-- Ghost Lines Label
+local ghostLinesLabel = Instance.new("TextLabel")
+ghostLinesLabel.Size = UDim2.new(0, 80, 0, 28)
+ghostLinesLabel.Position = UDim2.new(0, 5, 0, 40)
+ghostLinesLabel.BackgroundTransparency = 1
+ghostLinesLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+ghostLinesLabel.Text = "Ghost Lines:"
+ghostLinesLabel.Font = Enum.Font.Gotham
+ghostLinesLabel.TextSize = 11
+ghostLinesLabel.TextXAlignment = Enum.TextXAlignment.Left
+ghostLinesLabel.Parent = ghostPanel
+
+-- Ghost Lines Input
+local ghostLinesInput = Instance.new("TextBox")
+ghostLinesInput.Size = UDim2.new(0, 60, 0, 28)
+ghostLinesInput.Position = UDim2.new(0, 85, 0, 40)
+ghostLinesInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ghostLinesInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+ghostLinesInput.Text = "5"
+ghostLinesInput.Font = Enum.Font.Gotham
+ghostLinesInput.TextSize = 12
+ghostLinesInput.ClearTextOnFocus = false
+ghostLinesInput.Parent = ghostPanel
+
+local ghostLinesInputCorner = Instance.new("UICorner")
+ghostLinesInputCorner.CornerRadius = UDim.new(0, 6)
+ghostLinesInputCorner.Parent = ghostLinesInput
+
+-- Ghost Info Label
+local ghostInfoLabel = Instance.new("TextLabel")
+ghostInfoLabel.Size = UDim2.new(1, -10, 0, 40)
+ghostInfoLabel.Position = UDim2.new(0, 5, 0, 75)
+ghostInfoLabel.BackgroundTransparency = 1
+ghostInfoLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+ghostInfoLabel.Text = "Adds invisible lines above\nyour message to push it down"
+ghostInfoLabel.Font = Enum.Font.Gotham
+ghostInfoLabel.TextSize = 10
+ghostInfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+ghostInfoLabel.TextYAlignment = Enum.TextYAlignment.Top
+ghostInfoLabel.Parent = ghostPanel
+
 -- Dragging
 local dragging = false
 local dragInput
@@ -379,6 +466,18 @@ textbox:GetPropertyChangedSignal("Text"):Connect(function()
     end
 end)
 
+-- Ghost prefix function
+local function getGhostPrefix()
+    if not ghostEnabled then
+        return ""
+    end
+    local lines = tonumber(ghostLinesInput.Text) or 5
+    if lines < 0 then lines = 0 end
+    if lines > 50 then lines = 50 end
+    -- Zero-width space + newlines
+    return "\u200B" .. string.rep("\n", lines)
+end
+
 -- Send message function
 local function sendMessage(msg)
     local message = msg or textbox.Text
@@ -393,12 +492,16 @@ local function sendMessage(msg)
         message = message:sub(1, MAX_CHARS)
     end
     
+    -- Add ghost prefix
+    local ghostPrefix = getGhostPrefix()
+    local finalMessage = ghostPrefix .. message
+    
     local chatRemote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
     
     if chatRemote then
         local sayMessage = chatRemote:FindFirstChild("SayMessageRequest")
         if sayMessage then
-            sayMessage:FireServer(message, "All")
+            sayMessage:FireServer(finalMessage, "All")
             return true
         end
     end
@@ -409,7 +512,7 @@ local function sendMessage(msg)
         if channel then
             local rbxGeneral = channel:FindFirstChild("RBXGeneral")
             if rbxGeneral then
-                rbxGeneral:SendAsync(message)
+                rbxGeneral:SendAsync(finalMessage)
                 return true
             end
         end
@@ -495,38 +598,76 @@ local function updateMessagesUI()
 end
 
 -- Tab switching
-messagesTab.MouseButton1Click:Connect(function()
-    messagesTab.Text = "▼ Messages"
-    messagesTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    followUpTab.Text = "Follow-Up"
+local currentTab = "messages"
+
+local function switchTab(tab)
+    currentTab = tab
+    
+    -- Reset all tabs
+    messagesTab.Text = "Msgs"
+    messagesTab.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    messagesTab.TextColor3 = Color3.fromRGB(200, 200, 200)
+    
+    followUpTab.Text = "Follow"
     followUpTab.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    messagesPanel.Visible = messagesExpanded
+    followUpTab.TextColor3 = Color3.fromRGB(200, 200, 200)
+    
+    ghostTab.Text = "Ghost"
+    ghostTab.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    ghostTab.TextColor3 = Color3.fromRGB(200, 200, 200)
+    
+    -- Hide all panels
+    messagesPanel.Visible = false
     followUpPanel.Visible = false
+    ghostPanel.Visible = false
+    
+    -- Activate selected tab
+    if tab == "messages" then
+        messagesTab.Text = "▼ Msgs"
+        messagesTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        messagesTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+        messagesPanel.Visible = messagesExpanded
+    elseif tab == "followup" then
+        followUpTab.Text = "Follow"
+        followUpTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        followUpTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+        followUpPanel.Visible = true
+    elseif tab == "ghost" then
+        ghostTab.Text = "Ghost"
+        ghostTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        ghostTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+        ghostPanel.Visible = true
+    end
+end
+
+messagesTab.MouseButton1Click:Connect(function()
+    switchTab("messages")
 end)
 
 followUpTab.MouseButton1Click:Connect(function()
-    followUpTab.Text = "▼ Follow-Up"
-    followUpTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    messagesTab.Text = "Messages"
-    messagesTab.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    followUpPanel.Visible = true
-    messagesPanel.Visible = false
+    switchTab("followup")
+end)
+
+ghostTab.MouseButton1Click:Connect(function()
+    switchTab("ghost")
 end)
 
 -- Toggle messages panel (right click)
 messagesTab.MouseButton2Click:Connect(function()
-    messagesExpanded = not messagesExpanded
-    messagesPanel.Visible = messagesExpanded
-    
-    if messagesExpanded then
-        messagesTab.Text = "▲ Messages"
-        frame.Size = UDim2.new(0, 200, 0, 310)
-    else
-        messagesTab.Text = "▼ Messages"
-        frame.Size = UDim2.new(0, 200, 0, 180)
+    if currentTab == "messages" then
+        messagesExpanded = not messagesExpanded
+        messagesPanel.Visible = messagesExpanded
+        
+        if messagesExpanded then
+            messagesTab.Text = "▲ Msgs"
+            frame.Size = UDim2.new(0, 200, 0, 310)
+        else
+            messagesTab.Text = "▼ Msgs"
+            frame.Size = UDim2.new(0, 200, 0, 180)
+        end
+        
+        updateMessagesUI()
     end
-    
-    updateMessagesUI()
 end)
 
 -- Follow-Up toggle
@@ -539,6 +680,19 @@ followUpToggle.MouseButton1Click:Connect(function()
     else
         followUpToggle.Text = "FOLLOW-UP: OFF"
         followUpToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+    end
+end)
+
+-- Ghost toggle
+ghostToggle.MouseButton1Click:Connect(function()
+    ghostEnabled = not ghostEnabled
+    
+    if ghostEnabled then
+        ghostToggle.Text = "GHOST: ON"
+        ghostToggle.BackgroundColor3 = Color3.fromRGB(157, 77, 255)
+    else
+        ghostToggle.Text = "GHOST: OFF"
+        ghostToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
     end
 end)
 
@@ -636,5 +790,6 @@ end)
 
 -- Initialize
 updateMessagesUI()
+switchTab("messages")
 
-print("✅ Custom Chat GUI Loaded (with Follow-Up Tab)")
+print("✅ Custom Chat GUI Loaded (with Ghost)")
