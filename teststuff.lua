@@ -1,4 +1,4 @@
--- Mimic Chat GUI (Hub Style)
+-- Mimic Chat GUI (Fixed Hub Logic)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -112,7 +112,7 @@ killBtn.Font = Enum.Font.GothamBold
 killBtn.TextSize = 14
 killBtn.Parent = titleBar
 
-local killCorner = Instance.new("UICororner")
+local killCorner = Instance.new("UICorner")
 killCorner.CornerRadius = UDim.new(0, 4)
 killCorner.Parent = killBtn
 
@@ -249,18 +249,19 @@ local dropdownLayout = Instance.new("UIListLayout")
 dropdownLayout.Padding = UDim.new(0, 2)
 dropdownLayout.Parent = dropdownScroll
 
--- ========== DRAGGING ==========
-local draggingHub = false
-local dragHubInput, dragHubStart, dragHubPos
+-- ========== DRAGGING FOR HUB BUTTON ==========
+local dragging = false
+local dragInput, dragStart, startPos
 
 hubButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        draggingHub = true
-        dragHubStart = input.Position
-        dragHubPos = hubButton.Position
+        dragging = true
+        dragStart = input.Position
+        startPos = hubButton.Position
+        
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
-                draggingHub = false
+                dragging = false
             end
         end)
     end
@@ -268,28 +269,30 @@ end)
 
 hubButton.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragHubInput = input
+        dragInput = input
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if input == dragHubInput and draggingHub then
-        local delta = input.Position - dragHubStart
-        hubButton.Position = UDim2.new(dragHubPos.X.Scale, dragHubPos.X.Offset + delta.X, dragHubPos.Y.Scale, dragHubPos.Y.Offset + delta.Y)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        hubButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
-local draggingMain = false
-local dragMainInput, dragMainStart, dragMainPos
+-- ========== DRAGGING FOR MAIN FRAME ==========
+local mainDragging = false
+local mainDragInput, mainDragStart, mainDragPos
 
 mainFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        draggingMain = true
-        dragMainStart = input.Position
-        dragMainPos = mainFrame.Position
+        mainDragging = true
+        mainDragStart = input.Position
+        mainDragPos = mainFrame.Position
+        
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
-                draggingMain = false
+                mainDragging = false
             end
         end)
     end
@@ -297,22 +300,22 @@ end)
 
 mainFrame.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        dragMainInput = input
+        mainDragInput = input
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if input == dragMainInput and draggingMain then
-        local delta = input.Position - dragMainStart
-        mainFrame.Position = UDim2.new(dragMainPos.X.Scale, dragMainPos.X.Offset + delta.X, dragMainPos.Y.Scale, dragMainPos.Y.Offset + delta.Y)
+    if input == mainDragInput and mainDragging then
+        local delta = input.Position - mainDragStart
+        mainFrame.Position = UDim2.new(mainDragPos.X.Scale, mainDragPos.X.Offset + delta.X, mainDragPos.Y.Scale, mainDragPos.Y.Offset + delta.Y)
     end
 end)
 
--- ========== TOGGLE HUB ==========
+-- ========== TOGGLE HUB (Using InputBegan like reference) ==========
 hubButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         task.wait(0.1)
-        if not draggingHub then
+        if not dragging then
             hubButton.Visible = false
             mainFrame.Visible = true
         end
