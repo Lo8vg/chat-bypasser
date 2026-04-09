@@ -1,4 +1,4 @@
--- || MOBILE BLACK BOX LOGGER (Compact) ||
+-- || MOBILE BLACK BOX LOGGER (Fixed & Draggable) ||
 -- GUI Based Logger for Mobile
 
 local Players = game:GetService("Players")
@@ -40,8 +40,8 @@ toggleCorner.Parent = toggleBtn
 -- Main Frame (450x260)
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 450, 0, 260) -- Changed size
-mainFrame.Position = UDim2.new(0.5, -225, 0.5, -130) -- Centered
+mainFrame.Size = UDim2.new(0, 450, 0, 260)
+mainFrame.Position = UDim2.new(0.5, -225, 0.5, -130)
 mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -51,8 +51,9 @@ local mainCorner = Instance.new("UICorner")
 mainCorner.CornerRadius = UDim.new(0, 10)
 mainCorner.Parent = mainFrame
 
--- Title Bar
+-- Title Bar (Draggable Handle)
 local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
 titleBar.Size = UDim2.new(1, 0, 0, 35)
 titleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 titleBar.BorderSizePixel = 0
@@ -107,7 +108,7 @@ closeCorner.Parent = closeBtn
 
 -- Log Frame (Middle)
 local logFrame = Instance.new("ScrollingFrame")
-logFrame.Size = UDim2.new(1, -20, 1, -80) -- Adjusted to fit new height
+logFrame.Size = UDim2.new(1, -20, 1, -80)
 logFrame.Position = UDim2.new(0, 10, 0, 40)
 logFrame.BackgroundTransparency = 1
 logFrame.ScrollBarThickness = 4
@@ -148,6 +149,19 @@ copyLogBtn.Parent = btnRow
 local copyCorner = Instance.new("UICorner")
 copyCorner.CornerRadius = UDim.new(0, 6)
 copyCorner.Parent = copyLogBtn
+
+-- Target Selection Dropdown (Fixed Size)
+local playerDropdown = Instance.new("ScrollingFrame")
+playerDropdown.Size = UDim2.new(1, 0, 0, 100) -- Reduced height to 100
+playerDropdown.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+playerDropdown.Visible = false
+playerDropdown.Position = UDim2.new(0, 0, 1, 0)
+playerDropdown.ZIndex = 20
+playerDropdown.Parent = btnRow
+local dropCorner = Instance.new("UICorner")
+dropCorner.Parent = playerDropdown
+local dropLayout = Instance.new("UIListLayout")
+dropLayout.Parent = playerDropdown
 
 -- || FUNCTIONS ||
 
@@ -288,19 +302,6 @@ copyLogBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Target Selection Dropdown
-local playerDropdown = Instance.new("ScrollingFrame")
-playerDropdown.Size = UDim2.new(1, 0, 0, 150)
-playerDropdown.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-playerDropdown.Visible = false
-playerDropdown.Position = UDim2.new(0, 0, 1, 0)
-playerDropdown.ZIndex = 20
-playerDropdown.Parent = btnRow
-local dropCorner = Instance.new("UICorner")
-dropCorner.Parent = playerDropdown
-local dropLayout = Instance.new("UIListLayout")
-dropLayout.Parent = playerDropdown
-
 selectTargetBtn.MouseButton1Click:Connect(function()
     playerDropdown.Visible = not playerDropdown.Visible
     if playerDropdown.Visible then
@@ -326,6 +327,40 @@ selectTargetBtn.MouseButton1Click:Connect(function()
                 end)
             end
         end
+        
+        -- Auto-size dropdown canvas
+        playerDropdown.CanvasSize = UDim2.new(0, 0, 0, dropLayout.AbsoluteContentSize.Y)
+    end
+end)
+
+-- || DRAGGING LOGIC ||
+local dragging = false
+local dragInput, dragStart, startPos
+
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+titleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
