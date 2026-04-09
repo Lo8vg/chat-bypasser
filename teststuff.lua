@@ -1,4 +1,4 @@
--- Multi-Line Chat Hub (with Mimic Tab & Kill Button)
+-- Multi-Line Chat Hub (Compact Mode for Mobile)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -10,12 +10,13 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 -- Settings
 local MAX_CHARS = 200
-local caseMode = "normal" -- "upper", "lower", "normal"
+local caseMode = "normal"
 local mimicEnabled = false
 local targetPlayer = nil
 local suffixes = {}
 local suffixIndex = 1
 local currentTab = "chat"
+local advancedMode = false -- Starts in Compact Mode
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -46,11 +47,11 @@ hubIcon.Font = Enum.Font.GothamBold
 hubIcon.TextSize = 22
 hubIcon.Parent = hubButton
 
--- ========== MAIN FRAME (Expanded State) ==========
+-- ========== MAIN FRAME ==========
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 220, 0, 380)
-mainFrame.Position = UDim2.new(0, 20, 0.5, -190)
+mainFrame.Size = UDim2.new(0, 220, 0, 130) -- Compact Size by default
+mainFrame.Position = UDim2.new(0, 20, 0.5, -65)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BorderSizePixel = 2
 mainFrame.BorderColor3 = Color3.fromRGB(60, 60, 60)
@@ -81,11 +82,11 @@ titleFix.BorderSizePixel = 0
 titleFix.Parent = titleBar
 
 local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, -70, 1, 0)
+titleLabel.Size = UDim2.new(1, -100, 1, 0)
 titleLabel.Position = UDim2.new(0, 10, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.Text = "💬 Multi Chat"
+titleLabel.Text = "💬 Quick Chat"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 13
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -106,10 +107,25 @@ local killCorner = Instance.new("UICorner")
 killCorner.CornerRadius = UDim.new(0, 6)
 killCorner.Parent = killBtn
 
+-- Settings Button (Gear Icon)
+local settingsBtn = Instance.new("TextButton")
+settingsBtn.Size = UDim2.new(0, 28, 0, 22)
+settingsBtn.Position = UDim2.new(1, -64, 0.5, -11)
+settingsBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+settingsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+settingsBtn.Text = "⚙"
+settingsBtn.Font = Enum.Font.GothamBold
+settingsBtn.TextSize = 14
+settingsBtn.Parent = titleBar
+
+local settingsCorner = Instance.new("UICorner")
+settingsCorner.CornerRadius = UDim.new(0, 6)
+settingsCorner.Parent = settingsBtn
+
 -- Collapse Button (-)
 local collapseBtn = Instance.new("TextButton")
 collapseBtn.Size = UDim2.new(0, 28, 0, 22)
-collapseBtn.Position = UDim2.new(1, -64, 0.5, -11)
+collapseBtn.Position = UDim2.new(1, -96, 0.5, -11)
 collapseBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 collapseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 collapseBtn.Text = "-"
@@ -121,11 +137,98 @@ local collapseCorner = Instance.new("UICorner")
 collapseCorner.CornerRadius = UDim.new(0, 6)
 collapseCorner.Parent = collapseBtn
 
--- ========== TAB BAR ==========
+-- ========== COMPACT CONTENT (Default) ==========
+local compactContent = Instance.new("Frame")
+compactContent.Size = UDim2.new(1, 0, 1, -28)
+compactContent.Position = UDim2.new(0, 0, 0, 28)
+compactContent.BackgroundTransparency = 1
+compactContent.Parent = mainFrame
+
+-- Textbox (Compact)
+local textbox = Instance.new("TextBox")
+textbox.Name = "MultiInput"
+textbox.Size = UDim2.new(1, -20, 0, 50)
+textbox.Position = UDim2.new(0, 10, 0, 5)
+textbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+textbox.Text = ""
+textbox.PlaceholderText = "Message..."
+textbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+textbox.Font = Enum.Font.Gotham
+textbox.TextSize = 14
+textbox.TextXAlignment = Enum.TextXAlignment.Left
+textbox.TextYAlignment = Enum.TextYAlignment.Top
+textbox.ClearTextOnFocus = false
+textbox.MultiLine = true
+textbox.TextWrapped = true
+textbox.Parent = compactContent
+
+local textboxCorner = Instance.new("UICorner")
+textboxCorner.CornerRadius = UDim.new(0, 6)
+textboxCorner.Parent = textbox
+
+-- Button Row (Compact)
+local compactRow = Instance.new("Frame")
+compactRow.Size = UDim2.new(1, -20, 0, 32)
+compactRow.Position = UDim2.new(0, 10, 0, 60)
+compactRow.BackgroundTransparency = 1
+compactRow.Parent = compactContent
+
+local sendAllBtn = Instance.new("TextButton")
+sendAllBtn.Size = UDim2.new(1, -60, 1, 0)
+sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+sendAllBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+sendAllBtn.Text = "Send All"
+sendAllBtn.Font = Enum.Font.GothamBold
+sendAllBtn.TextSize = 13
+sendAllBtn.Parent = compactRow
+local sendAllCorner = Instance.new("UICorner")
+sendAllCorner.CornerRadius = UDim.new(0, 6)
+sendAllCorner.Parent = sendAllBtn
+
+local delayTextbox = Instance.new("TextBox")
+delayTextbox.Size = UDim2.new(0, 45, 1, 0)
+delayTextbox.Position = UDim2.new(1, -45, 0, 0)
+delayTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+delayTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+delayTextbox.Text = "0.5"
+delayTextbox.PlaceholderText = "0.5"
+delayTextbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+delayTextbox.Font = Enum.Font.Gotham
+delayTextbox.TextSize = 11
+delayTextbox.ClearTextOnFocus = false
+delayTextbox.Parent = compactRow
+
+local delayCorner = Instance.new("UICorner")
+delayCorner.CornerRadius = UDim.new(0, 6)
+delayCorner.Parent = delayTextbox
+
+-- Char Counter (Small)
+local charCounter = Instance.new("TextLabel")
+charCounter.Size = UDim2.new(1, -20, 0, 14)
+charCounter.Position = UDim2.new(0, 10, 1, -16)
+charCounter.BackgroundTransparency = 1
+charCounter.TextColor3 = Color3.fromRGB(100, 100, 100)
+charCounter.Text = "Lines: 0 | Chars: 0/200"
+charCounter.Font = Enum.Font.Gotham
+charCounter.TextSize = 9
+charCounter.TextXAlignment = Enum.TextXAlignment.Right
+charCounter.Parent = compactContent
+
+-- ========== ADVANCED CONTENT (Hidden by default) ==========
+local advancedContent = Instance.new("Frame")
+advancedContent.Size = UDim2.new(1, 0, 1, -56)
+advancedContent.Position = UDim2.new(0, 0, 0, 56)
+advancedContent.BackgroundTransparency = 1
+advancedContent.Visible = false
+advancedContent.Parent = mainFrame
+
+-- Tab Bar (Only in Advanced)
 local tabBar = Instance.new("Frame")
 tabBar.Size = UDim2.new(1, 0, 0, 28)
 tabBar.Position = UDim2.new(0, 0, 0, 28)
 tabBar.BackgroundTransparency = 1
+tabBar.Visible = false
 tabBar.Parent = mainFrame
 
 local chatTabBtn = Instance.new("TextButton")
@@ -154,67 +257,20 @@ local mimicTabCorner = Instance.new("UICorner")
 mimicTabCorner.CornerRadius = UDim.new(0, 6)
 mimicTabCorner.Parent = mimicTabBtn
 
--- ========== CONTENT FRAMES ==========
--- Chat Content
-local chatContent = Instance.new("Frame")
-chatContent.Size = UDim2.new(1, 0, 1, -56)
-chatContent.Position = UDim2.new(0, 0, 0, 56)
-chatContent.BackgroundTransparency = 1
-chatContent.Parent = mainFrame
-
--- Textbox Label
-local textboxLabel = Instance.new("TextLabel")
-textboxLabel.Size = UDim2.new(1, -20, 0, 18)
-textboxLabel.Position = UDim2.new(0, 10, 0, 8)
-textboxLabel.BackgroundTransparency = 1
-textboxLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-textboxLabel.Text = "Multi-line messages (one per line)"
-textboxLabel.Font = Enum.Font.Gotham
-textboxLabel.TextSize = 10
-textboxLabel.TextXAlignment = Enum.TextXAlignment.Left
-textboxLabel.Parent = chatContent
-
--- Multi-line Textbox
-local textbox = Instance.new("TextBox")
-textbox.Name = "MultiInput"
-textbox.Size = UDim2.new(1, -20, 0, 100)
-textbox.Position = UDim2.new(0, 10, 0, 30)
-textbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
-textbox.Text = ""
-textbox.PlaceholderText = "Message 1\nMessage 2\nMessage 3"
-textbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
-textbox.Font = Enum.Font.Gotham
-textbox.TextSize = 14
-textbox.TextXAlignment = Enum.TextXAlignment.Left
-textbox.TextYAlignment = Enum.TextYAlignment.Top
-textbox.ClearTextOnFocus = false
-textbox.MultiLine = true
-textbox.TextWrapped = true
-textbox.Parent = chatContent
-
-local textboxCorner = Instance.new("UICorner")
-textboxCorner.CornerRadius = UDim.new(0, 6)
-textboxCorner.Parent = textbox
-
--- Char Counter
-local charCounter = Instance.new("TextLabel")
-charCounter.Size = UDim2.new(1, -20, 0, 16)
-charCounter.Position = UDim2.new(0, 10, 0, 132)
-charCounter.BackgroundTransparency = 1
-charCounter.TextColor3 = Color3.fromRGB(150, 150, 150)
-charCounter.Text = "Lines: 0 | Chars: 0/200"
-charCounter.Font = Enum.Font.Gotham
-charCounter.TextSize = 10
-charCounter.TextXAlignment = Enum.TextXAlignment.Right
-charCounter.Parent = chatContent
+-- Chat Settings Content (Advanced)
+local chatSettingsContent = Instance.new("Frame")
+chatSettingsContent.Size = UDim2.new(1, 0, 1, -56)
+chatSettingsContent.Position = UDim2.new(0, 0, 0, 56)
+chatSettingsContent.BackgroundTransparency = 1
+chatSettingsContent.Visible = false
+chatSettingsContent.Parent = mainFrame
 
 -- Case Mode Buttons
 local caseRow = Instance.new("Frame")
 caseRow.Size = UDim2.new(1, -20, 0, 24)
-caseRow.Position = UDim2.new(0, 10, 0, 152)
+caseRow.Position = UDim2.new(0, 10, 0, 10)
 caseRow.BackgroundTransparency = 1
-caseRow.Parent = chatContent
+caseRow.Parent = chatSettingsContent
 
 local upperBtn = Instance.new("TextButton")
 upperBtn.Size = UDim2.new(0.33, -2, 1, 0)
@@ -254,95 +310,33 @@ local normalCorner = Instance.new("UICorner")
 normalCorner.CornerRadius = UDim.new(0, 6)
 normalCorner.Parent = normalBtn
 
--- Button Row
-local buttonRow = Instance.new("Frame")
-buttonRow.Size = UDim2.new(1, -20, 0, 32)
-buttonRow.Position = UDim2.new(0, 10, 0, 180)
-buttonRow.BackgroundTransparency = 1
-buttonRow.Parent = chatContent
-
+-- Clear Button
 local clearBtn = Instance.new("TextButton")
-clearBtn.Size = UDim2.new(0, 55, 1, 0)
+clearBtn.Size = UDim2.new(1, -20, 0, 32)
+clearBtn.Position = UDim2.new(0, 10, 0, 40)
 clearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 clearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-clearBtn.Text = "CLR"
+clearBtn.Text = "Clear All"
 clearBtn.Font = Enum.Font.GothamBold
-clearBtn.TextSize = 12
-clearBtn.Parent = buttonRow
+clearBtn.TextSize = 13
+clearBtn.Parent = chatSettingsContent
 local clearCorner = Instance.new("UICorner")
 clearCorner.CornerRadius = UDim.new(0, 6)
 clearCorner.Parent = clearBtn
 
-local sendAllBtn = Instance.new("TextButton")
-sendAllBtn.Size = UDim2.new(1, -59, 1, 0)
-sendAllBtn.Position = UDim2.new(0, 57, 0, 0)
-sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-sendAllBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-sendAllBtn.Text = "Send All"
-sendAllBtn.Font = Enum.Font.GothamBold
-sendAllBtn.TextSize = 13
-sendAllBtn.Parent = buttonRow
-local sendAllCorner = Instance.new("UICorner")
-sendAllCorner.CornerRadius = UDim.new(0, 6)
-sendAllCorner.Parent = sendAllBtn
-
--- Delay Row
-local delayRow = Instance.new("Frame")
-delayRow.Size = UDim2.new(1, -20, 0, 28)
-delayRow.Position = UDim2.new(0, 10, 0, 217)
-delayRow.BackgroundTransparency = 1
-delayRow.Parent = chatContent
-
-local delayLabel = Instance.new("TextLabel")
-delayLabel.Size = UDim2.new(0, 45, 1, 0)
-delayLabel.BackgroundTransparency = 1
-delayLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-delayLabel.Text = "Delay:"
-delayLabel.Font = Enum.Font.Gotham
-delayLabel.TextSize = 11
-delayLabel.TextXAlignment = Enum.TextXAlignment.Left
-delayLabel.Parent = delayRow
-
-local delayTextbox = Instance.new("TextBox")
-delayTextbox.Size = UDim2.new(0, 45, 1, 0)
-delayTextbox.Position = UDim2.new(0, 48, 0, 0)
-delayTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-delayTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
-delayTextbox.Text = "0.5"
-delayTextbox.PlaceholderText = "0.5"
-delayTextbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
-delayTextbox.Font = Enum.Font.Gotham
-delayTextbox.TextSize = 11
-delayTextbox.ClearTextOnFocus = false
-delayTextbox.Parent = delayRow
-
-local delayCorner = Instance.new("UICorner")
-delayCorner.CornerRadius = UDim.new(0, 6)
-delayCorner.Parent = delayTextbox
-
-local secLabel = Instance.new("TextLabel")
-secLabel.Size = UDim2.new(0, 25, 1, 0)
-secLabel.Position = UDim2.new(0, 98, 0, 0)
-secLabel.BackgroundTransparency = 1
-secLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-secLabel.Text = "sec"
-secLabel.Font = Enum.Font.Gotham
-secLabel.TextSize = 10
-secLabel.Parent = delayRow
-
 -- Status Label
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -20, 0, 16)
-statusLabel.Position = UDim2.new(0, 10, 0, 250)
+statusLabel.Position = UDim2.new(0, 10, 0, 80)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 statusLabel.Text = "Mode: Normal"
 statusLabel.Font = Enum.Font.Gotham
 statusLabel.TextSize = 10
 statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-statusLabel.Parent = chatContent
+statusLabel.Parent = chatSettingsContent
 
--- ========== MIMIC CONTENT ==========
+-- Mimic Content (Advanced)
 local mimicContent = Instance.new("Frame")
 mimicContent.Size = UDim2.new(1, 0, 1, -56)
 mimicContent.Position = UDim2.new(0, 0, 0, 56)
@@ -350,7 +344,6 @@ mimicContent.BackgroundTransparency = 1
 mimicContent.Visible = false
 mimicContent.Parent = mainFrame
 
--- Target Display
 local targetLabel = Instance.new("TextLabel")
 targetLabel.Size = UDim2.new(1, -20, 0, 24)
 targetLabel.Position = UDim2.new(0, 10, 0, 8)
@@ -365,7 +358,6 @@ local targetCorner = Instance.new("UICorner")
 targetCorner.CornerRadius = UDim.new(0, 6)
 targetCorner.Parent = targetLabel
 
--- Select Target Button
 local selectTargetBtn = Instance.new("TextButton")
 selectTargetBtn.Size = UDim2.new(1, -20, 0, 28)
 selectTargetBtn.Position = UDim2.new(0, 10, 0, 38)
@@ -375,12 +367,10 @@ selectTargetBtn.Text = "Select Target"
 selectTargetBtn.Font = Enum.Font.GothamBold
 selectTargetBtn.TextSize = 12
 selectTargetBtn.Parent = mimicContent
-
 local selectTargetCorner = Instance.new("UICorner")
 selectTargetCorner.CornerRadius = UDim.new(0, 6)
 selectTargetCorner.Parent = selectTargetBtn
 
--- Mimic Toggle
 local mimicToggle = Instance.new("TextButton")
 mimicToggle.Size = UDim2.new(1, -20, 0, 32)
 mimicToggle.Position = UDim2.new(0, 10, 0, 72)
@@ -390,12 +380,10 @@ mimicToggle.Text = "MIMIC: OFF"
 mimicToggle.Font = Enum.Font.GothamBold
 mimicToggle.TextSize = 14
 mimicToggle.Parent = mimicContent
-
 local mimicToggleCorner = Instance.new("UICorner")
 mimicToggleCorner.CornerRadius = UDim.new(0, 6)
 mimicToggleCorner.Parent = mimicToggle
 
--- Suffix Input
 local suffixInput = Instance.new("TextBox")
 suffixInput.Size = UDim2.new(1, -70, 0, 28)
 suffixInput.Position = UDim2.new(0, 10, 0, 110)
@@ -408,12 +396,10 @@ suffixInput.Font = Enum.Font.Gotham
 suffixInput.TextSize = 12
 suffixInput.ClearTextOnFocus = false
 suffixInput.Parent = mimicContent
-
 local suffixInputCorner = Instance.new("UICorner")
 suffixInputCorner.CornerRadius = UDim.new(0, 6)
 suffixInputCorner.Parent = suffixInput
 
--- Add Suffix Button
 local addSuffixBtn = Instance.new("TextButton")
 addSuffixBtn.Size = UDim2.new(0, 50, 0, 28)
 addSuffixBtn.Position = UDim2.new(1, -60, 0, 110)
@@ -423,18 +409,15 @@ addSuffixBtn.Text = "Add"
 addSuffixBtn.Font = Enum.Font.GothamBold
 addSuffixBtn.TextSize = 12
 addSuffixBtn.Parent = mimicContent
-
 local addSuffixCorner = Instance.new("UICorner")
 addSuffixCorner.CornerRadius = UDim.new(0, 6)
 addSuffixCorner.Parent = addSuffixBtn
 
--- Suffix List Frame
 local suffixListFrame = Instance.new("Frame")
 suffixListFrame.Size = UDim2.new(1, -20, 0, 160)
 suffixListFrame.Position = UDim2.new(0, 10, 0, 145)
 suffixListFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 suffixListFrame.Parent = mimicContent
-
 local suffixListCorner = Instance.new("UICorner")
 suffixListCorner.CornerRadius = UDim.new(0, 6)
 suffixListCorner.Parent = suffixListFrame
@@ -445,7 +428,6 @@ suffixScroll.Position = UDim2.new(0, 5, 0, 5)
 suffixScroll.BackgroundTransparency = 1
 suffixScroll.ScrollBarThickness = 4
 suffixScroll.Parent = suffixListFrame
-
 local suffixScrollCorner = Instance.new("UICorner")
 suffixScrollCorner.CornerRadius = UDim.new(0, 4)
 suffixScrollCorner.Parent = suffixScroll
@@ -454,7 +436,6 @@ local suffixLayout = Instance.new("UIListLayout")
 suffixLayout.Padding = UDim.new(0, 2)
 suffixLayout.Parent = suffixScroll
 
--- Dropdown
 local dropdownFrame = Instance.new("Frame")
 dropdownFrame.Size = UDim2.new(1, -20, 0, 120)
 dropdownFrame.Position = UDim2.new(0, 10, 0, 68)
@@ -462,7 +443,6 @@ dropdownFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 dropdownFrame.Visible = false
 dropdownFrame.ZIndex = 10
 dropdownFrame.Parent = mimicContent
-
 local dropdownCorner = Instance.new("UICorner")
 dropdownCorner.CornerRadius = UDim.new(0, 6)
 dropdownCorner.Parent = dropdownFrame
@@ -474,7 +454,6 @@ dropdownScroll.BackgroundTransparency = 1
 dropdownScroll.ScrollBarThickness = 4
 dropdownScroll.ZIndex = 10
 dropdownScroll.Parent = dropdownFrame
-
 local dropdownScrollCorner = Instance.new("UICorner")
 dropdownScrollCorner.CornerRadius = UDim.new(0, 4)
 dropdownScrollCorner.Parent = dropdownScroll
@@ -483,7 +462,7 @@ local dropdownLayout = Instance.new("UIListLayout")
 dropdownLayout.Padding = UDim.new(0, 2)
 dropdownLayout.Parent = dropdownScroll
 
--- ========== DRAGGING FOR HUB BUTTON ==========
+-- ========== DRAGGING ==========
 local dragging = false
 local dragInput, dragStart, startPos
 
@@ -514,7 +493,6 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ========== DRAGGING FOR MAIN FRAME ==========
 local mainDragging = false
 local mainDragInput, mainDragStart, mainDragPos
 
@@ -565,11 +543,45 @@ killBtn.MouseButton1Click:Connect(function()
     screenGui:Destroy()
 end)
 
+-- ========== TOGGLE ADVANCED MODE ==========
+local function toggleAdvancedMode()
+    advancedMode = not advancedMode
+    
+    if advancedMode then
+        -- Expand
+        mainFrame.Size = UDim2.new(0, 220, 0, 380) -- Full size
+        mainFrame.Position = UDim2.new(0, 20, 0.5, -190)
+        
+        compactContent.Visible = false
+        tabBar.Visible = true
+        advancedContent.Visible = true
+        
+        titleLabel.Text = "⚙ Settings"
+        settingsBtn.Text = "◀"
+    else
+        -- Compact
+        mainFrame.Size = UDim2.new(0, 220, 0, 130) -- Compact size
+        mainFrame.Position = UDim2.new(0, 20, 0.5, -65)
+        
+        compactContent.Visible = true
+        tabBar.Visible = false
+        advancedContent.Visible = false
+        mimicContent.Visible = false
+        
+        titleLabel.Text = "💬 Quick Chat"
+        settingsBtn.Text = "⚙"
+    end
+end
+
+settingsBtn.MouseButton1Click:Connect(function()
+    toggleAdvancedMode()
+end)
+
 -- ========== TAB SWITCHING ==========
 local function switchTab(tab)
     if tab == "chat" then
         currentTab = "chat"
-        chatContent.Visible = true
+        chatSettingsContent.Visible = true
         mimicContent.Visible = false
         chatTabBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
         chatTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -577,7 +589,7 @@ local function switchTab(tab)
         mimicTabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
     else
         currentTab = "mimic"
-        chatContent.Visible = false
+        chatSettingsContent.Visible = false
         mimicContent.Visible = true
         chatTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
         chatTabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -599,7 +611,7 @@ textbox:GetPropertyChangedSignal("Text"):Connect(function()
     local text = textbox.Text
     if #text > MAX_CHARS then
         textbox.Text = text:sub(1, MAX_CHARS)
-    end
+            end
     
     local lineCount = 1
     for _ in textbox.Text:gmatch("\n") do
@@ -611,7 +623,7 @@ textbox:GetPropertyChangedSignal("Text"):Connect(function()
     if #textbox.Text >= MAX_CHARS then
         charCounter.TextColor3 = Color3.fromRGB(255, 100, 100)
     else
-        charCounter.TextColor3 = Color3.fromRGB(150, 150, 150)
+        charCounter.TextColor3 = Color3.fromRGB(100, 100, 100)
     end
 end)
 
@@ -619,7 +631,6 @@ end)
 local function sendMessage(msg, preserveCase)
     local message = msg
     
-    -- Apply case mode ONLY if preserveCase is not true
     if not preserveCase then
         if caseMode == "upper" then
             message = string.upper(message)
@@ -628,7 +639,7 @@ local function sendMessage(msg, preserveCase)
         end
     end
     
-    message = message:gsub("^%s+", ""):gsub("%s+\$", "")
+    message = message:gsub("^%s+", ""):gsub("%s+$", "")
     
     if message == "" then
         return false
@@ -720,27 +731,23 @@ sendAllBtn.MouseButton1Click:Connect(function()
         end
     end
     
-    if #lines == 0 then return
-            end
+    if #lines == 0 then return end
     
     local delay = tonumber(delayTextbox.Text) or 0.5
     if delay < 0.1 then delay = 0.1 end
     
     sendAllBtn.Text = "Sending..."
     sendAllBtn.BackgroundColor3 = Color3.fromRGB(255, 193, 7)
-    statusLabel.Text = "Sending "..#lines.." messages..."
     
     spawn(function()
         for i, line in ipairs(lines) do
             sendMessage(line)
-            statusLabel.Text = "Sent "..i.."/"..#lines
             if i < #lines then
                 wait(delay)
             end
         end
         sendAllBtn.Text = "Send All"
         sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-        statusLabel.Text = "Done! Sent "..#lines.." messages"
     end)
 end)
 
@@ -806,8 +813,6 @@ local function onPlayerChatted(plr, msg)
     
     local suffix = suffixes[suffixIndex]
     local mimicMsg = '"' .. msg .. '" ' .. suffix
-    
-    -- Pass 'true' to preserve case (FIXED)
     sendMessage(mimicMsg, true)
     
     suffixIndex = suffixIndex + 1
@@ -934,4 +939,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Multi-Line Chat Hub with Mimic Tab Loaded")
+print("✅ Compact Multi-Chat Hub Loaded")
