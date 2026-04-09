@@ -1,4 +1,4 @@
--- Multi-Line Chat Hub (Compact Mode for Mobile)
+-- Compact Chat Hub (Fixed Layout)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,7 +16,7 @@ local targetPlayer = nil
 local suffixes = {}
 local suffixIndex = 1
 local currentTab = "chat"
-local advancedMode = false -- Starts in Compact Mode
+local advancedMode = false
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -24,7 +24,7 @@ screenGui.Name = "MultiChatHub"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- ========== HUB BUTTON (Collapsed State) ==========
+-- ========== HUB BUTTON ==========
 local hubButton = Instance.new("Frame")
 hubButton.Name = "HubButton"
 hubButton.Size = UDim2.new(0, 50, 0, 50)
@@ -50,8 +50,8 @@ hubIcon.Parent = hubButton
 -- ========== MAIN FRAME ==========
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 220, 0, 130) -- Compact Size by default
-mainFrame.Position = UDim2.new(0, 20, 0.5, -65)
+mainFrame.Size = UDim2.new(0, 220, 0, 145) -- Slightly taller for bigger box
+mainFrame.Position = UDim2.new(0, 20, 0.5, -72)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BorderSizePixel = 2
 mainFrame.BorderColor3 = Color3.fromRGB(60, 60, 60)
@@ -144,10 +144,10 @@ compactContent.Position = UDim2.new(0, 0, 0, 28)
 compactContent.BackgroundTransparency = 1
 compactContent.Parent = mainFrame
 
--- Textbox (Compact)
+-- Textbox (Bigger)
 local textbox = Instance.new("TextBox")
 textbox.Name = "MultiInput"
-textbox.Size = UDim2.new(1, -20, 0, 50)
+textbox.Size = UDim2.new(1, -20, 0, 65) -- Increased height from 50 to 65
 textbox.Position = UDim2.new(0, 10, 0, 5)
 textbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -170,25 +170,14 @@ textboxCorner.Parent = textbox
 -- Button Row (Compact)
 local compactRow = Instance.new("Frame")
 compactRow.Size = UDim2.new(1, -20, 0, 32)
-compactRow.Position = UDim2.new(0, 10, 0, 60)
+compactRow.Position = UDim2.new(0, 10, 0, 75) -- Moved down to fit bigger textbox
 compactRow.BackgroundTransparency = 1
 compactRow.Parent = compactContent
 
-local sendAllBtn = Instance.new("TextButton")
-sendAllBtn.Size = UDim2.new(1, -60, 1, 0)
-sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-sendAllBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-sendAllBtn.Text = "Send All"
-sendAllBtn.Font = Enum.Font.GothamBold
-sendAllBtn.TextSize = 13
-sendAllBtn.Parent = compactRow
-local sendAllCorner = Instance.new("UICorner")
-sendAllCorner.CornerRadius = UDim.new(0, 6)
-sendAllCorner.Parent = sendAllBtn
-
+-- Delay (Left)
 local delayTextbox = Instance.new("TextBox")
-delayTextbox.Size = UDim2.new(0, 45, 1, 0)
-delayTextbox.Position = UDim2.new(1, -45, 0, 0)
+delayTextbox.Size = UDim2.new(0, 40, 1, 0)
+delayTextbox.Position = UDim2.new(0, 0, 0, 0) -- Far Left
 delayTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 delayTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
 delayTextbox.Text = "0.5"
@@ -203,7 +192,35 @@ local delayCorner = Instance.new("UICorner")
 delayCorner.CornerRadius = UDim.new(0, 6)
 delayCorner.Parent = delayTextbox
 
--- Char Counter (Small)
+-- Clear Button (Middle)
+local clearBtn = Instance.new("TextButton")
+clearBtn.Size = UDim2.new(0, 35, 1, 0)
+clearBtn.Position = UDim2.new(0, 45, 0, 0) -- Next to Delay
+clearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+clearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+clearBtn.Text = "C"
+clearBtn.Font = Enum.Font.GothamBold
+clearBtn.TextSize = 13
+clearBtn.Parent = compactRow
+local clearCorner = Instance.new("UICorner")
+clearCorner.CornerRadius = UDim.new(0, 6)
+clearCorner.Parent = clearBtn
+
+-- Send Button (Right - Big)
+local sendAllBtn = Instance.new("TextButton")
+sendAllBtn.Size = UDim2.new(1, -85, 1, 0)
+sendAllBtn.Position = UDim2.new(0, 85, 0, 0) -- Takes remaining space
+sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+sendAllBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+sendAllBtn.Text = "S"
+sendAllBtn.Font = Enum.Font.GothamBold
+sendAllBtn.TextSize = 14
+sendAllBtn.Parent = compactRow
+local sendAllCorner = Instance.new("UICorner")
+sendAllCorner.CornerRadius = UDim.new(0, 6)
+sendAllCorner.Parent = sendAllBtn
+
+-- Char Counter
 local charCounter = Instance.new("TextLabel")
 charCounter.Size = UDim2.new(1, -20, 0, 14)
 charCounter.Position = UDim2.new(0, 10, 1, -16)
@@ -223,7 +240,7 @@ advancedContent.BackgroundTransparency = 1
 advancedContent.Visible = false
 advancedContent.Parent = mainFrame
 
--- Tab Bar (Only in Advanced)
+-- Tab Bar
 local tabBar = Instance.new("Frame")
 tabBar.Size = UDim2.new(1, 0, 0, 28)
 tabBar.Position = UDim2.new(0, 0, 0, 28)
@@ -257,7 +274,7 @@ local mimicTabCorner = Instance.new("UICorner")
 mimicTabCorner.CornerRadius = UDim.new(0, 6)
 mimicTabCorner.Parent = mimicTabBtn
 
--- Chat Settings Content (Advanced)
+-- Chat Settings Content
 local chatSettingsContent = Instance.new("Frame")
 chatSettingsContent.Size = UDim2.new(1, 0, 1, -56)
 chatSettingsContent.Position = UDim2.new(0, 0, 0, 56)
@@ -310,24 +327,9 @@ local normalCorner = Instance.new("UICorner")
 normalCorner.CornerRadius = UDim.new(0, 6)
 normalCorner.Parent = normalBtn
 
--- Clear Button
-local clearBtn = Instance.new("TextButton")
-clearBtn.Size = UDim2.new(1, -20, 0, 32)
-clearBtn.Position = UDim2.new(0, 10, 0, 40)
-clearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-clearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-clearBtn.Text = "Clear All"
-clearBtn.Font = Enum.Font.GothamBold
-clearBtn.TextSize = 13
-clearBtn.Parent = chatSettingsContent
-local clearCorner = Instance.new("UICorner")
-clearCorner.CornerRadius = UDim.new(0, 6)
-clearCorner.Parent = clearBtn
-
--- Status Label
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -20, 0, 16)
-statusLabel.Position = UDim2.new(0, 10, 0, 80)
+statusLabel.Position = UDim2.new(0, 10, 0, 40)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 statusLabel.Text = "Mode: Normal"
@@ -336,7 +338,7 @@ statusLabel.TextSize = 10
 statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 statusLabel.Parent = chatSettingsContent
 
--- Mimic Content (Advanced)
+-- Mimic Content
 local mimicContent = Instance.new("Frame")
 mimicContent.Size = UDim2.new(1, 0, 1, -56)
 mimicContent.Position = UDim2.new(0, 0, 0, 56)
@@ -353,7 +355,6 @@ targetLabel.Text = "Target: None"
 targetLabel.Font = Enum.Font.Gotham
 targetLabel.TextSize = 12
 targetLabel.Parent = mimicContent
-
 local targetCorner = Instance.new("UICorner")
 targetCorner.CornerRadius = UDim.new(0, 6)
 targetCorner.Parent = targetLabel
@@ -543,29 +544,34 @@ killBtn.MouseButton1Click:Connect(function()
     screenGui:Destroy()
 end)
 
--- ========== TOGGLE ADVANCED MODE ==========
+-- ========== TOGGLE ADVANCED MODE (FIXED) ==========
 local function toggleAdvancedMode()
     advancedMode = not advancedMode
     
     if advancedMode then
         -- Expand
-        mainFrame.Size = UDim2.new(0, 220, 0, 380) -- Full size
+        mainFrame.Size = UDim2.new(0, 220, 0, 380)
         mainFrame.Position = UDim2.new(0, 20, 0.5, -190)
         
         compactContent.Visible = false
+        
         tabBar.Visible = true
         advancedContent.Visible = true
+        chatSettingsContent.Visible = true
+        mimicContent.Visible = false
         
         titleLabel.Text = "⚙ Settings"
         settingsBtn.Text = "◀"
     else
         -- Compact
-        mainFrame.Size = UDim2.new(0, 220, 0, 130) -- Compact size
-        mainFrame.Position = UDim2.new(0, 20, 0.5, -65)
+        mainFrame.Size = UDim2.new(0, 220, 0, 145)
+        mainFrame.Position = UDim2.new(0, 20, 0.5, -72)
         
         compactContent.Visible = true
+        
         tabBar.Visible = false
         advancedContent.Visible = false
+        chatSettingsContent.Visible = false
         mimicContent.Visible = false
         
         titleLabel.Text = "💬 Quick Chat"
@@ -611,7 +617,7 @@ textbox:GetPropertyChangedSignal("Text"):Connect(function()
     local text = textbox.Text
     if #text > MAX_CHARS then
         textbox.Text = text:sub(1, MAX_CHARS)
-            end
+    end
     
     local lineCount = 1
     for _ in textbox.Text:gmatch("\n") do
@@ -736,7 +742,7 @@ sendAllBtn.MouseButton1Click:Connect(function()
     local delay = tonumber(delayTextbox.Text) or 0.5
     if delay < 0.1 then delay = 0.1 end
     
-    sendAllBtn.Text = "Sending..."
+    sendAllBtn.Text = "..."
     sendAllBtn.BackgroundColor3 = Color3.fromRGB(255, 193, 7)
     
     spawn(function()
@@ -746,7 +752,7 @@ sendAllBtn.MouseButton1Click:Connect(function()
                 wait(delay)
             end
         end
-        sendAllBtn.Text = "Send All"
+        sendAllBtn.Text = "S"
         sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
     end)
 end)
