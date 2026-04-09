@@ -1,4 +1,4 @@
--- Multi-Line Chat Hub (with Mimic Tab)
+-- Multi-Line Chat Hub (with Mimic Tab & Kill Button)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -15,7 +15,7 @@ local mimicEnabled = false
 local targetPlayer = nil
 local suffixes = {}
 local suffixIndex = 1
-local currentTab = "chat" -- "chat" or "mimic"
+local currentTab = "chat"
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -49,7 +49,7 @@ hubIcon.Parent = hubButton
 -- ========== MAIN FRAME (Expanded State) ==========
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 220, 0, 380) -- Increased height for tabs
+mainFrame.Size = UDim2.new(0, 220, 0, 380)
 mainFrame.Position = UDim2.new(0, 20, 0.5, -190)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BorderSizePixel = 2
@@ -615,15 +615,17 @@ textbox:GetPropertyChangedSignal("Text"):Connect(function()
     end
 end)
 
--- ========== SEND MESSAGE FUNCTION ==========
-local function sendMessage(msg)
+-- ========== SEND MESSAGE FUNCTION (FIXED) ==========
+local function sendMessage(msg, preserveCase)
     local message = msg
     
-    -- Apply case mode
-    if caseMode == "upper" then
-        message = string.upper(message)
-    elseif caseMode == "lower" then
-        message = string.lower(message)
+    -- Apply case mode ONLY if preserveCase is not true
+    if not preserveCase then
+        if caseMode == "upper" then
+            message = string.upper(message)
+        elseif caseMode == "lower" then
+            message = string.lower(message)
+        end
     end
     
     message = message:gsub("^%s+", ""):gsub("%s+\$", "")
@@ -718,7 +720,8 @@ sendAllBtn.MouseButton1Click:Connect(function()
         end
     end
     
-    if #lines == 0 then return end
+    if #lines == 0 then return
+            end
     
     local delay = tonumber(delayTextbox.Text) or 0.5
     if delay < 0.1 then delay = 0.1 end
@@ -803,7 +806,9 @@ local function onPlayerChatted(plr, msg)
     
     local suffix = suffixes[suffixIndex]
     local mimicMsg = '"' .. msg .. '" ' .. suffix
-    sendMessage(mimicMsg)
+    
+    -- Pass 'true' to preserve case (FIXED)
+    sendMessage(mimicMsg, true)
     
     suffixIndex = suffixIndex + 1
     if suffixIndex > #suffixes then
