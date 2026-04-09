@@ -1,16 +1,21 @@
--- Multi-Line Chat Hub (Fixed)
+-- Multi-Line Chat Hub (with Mimic Tab & Kill Button)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local TextChatService = game:GetService("TextChatService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 -- Settings
 local MAX_CHARS = 200
-local expanded = false
 local caseMode = "normal" -- "upper", "lower", "normal"
+local mimicEnabled = false
+local targetPlayer = nil
+local suffixes = {}
+local suffixIndex = 1
+local currentTab = "chat"
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -44,8 +49,8 @@ hubIcon.Parent = hubButton
 -- ========== MAIN FRAME (Expanded State) ==========
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 220, 0, 340)
-mainFrame.Position = UDim2.new(0, 20, 0.5, -170)
+mainFrame.Size = UDim2.new(0, 220, 0, 380)
+mainFrame.Position = UDim2.new(0, 20, 0.5, -190)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BorderSizePixel = 2
 mainFrame.BorderColor3 = Color3.fromRGB(60, 60, 60)
@@ -76,7 +81,7 @@ titleFix.BorderSizePixel = 0
 titleFix.Parent = titleBar
 
 local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, -40, 1, 0)
+titleLabel.Size = UDim2.new(1, -70, 1, 0)
 titleLabel.Position = UDim2.new(0, 10, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -86,13 +91,28 @@ titleLabel.TextSize = 13
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = titleBar
 
--- Collapse Button
+-- Kill Button (X)
+local killBtn = Instance.new("TextButton")
+killBtn.Size = UDim2.new(0, 28, 0, 22)
+killBtn.Position = UDim2.new(1, -32, 0.5, -11)
+killBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+killBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+killBtn.Text = "X"
+killBtn.Font = Enum.Font.GothamBold
+killBtn.TextSize = 14
+killBtn.Parent = titleBar
+
+local killCorner = Instance.new("UICorner")
+killCorner.CornerRadius = UDim.new(0, 6)
+killCorner.Parent = killBtn
+
+-- Collapse Button (-)
 local collapseBtn = Instance.new("TextButton")
 collapseBtn.Size = UDim2.new(0, 28, 0, 22)
-collapseBtn.Position = UDim2.new(1, -32, 0.5, -11)
-collapseBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+collapseBtn.Position = UDim2.new(1, -64, 0.5, -11)
+collapseBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 collapseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-collapseBtn.Text = "×"
+collapseBtn.Text = "-"
 collapseBtn.Font = Enum.Font.GothamBold
 collapseBtn.TextSize = 14
 collapseBtn.Parent = titleBar
@@ -101,12 +121,46 @@ local collapseCorner = Instance.new("UICorner")
 collapseCorner.CornerRadius = UDim.new(0, 6)
 collapseCorner.Parent = collapseBtn
 
--- Content Frame
-local contentFrame = Instance.new("Frame")
-contentFrame.Size = UDim2.new(1, 0, 1, -28)
-contentFrame.Position = UDim2.new(0, 0, 0, 28)
-contentFrame.BackgroundTransparency = 1
-contentFrame.Parent = mainFrame
+-- ========== TAB BAR ==========
+local tabBar = Instance.new("Frame")
+tabBar.Size = UDim2.new(1, 0, 0, 28)
+tabBar.Position = UDim2.new(0, 0, 0, 28)
+tabBar.BackgroundTransparency = 1
+tabBar.Parent = mainFrame
+
+local chatTabBtn = Instance.new("TextButton")
+chatTabBtn.Size = UDim2.new(0.5, -5, 1, -4)
+chatTabBtn.Position = UDim2.new(0, 2, 0, 2)
+chatTabBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+chatTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+chatTabBtn.Text = "Chat"
+chatTabBtn.Font = Enum.Font.GothamBold
+chatTabBtn.TextSize = 12
+chatTabBtn.Parent = tabBar
+local chatTabCorner = Instance.new("UICorner")
+chatTabCorner.CornerRadius = UDim.new(0, 6)
+chatTabCorner.Parent = chatTabBtn
+
+local mimicTabBtn = Instance.new("TextButton")
+mimicTabBtn.Size = UDim2.new(0.5, -5, 1, -4)
+mimicTabBtn.Position = UDim2.new(0.5, 3, 0, 2)
+mimicTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+mimicTabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+mimicTabBtn.Text = "Mimic"
+mimicTabBtn.Font = Enum.Font.GothamBold
+mimicTabBtn.TextSize = 12
+mimicTabBtn.Parent = tabBar
+local mimicTabCorner = Instance.new("UICorner")
+mimicTabCorner.CornerRadius = UDim.new(0, 6)
+mimicTabCorner.Parent = mimicTabBtn
+
+-- ========== CONTENT FRAMES ==========
+-- Chat Content
+local chatContent = Instance.new("Frame")
+chatContent.Size = UDim2.new(1, 0, 1, -56)
+chatContent.Position = UDim2.new(0, 0, 0, 56)
+chatContent.BackgroundTransparency = 1
+chatContent.Parent = mainFrame
 
 -- Textbox Label
 local textboxLabel = Instance.new("TextLabel")
@@ -118,7 +172,7 @@ textboxLabel.Text = "Multi-line messages (one per line)"
 textboxLabel.Font = Enum.Font.Gotham
 textboxLabel.TextSize = 10
 textboxLabel.TextXAlignment = Enum.TextXAlignment.Left
-textboxLabel.Parent = contentFrame
+textboxLabel.Parent = chatContent
 
 -- Multi-line Textbox
 local textbox = Instance.new("TextBox")
@@ -137,7 +191,7 @@ textbox.TextYAlignment = Enum.TextYAlignment.Top
 textbox.ClearTextOnFocus = false
 textbox.MultiLine = true
 textbox.TextWrapped = true
-textbox.Parent = contentFrame
+textbox.Parent = chatContent
 
 local textboxCorner = Instance.new("UICorner")
 textboxCorner.CornerRadius = UDim.new(0, 6)
@@ -153,14 +207,14 @@ charCounter.Text = "Lines: 0 | Chars: 0/200"
 charCounter.Font = Enum.Font.Gotham
 charCounter.TextSize = 10
 charCounter.TextXAlignment = Enum.TextXAlignment.Right
-charCounter.Parent = contentFrame
+charCounter.Parent = chatContent
 
--- ========== CASE MODE BUTTONS ==========
+-- Case Mode Buttons
 local caseRow = Instance.new("Frame")
 caseRow.Size = UDim2.new(1, -20, 0, 24)
 caseRow.Position = UDim2.new(0, 10, 0, 152)
 caseRow.BackgroundTransparency = 1
-caseRow.Parent = contentFrame
+caseRow.Parent = chatContent
 
 local upperBtn = Instance.new("TextButton")
 upperBtn.Size = UDim2.new(0.33, -2, 1, 0)
@@ -200,12 +254,12 @@ local normalCorner = Instance.new("UICorner")
 normalCorner.CornerRadius = UDim.new(0, 6)
 normalCorner.Parent = normalBtn
 
--- ========== BUTTON ROW (CLEAR + SEND ALL) ==========
+-- Button Row
 local buttonRow = Instance.new("Frame")
 buttonRow.Size = UDim2.new(1, -20, 0, 32)
 buttonRow.Position = UDim2.new(0, 10, 0, 180)
 buttonRow.BackgroundTransparency = 1
-buttonRow.Parent = contentFrame
+buttonRow.Parent = chatContent
 
 local clearBtn = Instance.new("TextButton")
 clearBtn.Size = UDim2.new(0, 55, 1, 0)
@@ -237,7 +291,7 @@ local delayRow = Instance.new("Frame")
 delayRow.Size = UDim2.new(1, -20, 0, 28)
 delayRow.Position = UDim2.new(0, 10, 0, 217)
 delayRow.BackgroundTransparency = 1
-delayRow.Parent = contentFrame
+delayRow.Parent = chatContent
 
 local delayLabel = Instance.new("TextLabel")
 delayLabel.Size = UDim2.new(0, 45, 1, 0)
@@ -286,7 +340,148 @@ statusLabel.Text = "Mode: Normal"
 statusLabel.Font = Enum.Font.Gotham
 statusLabel.TextSize = 10
 statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-statusLabel.Parent = contentFrame
+statusLabel.Parent = chatContent
+
+-- ========== MIMIC CONTENT ==========
+local mimicContent = Instance.new("Frame")
+mimicContent.Size = UDim2.new(1, 0, 1, -56)
+mimicContent.Position = UDim2.new(0, 0, 0, 56)
+mimicContent.BackgroundTransparency = 1
+mimicContent.Visible = false
+mimicContent.Parent = mainFrame
+
+-- Target Display
+local targetLabel = Instance.new("TextLabel")
+targetLabel.Size = UDim2.new(1, -20, 0, 24)
+targetLabel.Position = UDim2.new(0, 10, 0, 8)
+targetLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+targetLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+targetLabel.Text = "Target: None"
+targetLabel.Font = Enum.Font.Gotham
+targetLabel.TextSize = 12
+targetLabel.Parent = mimicContent
+
+local targetCorner = Instance.new("UICorner")
+targetCorner.CornerRadius = UDim.new(0, 6)
+targetCorner.Parent = targetLabel
+
+-- Select Target Button
+local selectTargetBtn = Instance.new("TextButton")
+selectTargetBtn.Size = UDim2.new(1, -20, 0, 28)
+selectTargetBtn.Position = UDim2.new(0, 10, 0, 38)
+selectTargetBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+selectTargetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+selectTargetBtn.Text = "Select Target"
+selectTargetBtn.Font = Enum.Font.GothamBold
+selectTargetBtn.TextSize = 12
+selectTargetBtn.Parent = mimicContent
+
+local selectTargetCorner = Instance.new("UICorner")
+selectTargetCorner.CornerRadius = UDim.new(0, 6)
+selectTargetCorner.Parent = selectTargetBtn
+
+-- Mimic Toggle
+local mimicToggle = Instance.new("TextButton")
+mimicToggle.Size = UDim2.new(1, -20, 0, 32)
+mimicToggle.Position = UDim2.new(0, 10, 0, 72)
+mimicToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+mimicToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+mimicToggle.Text = "MIMIC: OFF"
+mimicToggle.Font = Enum.Font.GothamBold
+mimicToggle.TextSize = 14
+mimicToggle.Parent = mimicContent
+
+local mimicToggleCorner = Instance.new("UICorner")
+mimicToggleCorner.CornerRadius = UDim.new(0, 6)
+mimicToggleCorner.Parent = mimicToggle
+
+-- Suffix Input
+local suffixInput = Instance.new("TextBox")
+suffixInput.Size = UDim2.new(1, -70, 0, 28)
+suffixInput.Position = UDim2.new(0, 10, 0, 110)
+suffixInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+suffixInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+suffixInput.Text = ""
+suffixInput.PlaceholderText = "Add suffix..."
+suffixInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+suffixInput.Font = Enum.Font.Gotham
+suffixInput.TextSize = 12
+suffixInput.ClearTextOnFocus = false
+suffixInput.Parent = mimicContent
+
+local suffixInputCorner = Instance.new("UICorner")
+suffixInputCorner.CornerRadius = UDim.new(0, 6)
+suffixInputCorner.Parent = suffixInput
+
+-- Add Suffix Button
+local addSuffixBtn = Instance.new("TextButton")
+addSuffixBtn.Size = UDim2.new(0, 50, 0, 28)
+addSuffixBtn.Position = UDim2.new(1, -60, 0, 110)
+addSuffixBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+addSuffixBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+addSuffixBtn.Text = "Add"
+addSuffixBtn.Font = Enum.Font.GothamBold
+addSuffixBtn.TextSize = 12
+addSuffixBtn.Parent = mimicContent
+
+local addSuffixCorner = Instance.new("UICorner")
+addSuffixCorner.CornerRadius = UDim.new(0, 6)
+addSuffixCorner.Parent = addSuffixBtn
+
+-- Suffix List Frame
+local suffixListFrame = Instance.new("Frame")
+suffixListFrame.Size = UDim2.new(1, -20, 0, 160)
+suffixListFrame.Position = UDim2.new(0, 10, 0, 145)
+suffixListFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+suffixListFrame.Parent = mimicContent
+
+local suffixListCorner = Instance.new("UICorner")
+suffixListCorner.CornerRadius = UDim.new(0, 6)
+suffixListCorner.Parent = suffixListFrame
+
+local suffixScroll = Instance.new("ScrollingFrame")
+suffixScroll.Size = UDim2.new(1, -10, 1, -10)
+suffixScroll.Position = UDim2.new(0, 5, 0, 5)
+suffixScroll.BackgroundTransparency = 1
+suffixScroll.ScrollBarThickness = 4
+suffixScroll.Parent = suffixListFrame
+
+local suffixScrollCorner = Instance.new("UICorner")
+suffixScrollCorner.CornerRadius = UDim.new(0, 4)
+suffixScrollCorner.Parent = suffixScroll
+
+local suffixLayout = Instance.new("UIListLayout")
+suffixLayout.Padding = UDim.new(0, 2)
+suffixLayout.Parent = suffixScroll
+
+-- Dropdown
+local dropdownFrame = Instance.new("Frame")
+dropdownFrame.Size = UDim2.new(1, -20, 0, 120)
+dropdownFrame.Position = UDim2.new(0, 10, 0, 68)
+dropdownFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+dropdownFrame.Visible = false
+dropdownFrame.ZIndex = 10
+dropdownFrame.Parent = mimicContent
+
+local dropdownCorner = Instance.new("UICorner")
+dropdownCorner.CornerRadius = UDim.new(0, 6)
+dropdownCorner.Parent = dropdownFrame
+
+local dropdownScroll = Instance.new("ScrollingFrame")
+dropdownScroll.Size = UDim2.new(1, -10, 1, -10)
+dropdownScroll.Position = UDim2.new(0, 5, 0, 5)
+dropdownScroll.BackgroundTransparency = 1
+dropdownScroll.ScrollBarThickness = 4
+dropdownScroll.ZIndex = 10
+dropdownScroll.Parent = dropdownFrame
+
+local dropdownScrollCorner = Instance.new("UICorner")
+dropdownScrollCorner.CornerRadius = UDim.new(0, 4)
+dropdownScrollCorner.Parent = dropdownScroll
+
+local dropdownLayout = Instance.new("UIListLayout")
+dropdownLayout.Padding = UDim.new(0, 2)
+dropdownLayout.Parent = dropdownScroll
 
 -- ========== DRAGGING FOR HUB BUTTON ==========
 local dragging = false
@@ -366,6 +561,39 @@ collapseBtn.MouseButton1Click:Connect(function()
     hubButton.Visible = true
 end)
 
+killBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+-- ========== TAB SWITCHING ==========
+local function switchTab(tab)
+    if tab == "chat" then
+        currentTab = "chat"
+        chatContent.Visible = true
+        mimicContent.Visible = false
+        chatTabBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+        chatTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        mimicTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        mimicTabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    else
+        currentTab = "mimic"
+        chatContent.Visible = false
+        mimicContent.Visible = true
+        chatTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        chatTabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        mimicTabBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+        mimicTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end
+end
+
+chatTabBtn.MouseButton1Click:Connect(function()
+    switchTab("chat")
+end)
+
+mimicTabBtn.MouseButton1Click:Connect(function()
+    switchTab("mimic")
+end)
+
 -- ========== CHARACTER LIMIT ==========
 textbox:GetPropertyChangedSignal("Text"):Connect(function()
     local text = textbox.Text
@@ -387,18 +615,20 @@ textbox:GetPropertyChangedSignal("Text"):Connect(function()
     end
 end)
 
--- ========== SEND MESSAGE FUNCTION ==========
-local function sendMessage(msg)
+-- ========== SEND MESSAGE FUNCTION (FIXED) ==========
+local function sendMessage(msg, preserveCase)
     local message = msg
     
-    -- Apply case mode
-    if caseMode == "upper" then
-        message = string.upper(message)
-    elseif caseMode == "lower" then
-        message = string.lower(message)
+    -- Apply case mode ONLY if preserveCase is not true
+    if not preserveCase then
+        if caseMode == "upper" then
+            message = string.upper(message)
+        elseif caseMode == "lower" then
+            message = string.lower(message)
+        end
     end
     
-    message = message:gsub("^%s+", ""):gsub("%s+$", "")
+    message = message:gsub("^%s+", ""):gsub("%s+\$", "")
     
     if message == "" then
         return false
@@ -418,7 +648,6 @@ local function sendMessage(msg)
         end
     end
     
-    local TextChatService = game:GetService("TextChatService")
     if TextChatService then
         local channel = TextChatService:FindFirstChild("TextChannels")
         if channel then
@@ -491,7 +720,8 @@ sendAllBtn.MouseButton1Click:Connect(function()
         end
     end
     
-    if #lines == 0 then return end
+    if #lines == 0 then return
+            end
     
     local delay = tonumber(delayTextbox.Text) or 0.5
     if delay < 0.1 then delay = 0.1 end
@@ -514,7 +744,182 @@ sendAllBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
--- ========== TOGGLE WITH RIGHT CONTROL ==========
+-- ========== MIMIC FUNCTIONS ==========
+local function updateSuffixList()
+    for _, child in pairs(suffixScroll:GetChildren()) do
+        if child:IsA("Frame") then
+            child:Destroy()
+        end
+    end
+    
+    for i, suffix in ipairs(suffixes) do
+        local item = Instance.new("Frame")
+        item.Size = UDim2.new(1, 0, 0, 24)
+        item.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        item.Parent = suffixScroll
+        
+        local itemCorner = Instance.new("UICorner")
+        itemCorner.CornerRadius = UDim.new(0, 4)
+        itemCorner.Parent = item
+        
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, -30, 1, 0)
+        label.Position = UDim2.new(0, 5, 0, 0)
+        label.BackgroundTransparency = 1
+        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        label.Text = i..". "..suffix
+        label.Font = Enum.Font.Gotham
+        label.TextSize = 11
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.TextTruncate = Enum.TextTruncate.AtEnd
+        label.Parent = item
+        
+        local deleteBtn = Instance.new("TextButton")
+        deleteBtn.Size = UDim2.new(0, 24, 0, 24)
+        deleteBtn.Position = UDim2.new(1, -26, 0, 0)
+        deleteBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+        deleteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        deleteBtn.Text = "X"
+        deleteBtn.Font = Enum.Font.GothamBold
+        deleteBtn.TextSize = 10
+        deleteBtn.Parent = item
+        
+        local deleteCorner = Instance.new("UICorner")
+        deleteCorner.CornerRadius = UDim.new(0, 4)
+        deleteCorner.Parent = deleteBtn
+        
+        deleteBtn.MouseButton1Click:Connect(function()
+            table.remove(suffixes, i)
+            if suffixIndex > #suffixes then suffixIndex = 1 end
+            updateSuffixList()
+        end)
+    end
+    
+    suffixScroll.CanvasSize = UDim2.new(0, 0, 0, suffixLayout.AbsoluteContentSize.Y)
+end
+
+local function onPlayerChatted(plr, msg)
+    if not mimicEnabled then return end
+    if targetPlayer == nil then return end
+    if plr ~= targetPlayer then return end
+    if #suffixes == 0 then return end
+    
+    local suffix = suffixes[suffixIndex]
+    local mimicMsg = '"' .. msg .. '" ' .. suffix
+    
+    -- Pass 'true' to preserve case (FIXED)
+    sendMessage(mimicMsg, true)
+    
+    suffixIndex = suffixIndex + 1
+    if suffixIndex > #suffixes then
+        suffixIndex = 1
+    end
+end
+
+local function setupPlayerListener(plr)
+    plr.Chatted:Connect(function(msg)
+        onPlayerChatted(plr, msg)
+    end)
+end
+
+for _, plr in pairs(Players:GetPlayers()) do
+    if plr ~= player then
+        setupPlayerListener(plr)
+    end
+end
+
+Players.PlayerAdded:Connect(function(plr)
+    if plr ~= player then
+        setupPlayerListener(plr)
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    if plr == targetPlayer then
+        targetPlayer = nil
+        targetLabel.Text = "Target: None"
+        mimicEnabled = false
+        mimicToggle.Text = "MIMIC: OFF"
+        mimicToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+    end
+end)
+
+local function updateDropdown()
+    for _, child in pairs(dropdownScroll:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= player then
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(1, 0, 0, 24)
+            btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            btn.Text = plr.Name
+            btn.Font = Enum.Font.Gotham
+            btn.TextSize = 11
+            btn.ZIndex = 10
+            btn.Parent = dropdownScroll
+            
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(0, 4)
+            btnCorner.Parent = btn
+            
+            btn.MouseButton1Click:Connect(function()
+                targetPlayer = plr
+                targetLabel.Text = "Target: " .. plr.Name
+                dropdownFrame.Visible = false
+            end)
+        end
+    end
+    
+    dropdownScroll.CanvasSize = UDim2.new(0, 0, 0, dropdownLayout.AbsoluteContentSize.Y)
+end
+
+selectTargetBtn.MouseButton1Click:Connect(function()
+    if dropdownFrame.Visible then
+        dropdownFrame.Visible = false
+    else
+        updateDropdown()
+        dropdownFrame.Visible = true
+    end
+end)
+
+mimicToggle.MouseButton1Click:Connect(function()
+    if targetPlayer == nil then
+        return
+    end
+    
+    mimicEnabled = not mimicEnabled
+    
+    if mimicEnabled then
+        mimicToggle.Text = "MIMIC: ON"
+        mimicToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
+    else
+        mimicToggle.Text = "MIMIC: OFF"
+        mimicToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+    end
+end)
+
+addSuffixBtn.MouseButton1Click:Connect(function()
+    local text = suffixInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
+    if text ~= "" then
+        table.insert(suffixes, text)
+        suffixInput.Text = ""
+        updateSuffixList()
+    end
+end)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if dropdownFrame.Visible then
+            dropdownFrame.Visible = false
+        end
+    end
+end)
+
 local guiVisible = true
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -529,4 +934,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("✅ Multi-Line Chat Hub Loaded")
+print("✅ Multi-Line Chat Hub with Mimic Tab Loaded")
