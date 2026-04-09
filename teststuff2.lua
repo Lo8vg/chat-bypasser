@@ -1,218 +1,330 @@
--- || THE BLACK BOX LOGGER ||
--- Automatically saves proof when players leave.
+-- || MOBILE BLACK BOX LOGGER ||
+-- GUI Based Logger for Mobile (No files needed)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 local TextChatService = game:GetService("TextChatService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 -- Settings
-local LOG_FOLDER = "RobloxLogs" -- Folder name in your workspace
-local LOG_CHAT_HISTORY = 50 -- How many previous messages to save in the "Last Moments" file
-
--- State
-local ChatHistory = {}
+local MAX_LOGS = 100 -- Max lines to keep in GUI
 local TargetPlayer = nil
-local LoggingEnabled = true
+local Logs = {} -- Stores all log data
 
--- || GUI ||
+-- || GUI CREATION ||
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "BlackBoxUI"
+screenGui.Name = "MobileLogger"
+screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
+-- Toggle Button (Small)
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Name = "ToggleBtn"
+toggleBtn.Size = UDim2.new(0, 50, 0, 50)
+toggleBtn.Position = UDim2.new(0, 10, 0.5, -25)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.Text = "📜"
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 20
+toggleBtn.Parent = screenGui
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0, 8)
+toggleCorner.Parent = toggleBtn
+
+-- Main Frame (Big)
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 250, 0, 180)
-mainFrame.Position = UDim2.new(1, -260, 0.5, -90)
-mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-mainFrame.BorderSizePixel = 2
-mainFrame.BorderColor3 = Color3.fromRGB(255, 255, 255)
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0.9, 0, 0.8, 0)
+mainFrame.Position = UDim2.new(0.05, 0, 0.1, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+mainFrame.BorderSizePixel = 0
+mainFrame.Visible = false
 mainFrame.Parent = screenGui
 
 local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(0, 6)
+mainCorner.CornerRadius = UDim.new(0, 10)
 mainCorner.Parent = mainFrame
 
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 30)
-title.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Text = "📦 BLACK BOX LOGGER"
-title.Font = Enum.Font.GothamBold
-title.TextSize = 14
-title.Parent = mainFrame
+-- Title Bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 40)
+titleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainFrame
+
 local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 6)
-titleCorner.Parent = title
+titleCorner.CornerRadius = UDim.new(0, 10)
+titleCorner.Parent = titleBar
 
--- Target Display
+local titleFix = Instance.new("Frame")
+titleFix.Size = UDim2.new(1, 0, 0, 15)
+titleFix.Position = UDim2.new(0, 0, 1, -15)
+titleFix.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+titleFix.BorderSizePixel = 0
+titleFix.Parent = titleBar
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -100, 1, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Text = "📋 LIVE LOGGER"
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 16
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Position = UDim2.new(0, 15, 0, 0)
+titleLabel.Parent = titleBar
+
 local targetLabel = Instance.new("TextLabel")
-targetLabel.Size = UDim2.new(1, -20, 0, 25)
-targetLabel.Position = UDim2.new(0, 10, 0, 40)
+targetLabel.Size = UDim2.new(0, 150, 1, 0)
+targetLabel.Position = UDim2.new(1, -150, 0, 0)
 targetLabel.BackgroundTransparency = 1
-targetLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+targetLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
 targetLabel.Text = "Target: None"
-targetLabel.Font = Enum.Font.Gotham
+targetLabel.Font = Enum.Font.GothamBold
 targetLabel.TextSize = 12
-targetLabel.TextXAlignment = Enum.TextXAlignment.Left
-targetLabel.Parent = mainFrame
+targetLabel.TextXAlignment = Enum.TextXAlignment.Right
+targetLabel.Parent = titleBar
 
--- Buttons
-local selectBtn = Instance.new("TextButton")
-selectBtn.Size = UDim2.new(1, -20, 0, 30)
-selectBtn.Position = UDim2.new(0, 10, 0, 70)
-selectBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-selectBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-selectBtn.Text = "SELECT TARGET"
-selectBtn.Font = Enum.Font.GothamBold
-selectBtn.TextSize = 12
-selectBtn.Parent = mainFrame
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -35, 0.5, -15)
+closeBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.Text = "X"
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 14
+closeBtn.Parent = titleBar
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 6)
+closeCorner.Parent = closeBtn
+
+-- Log Frame (Middle)
+local logFrame = Instance.new("ScrollingFrame")
+logFrame.Size = UDim2.new(1, -20, 1, -100)
+logFrame.Position = UDim2.new(0, 10, 0, 50)
+logFrame.BackgroundTransparency = 1
+logFrame.ScrollBarThickness = 4
+logFrame.Parent = mainFrame
+
+local logLayout = Instance.new("UIListLayout")
+logLayout.Padding = UDim.new(0, 4)
+logLayout.Parent = logFrame
+
+-- Bottom Buttons
+local btnRow = Instance.new("Frame")
+btnRow.Size = UDim2.new(1, -20, 0, 35)
+btnRow.Position = UDim2.new(0, 10, 1, -45)
+btnRow.BackgroundTransparency = 1
+btnRow.Parent = mainFrame
+
+local selectTargetBtn = Instance.new("TextButton")
+selectTargetBtn.Size = UDim2.new(0.5, -5, 1, 0)
+selectTargetBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+selectTargetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+selectTargetBtn.Text = "SELECT TARGET"
+selectTargetBtn.Font = Enum.Font.GothamBold
+selectTargetBtn.TextSize = 12
+selectTargetBtn.Parent = btnRow
 local selectCorner = Instance.new("UICorner")
-selectCorner.CornerRadius = UDim.new(0, 4)
-selectCorner.Parent = selectBtn
+selectCorner.CornerRadius = UDim.new(0, 6)
+selectCorner.Parent = selectTargetBtn
 
-local openFolderBtn = Instance.new("TextButton")
-openFolderBtn.Size = UDim2.new(1, -20, 0, 30)
-openFolderBtn.Position = UDim2.new(0, 10, 0, 105)
-openFolderBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-openFolderBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-openFolderBtn.Text = "OPEN LOG FOLDER"
-openFolderBtn.Font = Enum.Font.GothamBold
-openFolderBtn.TextSize = 12
-openFolderBtn.Parent = mainFrame
-local openCorner = Instance.new("UICorner")
-openCorner.CornerRadius = UDim.new(0, 4)
-openCorner.Parent = openFolderBtn
-
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Size = UDim2.new(1, -20, 0, 20)
-statusLabel.Position = UDim2.new(0, 10, 0, 140)
-statusLabel.BackgroundTransparency = 1
-statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-statusLabel.Text = "Logging Active..."
-statusLabel.Font = Enum.Font.Gotham
-statusLabel.TextSize = 10
-statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-statusLabel.Parent = mainFrame
+local copyLogBtn = Instance.new("TextButton")
+copyLogBtn.Size = UDim2.new(0.5, -5, 1, 0)
+copyLogBtn.Position = UDim2.new(0.5, 5, 0, 0)
+copyLogBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+copyLogBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+copyLogBtn.Text = "COPY LAST 10"
+copyLogBtn.Font = Enum.Font.GothamBold
+copyLogBtn.TextSize = 12
+copyLogBtn.Parent = btnRow
+local copyCorner = Instance.new("UICorner")
+copyCorner.CornerRadius = UDim.new(0, 6)
+copyCorner.Parent = copyLogBtn
 
 -- || FUNCTIONS ||
 
--- Function to write files
-local function writeLog(filename, content)
-    -- Uses 'writefile' which is standard in most executors
-    if writefile then
-        -- Create folder check (simulated by including folder path in filename)
-        -- Note: Some executors require makefolder first
-        if not isfolder(LOG_FOLDER) then
-            if makefolder then
-                makefolder(LOG_FOLDER)
-            end
+local function AddLog(text, color)
+    color = color or Color3.fromRGB(255, 255, 255)
+    
+    -- Add to GUI
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0, 0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = color
+    label.Text = text
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextWrapped = true
+    label.Parent = logFrame
+    
+    -- Auto size height
+    game:GetService("RunService").RenderStepped:Wait()
+    label.Size = UDim2.new(1, 0, 0, label.TextBounds.Y)
+    
+    -- Add to table
+    table.insert(Logs, {Text = text, Color = color})
+    
+    -- Limit logs
+    if #Logs > MAX_LOGS then
+        table.remove(Logs, 1)
+        if logFrame:GetChildren()[1] then
+            logFrame:GetChildren()[1]:Destroy()
         end
-        
-        writefile(LOG_FOLDER .. "/" .. filename, content)
+    end
+    
+    -- Auto scroll to bottom
+    logFrame.CanvasSize = UDim2.new(0, 0, 0, logLayout.AbsoluteContentSize.Y)
+    logFrame.CanvasPosition = Vector2.new(0, math.huge)
+end
+
+local function CopyToClipboard(text)
+    -- Universal setclipboard function
+    if setclipboard then
+        setclipboard(text)
+        return true
+    elseif writefile then
+        -- Fallback for some mobile executors
+        writefile("RobloxLog_Copy.txt", text)
+        return false
     else
-        warn("Executor does not support 'writefile'")
+        return false
     end
 end
 
--- Function to capture chat messages
-local function onChat(messageObj, speakerName)
-    if not LoggingEnabled then return end
-    
-    -- Check if speaker is valid
-    if not speakerName then return end
-    
-    local timestamp = os.date("%H:%M:%S")
-    local logEntry = string.format("[%s] %s: %s", timestamp, speakerName, messageObj)
-    
-    -- Add to history
-    table.insert(ChatHistory, logEntry)
-    if #ChatHistory > LOG_CHAT_HISTORY then
-        table.remove(ChatHistory, 1)
-    end
+-- Chat Detection
+local function OnChat(message, speakerName)
+    -- Add to log
+    local timeStr = os.date("%H:%M:%S")
+    local logText = string.format("[%s] %s: %s", timeStr, speakerName, message)
+    AddLog(logText, Color3.fromRGB(200, 200, 200))
 end
 
--- Function to handle Player Leaving
-local function onPlayerRemoving(plr)
-    local timestamp = os.date("%H_%M_%S") -- Use underscores for filename safety
-    local dateStamp = os.date("%Y-%m-%d")
+-- Player Events
+local function OnPlayerAdded(plr)
+    local timeStr = os.date("%H:%M:%S")
+    AddLog(string.format("--> %s JOINED", plr.Name), Color3.fromRGB(0, 255, 0))
+end
+
+local function OnPlayerRemoving(plr)
+    local timeStr = os.date("%H:%M:%S")
+    AddLog(string.format("<-- %s LEFT", plr.Name), Color3.fromRGB(255, 60, 60))
     
-    -- Basic Log
-    local basicContent = string.format("PLAYER LEFT: %s\nTime: %s %s", plr.Name, dateStamp, timestamp)
-    writeLog(string.format("Leave_%s_%s.txt", plr.Name, timestamp), basicContent)
-    
-    statusLabel.Text = "Saved log for: " .. plr.Name
-    statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
-    
-    -- Target Log (The "Receipt")
+    -- Check if target
     if TargetPlayer and plr.Name == TargetPlayer then
-        local receiptContent = "=== TARGET LEAVE RECEIPT ===\n"
-        receiptContent = receiptContent .. "Target: " .. plr.Name .. "\n"
-        receiptContent = receiptContent .. "Time: " .. os.date("%c") .. "\n\n"
-        receiptContent = receiptContent .. "=== LAST " .. #ChatHistory .. " MESSAGES ===\n"
+        AddLog("!!! TARGET DETECTED LEAVING !!!", Color3.fromRGB(255, 255, 0))
         
-        for _, msg in pairs(ChatHistory) do
-            receiptContent = receiptContent .. msg .. "\n"
+        -- Build Receipt
+        local receipt = "=== TARGET LEAVE LOG ===\n"
+        receipt = receipt .. "Target: " .. plr.Name .. "\n"
+        receipt = receipt .. "Time: " .. os.date("%c") .. "\n"
+        receipt = receipt .. "=== LAST CHAT MESSAGES ===\n"
+        
+        -- Get last 10 messages from logs
+        local count = 0
+        for i = #Logs, 1, -1 do
+            if count >= 10 then break end
+            -- Only grab chat messages (white/gray ones usually)
+            receipt = receipt .. Logs[i].Text .. "\n"
+            count = count + 1
         end
         
-        -- Save "Receipt"
-        writeLog(string.format("RECEIPT_%s_%s.txt", plr.Name, timestamp), receiptContent)
+        -- Copy to clipboard
+        if CopyToClipboard(receipt) then
+            AddLog("[Copied Log to Clipboard!]", Color3.fromRGB(0, 255, 255))
+        else
+            AddLog("[Failed to Copy - Check Console]", Color3.fromRGB(255, 100, 0))
+        end
         
-        -- Flash screen
-        local flash = Instance.new("Frame")
-        flash.Size = UDim2.new(1, 0, 1, 0)
-        flash.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-        flash.BackgroundTransparency = 0.5
-        flash.Parent = screenGui
-        flash.ZIndex = 100
-        
-        game:GetService("Debris"):AddItem(flash, 0.2)
-        
+        -- Reset target
         TargetPlayer = nil
-        targetLabel.Text = "Target: None (Logged)"
+        targetLabel.Text = "Target: None"
+        targetLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        
+        -- Flash effect
+        mainFrame.BackgroundColor3 = Color3.fromRGB(0, 50, 0)
+        wait(0.2)
+        mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     end
 end
 
--- Chat Detection Hook
--- (Works for both TextChatService and Legacy Chat)
+-- Hook Chat
 spawn(function()
     if TextChatService then
-        TextChatService.OnIncomingMessage:Connect(function(message)
-            local text = message.Text
-            local speaker = message.PrefixText
-            
-            -- Clean speaker name (usually "PlayerName:" or "[Rank] PlayerName:")
-            local cleanName = speaker:gsub(":$", ""):gsub("^%[.-%]%s*", "")
-            if cleanName == "" then cleanName = "Unknown" end
-            
-            onChat(text, cleanName)
+        TextChatService.OnIncomingMessage:Connect(function(msgObj)
+            if msgObj and msgObj.Text and msgObj.PrefixText then
+                local speaker = msgObj.PrefixText:gsub(":$", "")
+                local text = msgObj.Text
+                OnChat(text, speaker)
+            end
         end)
-    elseif ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents") then
-        ReplicatedStorage.DefaultChatSystemChatEvents.OnMessageDoneFiltering:Connect(function(data)
+    end
+    
+    -- Legacy Chat Hook
+    local chatEvents = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents", true)
+    if chatEvents then
+        chatEvents.OnMessageDoneFiltering:Connect(function(data)
             if data and data.FromSpeaker and data.Message then
-                onChat(data.Message, data.FromSpeaker)
+                OnChat(data.Message, data.FromSpeaker)
             end
         end)
     end
 end)
 
--- Player List for Selection
+-- || BUTTON EVENTS ||
+
+toggleBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = not mainFrame.Visible
+    toggleBtn.Visible = not mainFrame.Visible
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = false
+    toggleBtn.Visible = true
+end)
+
+copyLogBtn.MouseButton1Click:Connect(function()
+    local receipt = "=== MANUAL LOG COPY ===\n"
+    local count = 0
+    for i = #Logs, 1, -1 do
+        if count >= 10 then break end
+        receipt = receipt .. Logs[i].Text .. "\n"
+        count = count + 1
+    end
+    
+    if CopyToClipboard(receipt) then
+        AddLog("[Manual Copy Successful]", Color3.fromRGB(0, 255, 255))
+    else
+        AddLog("[Copy Failed]", Color3.fromRGB(255, 100, 0))
+    end
+end)
+
+-- Target Selection Dropdown
 local playerDropdown = Instance.new("ScrollingFrame")
-playerDropdown.Size = UDim2.new(1, 0, 0, 150)
+playerDropdown.Size = UDim2.new(1, 0, 0, 200)
 playerDropdown.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 playerDropdown.Visible = false
-playerDropdown.Parent = mainFrame
-playerDropdown.ZIndex = 10
+playerDropdown.Position = UDim2.new(0, 0, 1, 0)
+playerDropdown.ZIndex = 20
+playerDropdown.Parent = btnRow
 local dropCorner = Instance.new("UICorner")
 dropCorner.Parent = playerDropdown
 local dropLayout = Instance.new("UIListLayout")
 dropLayout.Parent = playerDropdown
 
-selectBtn.MouseButton1Click:Connect(function()
+selectTargetBtn.MouseButton1Click:Connect(function()
     playerDropdown.Visible = not playerDropdown.Visible
     if playerDropdown.Visible then
-        -- Populate list
+        -- Populate
         for _, child in pairs(playerDropdown:GetChildren()) do
             if child:IsA("TextButton") then child:Destroy() end
         end
@@ -220,7 +332,7 @@ selectBtn.MouseButton1Click:Connect(function()
         for _, plr in pairs(Players:GetPlayers()) do
             if plr ~= player then
                 local btn = Instance.new("TextButton")
-                btn.Size = UDim2.new(1, 0, 0, 25)
+                btn.Size = UDim2.new(1, 0, 0, 30)
                 btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
                 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
                 btn.Text = plr.Name
@@ -230,7 +342,7 @@ selectBtn.MouseButton1Click:Connect(function()
                 btn.MouseButton1Click:Connect(function()
                     TargetPlayer = plr.Name
                     targetLabel.Text = "Target: " .. plr.Name
-                    targetLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+                    targetLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
                     playerDropdown.Visible = false
                 end)
             end
@@ -238,27 +350,13 @@ selectBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-openFolderBtn.MouseButton1Click:Connect(function()
-    -- Some executors use 'loadfile' or specific folder opening commands
-    -- 'listfiles' might work to list, but we can't open the folder externally easily.
-    -- Best we can do is print the path.
-    print("Logs are saved in your Workspace folder inside: " .. LOG_FOLDER)
-    -- Notification on screen
-    local notify = Instance.new("TextLabel")
-    notify.Size = UDim2.new(0, 300, 0, 40)
-    notify.Position = UDim2.new(0.5, -150, 0, 50)
-    notify.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    notify.TextColor3 = Color3.fromRGB(255, 255, 255)
-    notify.Text = "Check Console for File Path (F9)"
-    notify.Font = Enum.Font.GothamBold
-    notify.TextSize = 14
-    notify.Parent = screenGui
-    notify.ZIndex = 50
-    game:GetService("Debris"):AddItem(notify, 3)
-end)
+-- Initialize Players
+Players.PlayerAdded:Connect(OnPlayerAdded)
+Players.PlayerRemoving:Connect(OnPlayerRemoving)
+for _, plr in pairs(Players:GetPlayers()) do
+    if plr ~= player then
+        OnPlayerAdded(plr)
+    end
+end
 
--- Connections
-Players.PlayerRemoving:Connect(onPlayerRemoving)
-
-print("|| BLACK BOX LOGGER ACTIVE ||")
-print("Files will save to: " .. LOG_FOLDER)
+AddLog("Logger Initialized.", Color3.fromRGB(0, 200, 255))
