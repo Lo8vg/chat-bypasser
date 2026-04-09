@@ -1,11 +1,10 @@
--- || MOBILE BLACK BOX LOGGER (Fixed & Draggable) ||
+-- || MOBILE BLACK BOX LOGGER (Fixed Dropdown) ||
 -- GUI Based Logger for Mobile
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local TextChatService = game:GetService("TextChatService")
-local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -51,7 +50,7 @@ local mainCorner = Instance.new("UICorner")
 mainCorner.CornerRadius = UDim.new(0, 10)
 mainCorner.Parent = mainFrame
 
--- Title Bar (Draggable Handle)
+-- Title Bar
 local titleBar = Instance.new("Frame")
 titleBar.Name = "TitleBar"
 titleBar.Size = UDim2.new(1, 0, 0, 35)
@@ -150,17 +149,19 @@ local copyCorner = Instance.new("UICorner")
 copyCorner.CornerRadius = UDim.new(0, 6)
 copyCorner.Parent = copyLogBtn
 
--- Target Selection Dropdown (Fixed Size)
+-- Target Selection Dropdown (Fixed Position - Inside MainFrame)
 local playerDropdown = Instance.new("ScrollingFrame")
-playerDropdown.Size = UDim2.new(1, 0, 0, 100) -- Reduced height to 100
-playerDropdown.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+playerDropdown.Size = UDim2.new(1, -20, 1, -80) -- Covers the log area
+playerDropdown.Position = UDim2.new(0, 10, 0, 40) -- Below title
+playerDropdown.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 playerDropdown.Visible = false
-playerDropdown.Position = UDim2.new(0, 0, 1, 0)
-playerDropdown.ZIndex = 20
-playerDropdown.Parent = btnRow
+playerDropdown.ZIndex = 10 -- On top
+playerDropdown.ScrollBarThickness = 4
+playerDropdown.Parent = mainFrame
 local dropCorner = Instance.new("UICorner")
 dropCorner.Parent = playerDropdown
 local dropLayout = Instance.new("UIListLayout")
+dropLayout.Padding = UDim.new(0, 2)
 dropLayout.Parent = playerDropdown
 
 -- || FUNCTIONS ||
@@ -304,13 +305,17 @@ end)
 
 selectTargetBtn.MouseButton1Click:Connect(function()
     playerDropdown.Visible = not playerDropdown.Visible
+    
+    -- Clear old buttons
+    for _, child in pairs(playerDropdown:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+    
     if playerDropdown.Visible then
-        for _, child in pairs(playerDropdown:GetChildren()) do
-            if child:IsA("TextButton") then child:Destroy() end
-        end
-        
+        local count = 0
         for _, plr in pairs(Players:GetPlayers()) do
             if plr ~= player then
+                count = count + 1
                 local btn = Instance.new("TextButton")
                 btn.Size = UDim2.new(1, 0, 0, 25)
                 btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
@@ -318,17 +323,31 @@ selectTargetBtn.MouseButton1Click:Connect(function()
                 btn.Text = plr.Name
                 btn.Font = Enum.Font.Gotham
                 btn.TextSize = 11
+                btn.ZIndex = 11 -- Ensure on top
                 btn.Parent = playerDropdown
+                
                 btn.MouseButton1Click:Connect(function()
                     TargetPlayer = plr.Name
                     targetLabel.Text = "Target: " .. plr.Name
                     targetLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-                    playerDropdown.Visible = false
+                    playerDropdown.Visible = false -- Close after selection
                 end)
             end
         end
         
-        -- Auto-size dropdown canvas
+        -- Handle empty server
+        if count == 0 then
+            local emptyLabel = Instance.new("TextLabel")
+            emptyLabel.Size = UDim2.new(1, 0, 1, 0)
+            emptyLabel.BackgroundTransparency = 1
+            emptyLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            emptyLabel.Text = "No other players in server."
+            emptyLabel.Font = Enum.Font.Gotham
+            emptyLabel.TextSize = 12
+            emptyLabel.ZIndex = 11
+            emptyLabel.Parent = playerDropdown
+        end
+        
         playerDropdown.CanvasSize = UDim2.new(0, 0, 0, dropLayout.AbsoluteContentSize.Y)
     end
 end)
