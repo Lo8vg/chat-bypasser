@@ -1,4 +1,4 @@
--- COMBO DESTROYER + ANTI-AFK HUB
+-- COMBO DESTROYER + ANTI-AFK HUB (MOBILE FRIENDLY)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -47,87 +47,84 @@ screenGui.Name = "ComboDestroyerHub"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Hub Button
-local hubButton = Instance.new("Frame")
-hubButton.Size = UDim2.new(0, 50, 0, 50)
-hubButton.Position = UDim2.new(0, 15, 0.5, -25)
+-- Hub Button (Visible by default)
+local hubButton = Instance.new("TextButton")
+hubButton.Name = "HubButton"
+hubButton.Size = UDim2.new(0, 55, 0, 55)
+hubButton.Position = UDim2.new(0, 10, 0.5, -27)
 hubButton.BackgroundColor3 = COLORS.cardBg
 hubButton.BorderSizePixel = 0
+hubButton.Text = "💀"
+hubButton.TextColor3 = COLORS.textDark
+hubButton.Font = Enum.Font.GothamBold
+hubButton.TextSize = 28
+hubButton.Visible = true
 hubButton.Parent = screenGui
+
 local hubCorner = Instance.new("UICorner")
 hubCorner.CornerRadius = UDim.new(0, 12)
 hubCorner.Parent = hubButton
-local hubShadow = Instance.new("UIStroke")
-hubShadow.Color = COLORS.border
-hubShadow.Thickness = 1
-hubShadow.Parent = hubButton
-local hubIcon = Instance.new("TextLabel")
-hubIcon.Size = UDim2.new(1, 0, 1, 0)
-hubIcon.BackgroundTransparency = 1
-hubIcon.TextColor3 = COLORS.textDark
-hubIcon.Text = "💀"
-hubIcon.Font = Enum.Font.GothamBold
-hubIcon.TextSize = 24
-hubIcon.Parent = hubButton
 
 -- Main Frame
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 520, 0, 350)
-mainFrame.Position = UDim2.new(0.5, -260, 0.5, -175)
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 480, 0, 320)
+mainFrame.Position = UDim2.new(0.5, -240, 0.5, -160)
 mainFrame.BackgroundColor3 = COLORS.background
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
 mainFrame.Parent = screenGui
+
 local mfCorner = Instance.new("UICorner")
 mfCorner.CornerRadius = UDim.new(0, 12)
 mfCorner.Parent = mainFrame
-local mfShadow = Instance.new("UIStroke")
-mfShadow.Color = Color3.fromRGB(180, 180, 180)
-mfShadow.Thickness = 1
-mfShadow.Parent = mainFrame
 
 -- Title Bar
 local titleBar = Instance.new("Frame")
-titleBar.Size = UDim2.new(1, 0, 0, 40)
+titleBar.Size = UDim2.new(1, 0, 0, 38)
 titleBar.BackgroundColor3 = COLORS.header
 titleBar.Parent = mainFrame
+
 local tbCorner = Instance.new("UICorner")
 tbCorner.CornerRadius = UDim.new(0, 12)
 tbCorner.Parent = titleBar
+
 local tbFix = Instance.new("Frame")
-tbFix.Size = UDim2.new(1, 0, 0, 15)
-tbFix.Position = UDim2.new(0, 0, 1, -15)
+tbFix.Size = UDim2.new(1, 0, 0, 14)
+tbFix.Position = UDim2.new(0, 0, 1, -14)
 tbFix.BackgroundColor3 = COLORS.header
 tbFix.BorderSizePixel = 0
 tbFix.Parent = titleBar
+
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -50, 1, 0)
-title.Position = UDim2.new(0, 15, 0, 0)
+title.Size = UDim2.new(1, -70, 1, 0)
+title.Position = UDim2.new(0, 12, 0, 0)
 title.BackgroundTransparency = 1
 title.TextColor3 = COLORS.textDark
-title.Text = "💀 COMBO DESTROYER HUB"
+title.Text = "💀 COMBO DESTROYER + ANTI-AFK"
 title.Font = Enum.Font.GothamBold
-title.TextSize = 14
+title.TextSize = 13
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = titleBar
 
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 30, 0, 26)
-closeBtn.Position = UDim2.new(1, -35, 0.5, -13)
+closeBtn.Size = UDim2.new(0, 28, 0, 24)
+closeBtn.Position = UDim2.new(1, -34, 0.5, -12)
 closeBtn.BackgroundColor3 = COLORS.buttonDanger
 closeBtn.TextColor3 = COLORS.textLight
 closeBtn.Text = "✕"
 closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 12
 closeBtn.Parent = titleBar
+
 local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(0, 6)
 closeCorner.Parent = closeBtn
 
--- Tab Buttons Frame
+-- Tab Frame
 local tabFrame = Instance.new("Frame")
-tabFrame.Size = UDim2.new(1, -20, 0, 35)
-tabFrame.Position = UDim2.new(0, 10, 0, 48)
+tabFrame.Size = UDim2.new(1, -16, 0, 32)
+tabFrame.Position = UDim2.new(0, 8, 0, 44)
 tabFrame.BackgroundTransparency = 1
 tabFrame.Parent = mainFrame
 
@@ -137,24 +134,24 @@ local currentTab = "Destroyer"
 
 for i, tabName in ipairs(tabs) do
     local tabBtn = Instance.new("TextButton")
-    tabBtn.Size = UDim2.new(1/#tabs, -5, 1, 0)
-    tabBtn.Position = UDim2.new((i-1)/#tabs * (1 + 5/500), 0, 0, 0)
-    tabBtn.BackgroundColor3 = i == 1 and COLORS.buttonPrimary or Color3.fromRGB(230, 230, 230)
+    tabBtn.Size = UDim2.new(0.5, -3, 1, 0)
+    tabBtn.Position = UDim2.new((i-1) * 0.5 + (i-1) * 0.005, 0, 0, 0)
+    tabBtn.BackgroundColor3 = i == 1 and COLORS.buttonPrimary or Color3.fromRGB(220, 220, 220)
     tabBtn.TextColor3 = i == 1 and COLORS.textLight or COLORS.textDark
     tabBtn.Text = tabName
     tabBtn.Font = Enum.Font.GothamBold
-    tabBtn.TextSize = 12
+    tabBtn.TextSize = 11
     tabBtn.Parent = tabFrame
     local tabCorner = Instance.new("UICorner")
-    tabCorner.CornerRadius = UDim.new(0, 8)
+    tabCorner.CornerRadius = UDim.new(0, 6)
     tabCorner.Parent = tabBtn
     tabButtons[tabName] = tabBtn
 end
 
 -- Content Frame
 local contentFrame = Instance.new("Frame")
-contentFrame.Size = UDim2.new(1, -20, 1, -95)
-contentFrame.Position = UDim2.new(0, 10, 0, 90)
+contentFrame.Size = UDim2.new(1, -16, 1, -86)
+contentFrame.Position = UDim2.new(0, 8, 0, 82)
 contentFrame.BackgroundTransparency = 1
 contentFrame.Parent = mainFrame
 
@@ -166,48 +163,48 @@ destroyerSection.BackgroundTransparency = 1
 destroyerSection.Visible = true
 destroyerSection.Parent = contentFrame
 
--- Column 1: Target & Toggle
+-- Column 1
 local col1 = Instance.new("Frame")
-col1.Size = UDim2.new(0.32, 0, 1, 0)
+col1.Size = UDim2.new(0.34, 0, 1, 0)
 col1.BackgroundTransparency = 1
 col1.Parent = destroyerSection
 
 local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(1, 0, 0, 35)
+toggleBtn.Size = UDim2.new(1, 0, 0, 32)
 toggleBtn.BackgroundColor3 = COLORS.buttonDanger
 toggleBtn.TextColor3 = COLORS.textLight
 toggleBtn.Text = "DESTROY: OFF"
 toggleBtn.Font = Enum.Font.GothamBold
-toggleBtn.TextSize = 14
+toggleBtn.TextSize = 12
 toggleBtn.Parent = col1
 local togCorner = Instance.new("UICorner")
-togCorner.CornerRadius = UDim.new(0, 8)
+togCorner.CornerRadius = UDim.new(0, 6)
 togCorner.Parent = toggleBtn
 
 local statusLbl = Instance.new("TextLabel")
-statusLbl.Size = UDim2.new(1, 0, 0, 20)
-statusLbl.Position = UDim2.new(0, 0, 0, 40)
+statusLbl.Size = UDim2.new(1, 0, 0, 18)
+statusLbl.Position = UDim2.new(0, 0, 0, 36)
 statusLbl.BackgroundTransparency = 1
 statusLbl.TextColor3 = COLORS.textMuted
 statusLbl.Text = "No target"
 statusLbl.Font = Enum.Font.Gotham
-statusLbl.TextSize = 11
+statusLbl.TextSize = 10
 statusLbl.Parent = col1
 
 local targetLbl = Instance.new("TextLabel")
-targetLbl.Size = UDim2.new(1, 0, 0, 18)
-targetLbl.Position = UDim2.new(0, 0, 0, 68)
+targetLbl.Size = UDim2.new(1, 0, 0, 16)
+targetLbl.Position = UDim2.new(0, 0, 0, 58)
 targetLbl.BackgroundTransparency = 1
 targetLbl.TextColor3 = COLORS.textDark
 targetLbl.Text = "Target:"
 targetLbl.Font = Enum.Font.GothamBold
-targetLbl.TextSize = 11
+targetLbl.TextSize = 10
 targetLbl.TextXAlignment = Enum.TextXAlignment.Left
 targetLbl.Parent = col1
 
 local playerList = Instance.new("ScrollingFrame")
-playerList.Size = UDim2.new(1, 0, 0, 145)
-playerList.Position = UDim2.new(0, 0, 0, 90)
+playerList.Size = UDim2.new(1, 0, 0, 130)
+playerList.Position = UDim2.new(0, 0, 0, 78)
 playerList.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
 playerList.ScrollBarThickness = 4
 playerList.Parent = col1
@@ -218,280 +215,274 @@ local plLayout = Instance.new("UIListLayout")
 plLayout.Padding = UDim.new(0, 2)
 plLayout.Parent = playerList
 
--- Column 2: Modes & Settings
+-- Column 2
 local col2 = Instance.new("Frame")
-col2.Size = UDim2.new(0.36, -8, 1, 0)
-col2.Position = UDim2.new(0.32, 4, 0, 0)
+col2.Size = UDim2.new(0.34, -4, 1, 0)
+col2.Position = UDim2.new(0.34, 2, 0, 0)
 col2.BackgroundTransparency = 1
 col2.Parent = destroyerSection
 
 local modeLbl = Instance.new("TextLabel")
-modeLbl.Size = UDim2.new(1, 0, 0, 18)
+modeLbl.Size = UDim2.new(1, 0, 0, 16)
 modeLbl.BackgroundTransparency = 1
 modeLbl.TextColor3 = COLORS.textDark
 modeLbl.Text = "Mode:"
 modeLbl.Font = Enum.Font.GothamBold
-modeLbl.TextSize = 11
+modeLbl.TextSize = 10
 modeLbl.TextXAlignment = Enum.TextXAlignment.Left
 modeLbl.Parent = col2
 
 local devBtn = Instance.new("TextButton")
-devBtn.Size = UDim2.new(0.33, -1, 0, 26)
+devBtn.Size = UDim2.new(0.33, -1, 0, 22)
 devBtn.BackgroundColor3 = COLORS.buttonSuccess
 devBtn.TextColor3 = COLORS.textLight
 devBtn.Text = "✓ DEV"
 devBtn.Font = Enum.Font.GothamBold
-devBtn.TextSize = 10
+devBtn.TextSize = 9
 devBtn.Parent = col2
 local devCorner = Instance.new("UICorner")
-devCorner.CornerRadius = UDim.new(0, 6)
+devCorner.CornerRadius = UDim.new(0, 4)
 devCorner.Parent = devBtn
 
 local orbBtn = Instance.new("TextButton")
-orbBtn.Size = UDim2.new(0.33, -1, 0, 26)
+orbBtn.Size = UDim2.new(0.33, -1, 0, 22)
 orbBtn.Position = UDim2.new(0.33, 1, 0, 0)
 orbBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
 orbBtn.TextColor3 = COLORS.textDark
 orbBtn.Text = "ORB"
 orbBtn.Font = Enum.Font.Gotham
-orbBtn.TextSize = 10
+orbBtn.TextSize = 9
 orbBtn.Parent = col2
 local orbCorner = Instance.new("UICorner")
-orbCorner.CornerRadius = UDim.new(0, 6)
+orbCorner.CornerRadius = UDim.new(0, 4)
 orbCorner.Parent = orbBtn
 
 local chaosBtn = Instance.new("TextButton")
-chaosBtn.Size = UDim2.new(0.34, -1, 0, 26)
+chaosBtn.Size = UDim2.new(0.34, -1, 0, 22)
 chaosBtn.Position = UDim2.new(0.66, 2, 0, 0)
 chaosBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
 chaosBtn.TextColor3 = COLORS.textDark
 chaosBtn.Text = "CHAOS"
 chaosBtn.Font = Enum.Font.Gotham
-chaosBtn.TextSize = 10
+chaosBtn.TextSize = 9
 chaosBtn.Parent = col2
 local chaosCorner = Instance.new("UICorner")
-chaosCorner.CornerRadius = UDim.new(0, 6)
+chaosCorner.CornerRadius = UDim.new(0, 4)
 chaosCorner.Parent = chaosBtn
 
--- Toggles Row 1
 local swordTog = Instance.new("TextButton")
-swordTog.Size = UDim2.new(0.5, -1, 0, 24)
-swordTog.Position = UDim2.new(0, 0, 0, 32)
+swordTog.Size = UDim2.new(0.5, -1, 0, 20)
+swordTog.Position = UDim2.new(0, 0, 0, 26)
 swordTog.BackgroundColor3 = COLORS.buttonSuccess
 swordTog.TextColor3 = COLORS.textLight
 swordTog.Text = "✓ Sword"
 swordTog.Font = Enum.Font.Gotham
-swordTog.TextSize = 10
+swordTog.TextSize = 9
 swordTog.Parent = col2
 local stCorner = Instance.new("UICorner")
-stCorner.CornerRadius = UDim.new(0, 6)
+stCorner.CornerRadius = UDim.new(0, 4)
 stCorner.Parent = swordTog
 
 local velTog = Instance.new("TextButton")
-velTog.Size = UDim2.new(0.5, -1, 0, 24)
-velTog.Position = UDim2.new(0.5, 1, 0, 32)
+velTog.Size = UDim2.new(0.5, -1, 0, 20)
+velTog.Position = UDim2.new(0.5, 1, 0, 26)
 velTog.BackgroundColor3 = COLORS.buttonSuccess
 velTog.TextColor3 = COLORS.textLight
 velTog.Text = "✓ Velocity"
 velTog.Font = Enum.Font.Gotham
-velTog.TextSize = 10
+velTog.TextSize = 9
 velTog.Parent = col2
 local vtCorner = Instance.new("UICorner")
-vtCorner.CornerRadius = UDim.new(0, 6)
+vtCorner.CornerRadius = UDim.new(0, 4)
 vtCorner.Parent = velTog
 
--- Toggles Row 2
 local angTog = Instance.new("TextButton")
-angTog.Size = UDim2.new(0.5, -1, 0, 24)
-angTog.Position = UDim2.new(0, 0, 0, 60)
+angTog.Size = UDim2.new(0.5, -1, 0, 20)
+angTog.Position = UDim2.new(0, 0, 0, 50)
 angTog.BackgroundColor3 = COLORS.buttonSuccess
 angTog.TextColor3 = COLORS.textLight
 angTog.Text = "✓ Angular"
 angTog.Font = Enum.Font.Gotham
-angTog.TextSize = 10
+angTog.TextSize = 9
 angTog.Parent = col2
 local atCorner = Instance.new("UICorner")
-atCorner.CornerRadius = UDim.new(0, 6)
+atCorner.CornerRadius = UDim.new(0, 4)
 atCorner.Parent = angTog
 
 local tpTog = Instance.new("TextButton")
-tpTog.Size = UDim2.new(0.5, -1, 0, 24)
-tpTog.Position = UDim2.new(0.5, 1, 0, 60)
+tpTog.Size = UDim2.new(0.5, -1, 0, 20)
+tpTog.Position = UDim2.new(0.5, 1, 0, 50)
 tpTog.BackgroundColor3 = COLORS.buttonSuccess
 tpTog.TextColor3 = COLORS.textLight
 tpTog.Text = "✓ Teleport"
 tpTog.Font = Enum.Font.Gotham
-tpTog.TextSize = 10
+tpTog.TextSize = 9
 tpTog.Parent = col2
 local tpCorner = Instance.new("UICorner")
-tpCorner.CornerRadius = UDim.new(0, 6)
+tpCorner.CornerRadius = UDim.new(0, 4)
 tpCorner.Parent = tpTog
 
--- Mass Toggle
 local massTog = Instance.new("TextButton")
-massTog.Size = UDim2.new(1, 0, 0, 24)
-massTog.Position = UDim2.new(0, 0, 0, 88)
+massTog.Size = UDim2.new(1, 0, 0, 20)
+massTog.Position = UDim2.new(0, 0, 0, 74)
 massTog.BackgroundColor3 = COLORS.buttonSuccess
 massTog.TextColor3 = COLORS.textLight
 massTog.Text = "✓ Mass Boost"
 massTog.Font = Enum.Font.Gotham
-massTog.TextSize = 10
+massTog.TextSize = 9
 massTog.Parent = col2
 local mtCorner = Instance.new("UICorner")
-mtCorner.CornerRadius = UDim.new(0, 6)
+mtCorner.CornerRadius = UDim.new(0, 4)
 mtCorner.Parent = massTog
 
--- Settings
 local setLbl = Instance.new("TextLabel")
-setLbl.Size = UDim2.new(1, 0, 0, 18)
-setLbl.Position = UDim2.new(0, 0, 0, 118)
+setLbl.Size = UDim2.new(1, 0, 0, 16)
+setLbl.Position = UDim2.new(0, 0, 0, 98)
 setLbl.BackgroundTransparency = 1
 setLbl.TextColor3 = COLORS.textDark
 setLbl.Text = "Power:"
 setLbl.Font = Enum.Font.GothamBold
-setLbl.TextSize = 11
+setLbl.TextSize = 10
 setLbl.TextXAlignment = Enum.TextXAlignment.Left
 setLbl.Parent = col2
 
 local velInput = Instance.new("TextBox")
-velInput.Size = UDim2.new(0.5, -1, 0, 24)
-velInput.Position = UDim2.new(0, 0, 0, 138)
+velInput.Size = UDim2.new(0.5, -1, 0, 20)
+velInput.Position = UDim2.new(0, 0, 0, 116)
 velInput.BackgroundColor3 = COLORS.inputBg
 velInput.TextColor3 = COLORS.textDark
 velInput.Text = "999999"
 velInput.Font = Enum.Font.Gotham
-velInput.TextSize = 10
+velInput.TextSize = 9
 velInput.PlaceholderText = "Vel"
 velInput.Parent = col2
 local viCorner = Instance.new("UICorner")
-viCorner.CornerRadius = UDim.new(0, 6)
+viCorner.CornerRadius = UDim.new(0, 4)
 viCorner.Parent = velInput
 
 local angInput = Instance.new("TextBox")
-angInput.Size = UDim2.new(0.5, -1, 0, 24)
-angInput.Position = UDim2.new(0.5, 1, 0, 138)
+angInput.Size = UDim2.new(0.5, -1, 0, 20)
+angInput.Position = UDim2.new(0.5, 1, 0, 116)
 angInput.BackgroundColor3 = COLORS.inputBg
 angInput.TextColor3 = COLORS.textDark
 angInput.Text = "999999"
 angInput.Font = Enum.Font.Gotham
-angInput.TextSize = 10
+angInput.TextSize = 9
 angInput.PlaceholderText = "Ang"
 angInput.Parent = col2
 local aiCorner = Instance.new("UICorner")
-aiCorner.CornerRadius = UDim.new(0, 6)
+aiCorner.CornerRadius = UDim.new(0, 4)
 aiCorner.Parent = angInput
 
 local swingInput = Instance.new("TextBox")
-swingInput.Size = UDim2.new(0.5, -1, 0, 24)
-swingInput.Position = UDim2.new(0, 0, 0, 166)
+swingInput.Size = UDim2.new(0.5, -1, 0, 20)
+swingInput.Position = UDim2.new(0, 0, 0, 140)
 swingInput.BackgroundColor3 = COLORS.inputBg
 swingInput.TextColor3 = COLORS.textDark
 swingInput.Text = "3"
 swingInput.Font = Enum.Font.Gotham
-swingInput.TextSize = 10
+swingInput.TextSize = 9
 swingInput.PlaceholderText = "Swings"
 swingInput.Parent = col2
 local siCorner = Instance.new("UICorner")
-siCorner.CornerRadius = UDim.new(0, 6)
+siCorner.CornerRadius = UDim.new(0, 4)
 siCorner.Parent = swingInput
 
 local reachInput = Instance.new("TextBox")
-reachInput.Size = UDim2.new(0.5, -1, 0, 24)
-reachInput.Position = UDim2.new(0.5, 1, 0, 166)
+reachInput.Size = UDim2.new(0.5, -1, 0, 20)
+reachInput.Position = UDim2.new(0.5, 1, 0, 140)
 reachInput.BackgroundColor3 = COLORS.inputBg
 reachInput.TextColor3 = COLORS.textDark
 reachInput.Text = "15"
 reachInput.Font = Enum.Font.Gotham
-reachInput.TextSize = 10
+reachInput.TextSize = 9
 reachInput.PlaceholderText = "Reach"
 reachInput.Parent = col2
 local riCorner = Instance.new("UICorner")
-riCorner.CornerRadius = UDim.new(0, 6)
+riCorner.CornerRadius = UDim.new(0, 4)
 riCorner.Parent = reachInput
 
--- Column 3: Info & DANGER ZONE
+-- Column 3
 local col3 = Instance.new("Frame")
-col3.Size = UDim2.new(0.32, -8, 1, 0)
-col3.Position = UDim2.new(0.68, 4, 0, 0)
+col3.Size = UDim2.new(0.32, -4, 1, 0)
+col3.Position = UDim2.new(0.68, 2, 0, 0)
 col3.BackgroundTransparency = 1
 col3.Parent = destroyerSection
 
 local howLbl = Instance.new("TextLabel")
-howLbl.Size = UDim2.new(1, 0, 0, 18)
+howLbl.Size = UDim2.new(1, 0, 0, 16)
 howLbl.BackgroundTransparency = 1
 howLbl.TextColor3 = COLORS.textDark
 howLbl.Text = "How to use:"
 howLbl.Font = Enum.Font.GothamBold
-howLbl.TextSize = 11
+howLbl.TextSize = 10
 howLbl.TextXAlignment = Enum.TextXAlignment.Left
 howLbl.Parent = col3
 
 local info1 = Instance.new("TextLabel")
-info1.Size = UDim2.new(1, 0, 0, 50)
-info1.Position = UDim2.new(0, 0, 0, 20)
+info1.Size = UDim2.new(1, 0, 0, 45)
+info1.Position = UDim2.new(0, 0, 0, 18)
 info1.BackgroundTransparency = 1
 info1.TextColor3 = COLORS.textMuted
-info1.Text = "1. Select target from list\n2. Toggle DESTROY ON\n3. Combo activates automatically"
+info1.Text = "1. Select target\n2. Toggle DESTROY ON\n3. Combo activates"
 info1.Font = Enum.Font.Gotham
-info1.TextSize = 10
+info1.TextSize = 9
 info1.TextXAlignment = Enum.TextXAlignment.Left
 info1.Parent = col3
 
 local comboLbl = Instance.new("TextLabel")
-comboLbl.Size = UDim2.new(1, 0, 0, 18)
-comboLbl.Position = UDim2.new(0, 0, 0, 75)
+comboLbl.Size = UDim2.new(1, 0, 0, 16)
+comboLbl.Position = UDim2.new(0, 0, 0, 68)
 comboLbl.BackgroundTransparency = 1
 comboLbl.TextColor3 = COLORS.buttonPrimary
 comboLbl.Text = "COMBO EFFECTS:"
 comboLbl.Font = Enum.Font.GothamBold
-comboLbl.TextSize = 11
+comboLbl.TextSize = 10
 comboLbl.TextXAlignment = Enum.TextXAlignment.Left
 comboLbl.Parent = col3
 
 local comboInfo = Instance.new("TextLabel")
-comboInfo.Size = UDim2.new(1, 0, 0, 55)
-comboInfo.Position = UDim2.new(0, 0, 0, 95)
+comboInfo.Size = UDim2.new(1, 0, 0, 45)
+comboInfo.Position = UDim2.new(0, 0, 0, 86)
 comboInfo.BackgroundTransparency = 1
 comboInfo.TextColor3 = COLORS.textMuted
-comboInfo.Text = "• Fling = Launch into target\n• Sword = Auto-swing in reach\n• Combined = Unavoidable"
+comboInfo.Text = "• Fling into target\n• Auto-sword swing\n• Unavoidable combo"
 comboInfo.Font = Enum.Font.Gotham
-comboInfo.TextSize = 10
+comboInfo.TextSize = 9
 comboInfo.TextXAlignment = Enum.TextXAlignment.Left
-comboInfo.TextWrapped = true
 comboInfo.Parent = col3
 
--- DANGER ZONE
 local dangerZone = Instance.new("Frame")
-dangerZone.Size = UDim2.new(1, 0, 0, 70)
-dangerZone.Position = UDim2.new(0, 0, 1, -72)
+dangerZone.Size = UDim2.new(1, 0, 0, 55)
+dangerZone.Position = UDim2.new(0, 0, 1, -57)
 dangerZone.BackgroundColor3 = Color3.fromRGB(255, 235, 235)
 dangerZone.Parent = col3
 local dzCorner = Instance.new("UICorner")
-dzCorner.CornerRadius = UDim.new(0, 8)
+dzCorner.CornerRadius = UDim.new(0, 6)
 dzCorner.Parent = dangerZone
 
 local dangerLbl = Instance.new("TextLabel")
-dangerLbl.Size = UDim2.new(1, 0, 0, 18)
-dangerLbl.Position = UDim2.new(0, 0, 0, 5)
+dangerLbl.Size = UDim2.new(1, 0, 0, 16)
+dangerLbl.Position = UDim2.new(0, 0, 0, 4)
 dangerLbl.BackgroundTransparency = 1
 dangerLbl.TextColor3 = COLORS.buttonDanger
 dangerLbl.Text = "⚠ DANGER ZONE"
 dangerLbl.Font = Enum.Font.GothamBold
-dangerLbl.TextSize = 11
+dangerLbl.TextSize = 10
 dangerLbl.Parent = dangerZone
 
 local killGuiBtn = Instance.new("TextButton")
-killGuiBtn.Size = UDim2.new(1, -10, 0, 35)
-killGuiBtn.Position = UDim2.new(0, 5, 0, 28)
+killGuiBtn.Size = UDim2.new(1, -8, 0, 28)
+killGuiBtn.Position = UDim2.new(0, 4, 0, 23)
 killGuiBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
 killGuiBtn.TextColor3 = COLORS.textLight
-killGuiBtn.Text = "☠ KILL GUI ☠"
+killGuiBtn.Text = "☠ KILL GUI"
 killGuiBtn.Font = Enum.Font.GothamBold
-killGuiBtn.TextSize = 13
+killGuiBtn.TextSize = 11
 killGuiBtn.Parent = dangerZone
-local killGuiCorner = Instance.new("UICorner")
-killGuiCorner.CornerRadius = UDim.new(0, 6)
-killGuiCorner.Parent = killGuiBtn
+local killCorner = Instance.new("UICorner")
+killCorner.CornerRadius = UDim.new(0, 5)
+killCorner.Parent = killGuiBtn
 
 -- ========== ANTI-AFK SECTION ==========
 
@@ -502,31 +493,31 @@ afkSection.Visible = false
 afkSection.Parent = contentFrame
 
 local afkTitle = Instance.new("TextLabel")
-afkTitle.Size = UDim2.new(1, 0, 0, 30)
-afkTitle.Position = UDim2.new(0, 0, 0, 20)
+afkTitle.Size = UDim2.new(1, 0, 0, 28)
+afkTitle.Position = UDim2.new(0, 0, 0, 10)
 afkTitle.BackgroundTransparency = 1
 afkTitle.TextColor3 = COLORS.textDark
 afkTitle.Text = "Anti-AFK Protection"
 afkTitle.Font = Enum.Font.GothamBold
-afkTitle.TextSize = 18
+afkTitle.TextSize = 16
 afkTitle.Parent = afkSection
 
 local afkToggle = Instance.new("TextButton")
-afkToggle.Size = UDim2.new(0.6, 0, 0, 50)
-afkToggle.Position = UDim2.new(0.2, 0, 0, 70)
+afkToggle.Size = UDim2.new(0.7, 0, 0, 50)
+afkToggle.Position = UDim2.new(0.15, 0, 0, 55)
 afkToggle.BackgroundColor3 = COLORS.buttonDanger
 afkToggle.TextColor3 = COLORS.textLight
 afkToggle.Text = "ANTI-AFK: OFF"
 afkToggle.Font = Enum.Font.GothamBold
-afkToggle.TextSize = 16
+afkToggle.TextSize = 15
 afkToggle.Parent = afkSection
 local afkCorner = Instance.new("UICorner")
 afkCorner.CornerRadius = UDim.new(0, 10)
 afkCorner.Parent = afkToggle
 
 local afkInfo = Instance.new("TextLabel")
-afkInfo.Size = UDim2.new(0.8, 0, 0, 80)
-afkInfo.Position = UDim2.new(0.1, 0, 0, 140)
+afkInfo.Size = UDim2.new(0.85, 0, 0, 70)
+afkInfo.Position = UDim2.new(0.075, 0, 0, 120)
 afkInfo.BackgroundTransparency = 1
 afkInfo.TextColor3 = COLORS.textMuted
 afkInfo.Text = "Prevents getting kicked for inactivity.\n\nWorks in any game.\nSimulates activity every 60 seconds."
@@ -536,16 +527,16 @@ afkInfo.TextWrapped = true
 afkInfo.Parent = afkSection
 
 local afkStatus = Instance.new("TextLabel")
-afkStatus.Size = UDim2.new(1, 0, 0, 25)
-afkStatus.Position = UDim2.new(0, 0, 1, -30)
+afkStatus.Size = UDim2.new(1, 0, 0, 22)
+afkStatus.Position = UDim2.new(0, 0, 1, -25)
 afkStatus.BackgroundTransparency = 1
 afkStatus.TextColor3 = COLORS.buttonPrimary
 afkStatus.Text = "Status: Inactive"
 afkStatus.Font = Enum.Font.Gotham
-afkStatus.TextSize = 12
+afkStatus.TextSize = 11
 afkStatus.Parent = afkSection
 
--- ========== DRAGGING (HUB BUTTON) ==========
+-- ========== DRAGGING (MOBILE + PC) ==========
 
 local dragging = false
 local dragInput, dragStart, startPos
@@ -555,7 +546,6 @@ hubButton.InputBegan:Connect(function(input)
         dragging = true
         dragStart = input.Position
         startPos = hubButton.Position
-        
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 dragging = false
@@ -577,8 +567,16 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ========== DRAGGING (MAIN FRAME) ==========
+-- OPEN HUB ON TAP (MOBILE FRIENDLY)
+hubButton.MouseButton1Click:Connect(function()
+    wait(0.05)
+    if not dragging then
+        hubButton.Visible = false
+        mainFrame.Visible = true
+    end
+end)
 
+-- DRAGGING MAIN FRAME
 local mfDragging = false
 local mfDragInput, mfDragStart, mfDragPos
 
@@ -587,7 +585,6 @@ titleBar.InputBegan:Connect(function(input)
         mfDragging = true
         mfDragStart = input.Position
         mfDragPos = mainFrame.Position
-        
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 mfDragging = false
@@ -609,18 +606,6 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- ========== TOGGLE HUB ==========
-
-hubButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        wait(0.1)
-        if not dragging then
-            hubButton.Visible = false
-            mainFrame.Visible = true
-        end
-    end
-end)
-
 closeBtn.MouseButton1Click:Connect(function()
     mainFrame.Visible = false
     hubButton.Visible = true
@@ -638,7 +623,7 @@ local function switchTab(tabName)
             btn.BackgroundColor3 = COLORS.buttonPrimary
             btn.TextColor3 = COLORS.textLight
         else
-            btn.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+            btn.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
             btn.TextColor3 = COLORS.textDark
         end
     end
@@ -750,12 +735,12 @@ local function updatePlayerList()
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= player then
             local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, 0, 0, 22)
+            btn.Size = UDim2.new(1, 0, 0, 20)
             btn.BackgroundColor3 = targetPlayer == plr and COLORS.buttonPrimary or Color3.fromRGB(240, 240, 240)
             btn.TextColor3 = targetPlayer == plr and COLORS.textLight or COLORS.textDark
             btn.Text = plr.Name
             btn.Font = Enum.Font.Gotham
-            btn.TextSize = 10
+            btn.TextSize = 9
             btn.Parent = playerList
             local btnCorner = Instance.new("UICorner")
             btnCorner.CornerRadius = UDim.new(0, 4)
@@ -771,7 +756,7 @@ local function updatePlayerList()
         end
     end
     
-    playerList.CanvasSize = UDim2.new(0, 0, 0, #playerButtons * 24)
+    playerList.CanvasSize = UDim2.new(0, 0, 0, #playerButtons * 22)
 end
 
 Players.PlayerAdded:Connect(updatePlayerList)
@@ -803,11 +788,11 @@ local function equipSword()
     local backpack = player:FindFirstChild("Backpack")
     if not character or not backpack then return nil end
     local currentTool = getSword()
-    if currentTool then return currentTool end
+    if currentTool then return currentTool
+        end
     local humanoid = character:FindFirstChild("Humanoid")
     if not humanoid then return nil end
-    for _, item in pairs(backpack:GetChildren
-        end) do
+    for _, item in pairs(backpack:GetChildren()) do
         if item:IsA("Tool") then
             humanoid:EquipTool(item)
             wait(0.05)
@@ -1040,19 +1025,6 @@ spawn(function()
     end
 end)
 
--- ========== KEYBIND ==========
-
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if input.KeyCode == Enum.KeyCode.RightControl then
-        if mainFrame.Visible then
-            mainFrame.Visible = false
-            hubButton.Visible = true
-        else
-            hubButton.Visible = not hubButton.Visible
-        end
-    end
-end)
-
 -- ========== RESPAWN HANDLER ==========
 
 player.CharacterAdded:Connect(function(char)
@@ -1068,4 +1040,4 @@ player.CharacterRemoving:Connect(function()
     stopAll()
 end)
 
-print("✅ COMBO DESTROYER + ANTI-AFK HUB Loaded")
+print("✅ COMBO DESTROYER + ANTI-AFK HUB Loaded (Mobile Friendly)")
