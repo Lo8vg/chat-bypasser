@@ -1,5 +1,5 @@
--- Combined Hub: 5 Tabs (Fling + TP Kill + Ultimate + Combo + Anti-AFK)
--- Fixed logic integration for Combo Destroyer
+-- Combined Hub: Fling + TP Kill + Ultimate Collision + Destroyer + Anti-AFK (5 Tabs)
+-- Five separate tabs, each works independently
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -29,7 +29,7 @@ local COLORS = {
 -- ========== SCREEN GUI ==========
 
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "CombinedHub_5Tabs"
+screenGui.Name = "CombinedHub"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
@@ -61,8 +61,8 @@ hubButtonShadow.Parent = hubButton
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 480, 0, 350)
-mainFrame.Position = UDim2.new(0.5, -240, 0.5, -175)
+mainFrame.Size = UDim2.new(0, 500, 0, 380)
+mainFrame.Position = UDim2.new(0.5, -250, 0.5, -190)
 mainFrame.BackgroundColor3 = COLORS.background
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -100,7 +100,7 @@ titleLabel.Size = UDim2.new(1, -90, 1, 0)
 titleLabel.Position = UDim2.new(0, 15, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = COLORS.textDark
-titleLabel.Text = "⚔️ Ultimate 5-Tab Hub"
+titleLabel.Text = "⚔️ Ultimate Combat Hub"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 15
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -120,7 +120,7 @@ local collapseCorner = Instance.new("UICorner")
 collapseCorner.CornerRadius = UDim.new(0, 6)
 collapseCorner.Parent = collapseButton
 
--- ========== TAB BUTTONS (5 TABS) ==========
+-- ========== TAB BUTTONS ==========
 
 local tabButtonsFrame = Instance.new("Frame")
 tabButtonsFrame.Size = UDim2.new(1, -20, 0, 32)
@@ -128,58 +128,51 @@ tabButtonsFrame.Position = UDim2.new(0, 10, 0, 44)
 tabButtonsFrame.BackgroundTransparency = 1
 tabButtonsFrame.Parent = mainFrame
 
-local tabNames = {"Original", "TP Kill", "Ultimate", "Combo", "Anti-AFK"}
+-- Create 5 tab buttons
 local tabButtons = {}
-local tabContents = {}
-
-for i, name in ipairs(tabNames) do
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1/5, -4, 1, 0)
-    btn.Position = UDim2.new((i-1)/5 + (i-1)*0.004, 2, 0, 0)
-    btn.BackgroundColor3 = COLORS.tabInactive
-    btn.TextColor3 = COLORS.textDark
-    btn.Text = name
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 10
-    btn.Parent = tabButtonsFrame
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
-    corner.Parent = btn
-    
-    tabButtons[i] = btn
-end
-
--- Set Tab 1 as active initially
-tabButtons[1].BackgroundColor3 = COLORS.tabActive
-tabButtons[1].TextColor3 = COLORS.textLight
-
--- ========== TAB CONTENT FRAMES ==========
-
-local contentContainer = Instance.new("Frame")
-contentContainer.Size = UDim2.new(1, -20, 1, -82)
-contentContainer.Position = UDim2.new(0, 10, 0, 80)
-contentContainer.BackgroundTransparency = 1
-contentContainer.Parent = mainFrame
-
--- Initialize 5 content frames
 for i = 1, 5 do
-    local frame = Instance.new("Frame")
-    frame.Name = "Tab" .. i .. "Content"
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.BackgroundTransparency = 1
-    frame.Visible = (i == 1) -- Only Tab 1 visible
-    frame.Parent = contentContainer
-    tabContents[i] = frame
+    local tabButton = Instance.new("TextButton")
+    tabButton.Size = UDim2.new(0.2, -2, 1, 0)
+    tabButton.Position = UDim2.new((i-1) * 0.2, (i-1) * 2, 0, 0)
+    tabButton.BackgroundColor3 = i == 1 and COLORS.tabActive or COLORS.tabInactive
+    tabButton.TextColor3 = i == 1 and COLORS.textLight or COLORS.textDark
+    tabButton.Font = Enum.Font.GothamBold
+    tabButton.TextSize = 10
+    
+    if i == 1 then
+        tabButton.Text = "Original"
+    elseif i == 2 then
+        tabButton.Text = "TP Kill"
+    elseif i == 3 then
+        tabButton.Text = "Ultimate"
+    elseif i == 4 then
+        tabButton.Text = "Destroyer"
+    else
+        tabButton.Text = "Anti-AFK"
+    end
+    
+    tabButton.Parent = tabButtonsFrame
+    local tabCorner = Instance.new("UICorner")
+    tabCorner.CornerRadius = UDim.new(0, 6)
+    tabCorner.Parent = tabButton
+    tabButtons[i] = tabButton
 end
 
--- ========== TAB 1: ORIGINAL FLING ==========
+-- ========== TAB 1: FLING (ORIGINAL SCRIPT) ==========
 
+local tab1Content = Instance.new("Frame")
+tab1Content.Size = UDim2.new(1, -20, 1, -82)
+tab1Content.Position = UDim2.new(0, 10, 0, 80)
+tab1Content.BackgroundTransparency = 1
+tab1Content.Visible = true
+tab1Content.Parent = mainFrame
+
+-- Left Frame (Fling)
 local leftFrame1 = Instance.new("Frame")
 leftFrame1.Size = UDim2.new(0.5, -8, 1, 0)
 leftFrame1.Position = UDim2.new(0, 0, 0, 0)
 leftFrame1.BackgroundTransparency = 1
-leftFrame1.Parent = tabContents[1]
+leftFrame1.Parent = tab1Content
 
 -- Toggle Button
 local toggleButton1 = Instance.new("TextButton")
@@ -197,15 +190,15 @@ toggleCorner1.CornerRadius = UDim.new(0, 6)
 toggleCorner1.Parent = toggleButton1
 
 -- Fling Counter
-local flingCounter1 = Instance.new("TextLabel")
-flingCounter1.Size = UDim2.new(1, 0, 0, 16)
-flingCounter1.Position = UDim2.new(0, 0, 0, 36)
-flingCounter1.BackgroundTransparency = 1
-flingCounter1.TextColor3 = COLORS.buttonSuccess
-flingCounter1.Text = "Flings: 0"
-flingCounter1.Font = Enum.Font.GothamBold
-flingCounter1.TextSize = 11
-flingCounter1.Parent = leftFrame1
+local flingCounter = Instance.new("TextLabel")
+flingCounter.Size = UDim2.new(1, 0, 0, 16)
+flingCounter.Position = UDim2.new(0, 0, 0, 36)
+flingCounter.BackgroundTransparency = 1
+flingCounter.TextColor3 = COLORS.buttonSuccess
+flingCounter.Text = "Flings: 0"
+flingCounter.Font = Enum.Font.GothamBold
+flingCounter.TextSize = 11
+flingCounter.Parent = leftFrame1
 
 -- Target Label
 local targetLabel1 = Instance.new("TextLabel")
@@ -252,7 +245,7 @@ local rightFrame1 = Instance.new("Frame")
 rightFrame1.Size = UDim2.new(0.5, -8, 1, 0)
 rightFrame1.Position = UDim2.new(0.5, 8, 0, 0)
 rightFrame1.BackgroundTransparency = 1
-rightFrame1.Parent = tabContents[1]
+rightFrame1.Parent = tab1Content
 
 -- Spin Power
 local spinLabel = Instance.new("TextLabel")
@@ -331,8 +324,16 @@ infoLabel1.TextWrapped = true
 infoLabel1.TextXAlignment = Enum.TextXAlignment.Left
 infoLabel1.Parent = rightFrame1
 
--- ========== TAB 2: TP KILL ==========
+-- ========== TAB 2: TP KILL (ORIGINAL SCRIPT) ==========
 
+local tab2Content = Instance.new("Frame")
+tab2Content.Size = UDim2.new(1, -20, 1, -82)
+tab2Content.Position = UDim2.new(0, 10, 0, 80)
+tab2Content.BackgroundTransparency = 1
+tab2Content.Visible = false
+tab2Content.Parent = mainFrame
+
+-- Toggle Button
 local toggleButton2 = Instance.new("TextButton")
 toggleButton2.Size = UDim2.new(1, 0, 0, 36)
 toggleButton2.Position = UDim2.new(0, 0, 0, 0)
@@ -341,7 +342,7 @@ toggleButton2.TextColor3 = COLORS.textLight
 toggleButton2.Text = "KILL AURA: OFF"
 toggleButton2.Font = Enum.Font.GothamBold
 toggleButton2.TextSize = 14
-toggleButton2.Parent = tabContents[2]
+toggleButton2.Parent = tab2Content
 
 local toggleCorner2 = Instance.new("UICorner")
 toggleCorner2.CornerRadius = UDim.new(0, 6)
@@ -356,7 +357,7 @@ protectionLabel.TextColor3 = COLORS.textMuted
 protectionLabel.Text = "Protection: Waiting..."
 protectionLabel.Font = Enum.Font.Gotham
 protectionLabel.TextSize = 10
-protectionLabel.Parent = tabContents[2]
+protectionLabel.Parent = tab2Content
 
 -- Target Label
 local targetLabel2 = Instance.new("TextLabel")
@@ -368,7 +369,7 @@ targetLabel2.Text = "Select Target:"
 targetLabel2.Font = Enum.Font.GothamBold
 targetLabel2.TextSize = 10
 targetLabel2.TextXAlignment = Enum.TextXAlignment.Left
-targetLabel2.Parent = tabContents[2]
+targetLabel2.Parent = tab2Content
 
 -- Player List
 local playerScroll2 = Instance.new("ScrollingFrame")
@@ -376,7 +377,7 @@ playerScroll2.Size = UDim2.new(1, 0, 0, 80)
 playerScroll2.Position = UDim2.new(0, 0, 0, 76)
 playerScroll2.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
 playerScroll2.ScrollBarThickness = 4
-playerScroll2.Parent = tabContents[2]
+playerScroll2.Parent = tab2Content
 
 local playerScrollCorner2 = Instance.new("UICorner")
 playerScrollCorner2.CornerRadius = UDim.new(0, 6)
@@ -396,14 +397,14 @@ statusLabel2.Text = "No target selected"
 statusLabel2.Font = Enum.Font.Gotham
 statusLabel2.TextSize = 9
 statusLabel2.TextWrapped = true
-statusLabel2.Parent = tabContents[2]
+statusLabel2.Parent = tab2Content
 
 -- Delay Input
 local delayRow = Instance.new("Frame")
 delayRow.Size = UDim2.new(1, 0, 0, 24)
 delayRow.Position = UDim2.new(0, 0, 0, 180)
 delayRow.BackgroundTransparency = 1
-delayRow.Parent = tabContents[2]
+delayRow.Parent = tab2Content
 
 local delayLabel = Instance.new("TextLabel")
 delayLabel.Size = UDim2.new(0, 80, 1, 0)
@@ -451,7 +452,7 @@ local swingsRow = Instance.new("Frame")
 swingsRow.Size = UDim2.new(1, 0, 0, 24)
 swingsRow.Position = UDim2.new(0, 0, 0, 208)
 swingsRow.BackgroundTransparency = 1
-swingsRow.Parent = tabContents[2]
+swingsRow.Parent = tab2Content
 
 local swingsLabel = Instance.new("TextLabel")
 swingsLabel.Size = UDim2.new(0, 80, 1, 0)
@@ -488,7 +489,7 @@ local checkRow = Instance.new("Frame")
 checkRow.Size = UDim2.new(1, 0, 0, 24)
 checkRow.Position = UDim2.new(0, 0, 0, 236)
 checkRow.BackgroundTransparency = 1
-checkRow.Parent = tabContents[2]
+checkRow.Parent = tab2Content
 
 local checkLabel = Instance.new("TextLabel")
 checkLabel.Size = UDim2.new(0, 80, 1, 0)
@@ -520,13 +521,21 @@ checkStroke.Color = COLORS.border
 checkStroke.Thickness = 1
 checkStroke.Parent = checkInput
 
--- ========== TAB 3: ULTIMATE COLLISION FLING ==========
+-- ========== TAB 3: ULTIMATE COLLISION FLING (ORIGINAL SCRIPT) ==========
 
+local tab3Content = Instance.new("Frame")
+tab3Content.Size = UDim2.new(1, -20, 1, -82)
+tab3Content.Position = UDim2.new(0, 10, 0, 80)
+tab3Content.BackgroundTransparency = 1
+tab3Content.Visible = false
+tab3Content.Parent = mainFrame
+
+-- Left Frame
 local leftFrame3 = Instance.new("Frame")
 leftFrame3.Size = UDim2.new(0.5, -8, 1, 0)
 leftFrame3.Position = UDim2.new(0, 0, 0, 0)
 leftFrame3.BackgroundTransparency = 1
-leftFrame3.Parent = tabContents[3]
+leftFrame3.Parent = tab3Content
 
 -- Toggle Button
 local toggleButton3 = Instance.new("TextButton")
@@ -653,7 +662,7 @@ local rightFrame3 = Instance.new("Frame")
 rightFrame3.Size = UDim2.new(0.5, -8, 1, 0)
 rightFrame3.Position = UDim2.new(0.5, 8, 0, 0)
 rightFrame3.BackgroundTransparency = 1
-rightFrame3.Parent = tabContents[3]
+rightFrame3.Parent = tab3Content
 
 -- Velocity Power
 local velocityLabel3 = Instance.new("TextLabel")
@@ -797,7 +806,7 @@ teleportToggle3.Position = UDim2.new(0, 0, 0, 164)
 teleportToggle3.BackgroundColor3 = COLORS.buttonSuccess
 teleportToggle3.TextColor3 = COLORS.textLight
 teleportToggle3.Text = "✓ Rapid Teleport"
-teleToggle3.Font = Enum.Font.Gotham
+teleportToggle3.Font = Enum.Font.Gotham
 teleportToggle3.TextSize = 8
 teleportToggle3.Parent = rightFrame3
 
@@ -821,327 +830,359 @@ massTogCorner3.Parent = massToggle3
 
 -- ========== TAB 4: COMBO DESTROYER ==========
 
-local col4_C1 = Instance.new("Frame")
-col4_C1.Size = UDim2.new(0.34, 0, 1, 0)
-col4_C1.BackgroundTransparency = 1
-col4_C1.Parent = tabContents[4]
+local tab4Content = Instance.new("Frame")
+tab4Content.Size = UDim2.new(1, -20, 1, -82)
+tab4Content.Position = UDim2.new(0, 10, 0, 80)
+tab4Content.BackgroundTransparency = 1
+tab4Content.Visible = false
+tab4Content.Parent = mainFrame
 
-local toggleButton4 = Instance.new("TextButton")
-toggleButton4.Size = UDim2.new(1, 0, 0, 32)
-toggleButton4.BackgroundColor3 = COLORS.buttonDanger
-toggleButton4.TextColor3 = COLORS.textLight
-toggleButton4.Text = "DESTROY: OFF"
-toggleButton4.Font = Enum.Font.GothamBold
-toggleButton4.TextSize = 12
-toggleButton4.Parent = col4_C1
-local togCorner4 = Instance.new("UICorner")
-togCorner4.CornerRadius = UDim.new(0, 6)
-togCorner4.Parent = toggleButton4
+-- Column 1 (Destroyer Left)
+local destroyerLeft = Instance.new("Frame")
+destroyerLeft.Size = UDim2.new(0.34, 0, 1, 0)
+destroyerLeft.BackgroundTransparency = 1
+destroyerLeft.Parent = tab4Content
 
-local statusLbl4 = Instance.new("TextLabel")
-statusLbl4.Size = UDim2.new(1, 0, 0, 18)
-statusLbl4.Position = UDim2.new(0, 0, 0, 36)
-statusLbl4.BackgroundTransparency = 1
-statusLbl4.TextColor3 = COLORS.textMuted
-statusLbl4.Text = "No target"
-statusLbl4.Font = Enum.Font.Gotham
-statusLbl4.TextSize = 10
-statusLbl4.Parent = col4_C1
+local destroyerToggle = Instance.new("TextButton")
+destroyerToggle.Size = UDim2.new(1, 0, 0, 32)
+destroyerToggle.BackgroundColor3 = COLORS.buttonDanger
+destroyerToggle.TextColor3 = COLORS.textLight
+destroyerToggle.Text = "DESTROY: OFF"
+destroyerToggle.Font = Enum.Font.GothamBold
+destroyerToggle.TextSize = 12
+destroyerToggle.Parent = destroyerLeft
 
-local targetLbl4 = Instance.new("TextLabel")
-targetLbl4.Size = UDim2.new(1, 0, 0, 16)
-targetLbl4.Position = UDim2.new(0, 0, 0, 58)
-targetLbl4.BackgroundTransparency = 1
-targetLbl4.TextColor3 = COLORS.textDark
-targetLbl4.Text = "Target:"
-targetLbl4.Font = Enum.Font.GothamBold
-targetLbl4.TextSize = 10
-targetLbl4.TextXAlignment = Enum.TextXAlignment.Left
-targetLbl4.Parent = col4_C1
+local destroyerToggleCorner = Instance.new("UICorner")
+destroyerToggleCorner.CornerRadius = UDim.new(0, 6)
+destroyerToggleCorner.Parent = destroyerToggle
 
-local playerScroll4 = Instance.new("ScrollingFrame")
-playerScroll4.Size = UDim2.new(1, 0, 0, 130)
-playerScroll4.Position = UDim2.new(0, 0, 0, 78)
-playerScroll4.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
-playerScroll4.ScrollBarThickness = 4
-playerScroll4.Parent = col4_C1
-local plCorner4 = Instance.new("UICorner")
-plCorner4.CornerRadius = UDim.new(0, 6)
-plCorner4.Parent = playerScroll4
-local plLayout4 = Instance.new("UIListLayout")
-plLayout4.Padding = UDim.new(0, 2)
-plLayout4.Parent = playerScroll4
+local destroyerStatus = Instance.new("TextLabel")
+destroyerStatus.Size = UDim2.new(1, 0, 0, 18)
+destroyerStatus.Position = UDim2.new(0, 0, 0, 36)
+destroyerStatus.BackgroundTransparency = 1
+destroyerStatus.TextColor3 = COLORS.textMuted
+destroyerStatus.Text = "No target"
+destroyerStatus.Font = Enum.Font.Gotham
+destroyerStatus.TextSize = 10
+destroyerStatus.Parent = destroyerLeft
 
--- Col 2
-local col4_C2 = Instance.new("Frame")
-col4_C2.Size = UDim2.new(0.34, -4, 1, 0)
-col4_C2.Position = UDim2.new(0.34, 2, 0, 0)
-col4_C2.BackgroundTransparency = 1
-col4_C2.Parent = tabContents[4]
+local destroyerTargetLabel = Instance.new("TextLabel")
+destroyerTargetLabel.Size = UDim2.new(1, 0, 0, 16)
+destroyerTargetLabel.Position = UDim2.new(0, 0, 0, 58)
+destroyerTargetLabel.BackgroundTransparency = 1
+destroyerTargetLabel.TextColor3 = COLORS.textDark
+destroyerTargetLabel.Text = "Target:"
+destroyerTargetLabel.Font = Enum.Font.GothamBold
+destroyerTargetLabel.TextSize = 10
+destroyerTargetLabel.TextXAlignment = Enum.TextXAlignment.Left
+destroyerTargetLabel.Parent = destroyerLeft
 
-local modeLbl4 = Instance.new("TextLabel")
-modeLbl4.Size = UDim2.new(1, 0, 0, 16)
-modeLbl4.BackgroundTransparency = 1
-modeLbl4.TextColor3 = COLORS.textDark
-modeLbl4.Text = "Mode:"
-modeLbl4.Font = Enum.Font.GothamBold
-modeLbl4.TextSize = 10
-modeLbl4.TextXAlignment = Enum.TextXAlignment.Left
-modeLbl4.Parent = col4_C2
+local destroyerPlayerScroll = Instance.new("ScrollingFrame")
+destroyerPlayerScroll.Size = UDim2.new(1, 0, 0, 130)
+destroyerPlayerScroll.Position = UDim2.new(0, 0, 0, 78)
+destroyerPlayerScroll.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
+destroyerPlayerScroll.ScrollBarThickness = 4
+destroyerPlayerScroll.Parent = destroyerLeft
 
-local devBtn4 = Instance.new("TextButton")
-devBtn4.Size = UDim2.new(0.33, -1, 0, 22)
-devBtn4.BackgroundColor3 = COLORS.buttonSuccess
-devBtn4.TextColor3 = COLORS.textLight
-devBtn4.Text = "✓ DEV"
-devBtn4.Font = Enum.Font.GothamBold
-devBtn4.TextSize = 9
-devBtn4.Parent = col4_C2
-local devCorner4 = Instance.new("UICorner")
-devCorner4.CornerRadius = UDim.new(0, 4)
-devCorner4.Parent = devBtn4
+local destroyerScrollCorner = Instance.new("UICorner")
+destroyerScrollCorner.CornerRadius = UDim.new(0, 6)
+destroyerScrollCorner.Parent = destroyerPlayerScroll
 
-local orbBtn4 = Instance.new("TextButton")
-orbBtn4.Size = UDim2.new(0.33, -1, 0, 22)
-orbBtn4.Position = UDim2.new(0.33, 1, 0, 0)
-orbBtn4.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-orbBtn4.TextColor3 = COLORS.textDark
-orbBtn4.Text = "ORB"
-orbBtn4.Font = Enum.Font.Gotham
-orbBtn4.TextSize = 9
-orbBtn4.Parent = col4_C2
-local orbCorner4 = Instance.new("UICorner")
-orbCorner4.CornerRadius = UDim.new(0, 4)
-orbCorner4.Parent = orbBtn4
+local destroyerPlayerLayout = Instance.new("UIListLayout")
+destroyerPlayerLayout.Padding = UDim.new(0, 2)
+destroyerPlayerLayout.Parent = destroyerPlayerScroll
 
-local chaosBtn4 = Instance.new("TextButton")
-chaosBtn4.Size = UDim2.new(0.34, -1, 0, 22)
-chaosBtn4.Position = UDim2.new(0.66, 2, 0, 0)
-chaosBtn4.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-chaosBtn4.TextColor3 = COLORS.textDark
-chaosBtn4.Text = "CHAOS"
-chaosBtn4.Font = Enum.Font.Gotham
-chaosBtn4.TextSize = 9
-chaosBtn4.Parent = col4_C2
-local chaosCorner4 = Instance.new("UICorner")
-chaosCorner4.CornerRadius = UDim.new(0, 4)
-chaosCorner4.Parent = chaosBtn4
+-- Column 2 (Destroyer Middle)
+local destroyerMiddle = Instance.new("Frame")
+destroyerMiddle.Size = UDim2.new(0.34, -4, 1, 0)
+destroyerMiddle.Position = UDim2.new(0.34, 2, 0, 0)
+destroyerMiddle.BackgroundTransparency = 1
+destroyerMiddle.Parent = tab4Content
 
-local swordTog4 = Instance.new("TextButton")
-swordTog4.Size = UDim2.new(0.5, -1, 0, 20)
-swordTog4.Position = UDim2.new(0, 0, 0, 26)
-swordTog4.BackgroundColor3 = COLORS.buttonSuccess
-swordTog4.TextColor3 = COLORS.textLight
-swordTog4.Text = "✓ Sword"
-swordTog4.Font = Enum.Font.Gotham
-swordTog4.TextSize = 9
-swordTog4.Parent = col4_C2
-local stCorner4 = Instance.new("UICorner")
-stCorner4.CornerRadius = UDim.new(0, 4)
-stCorner4.Parent = swordTog4
+local modeLabel = Instance.new("TextLabel")
+modeLabel.Size = UDim2.new(1, 0, 0, 16)
+modeLabel.BackgroundTransparency = 1
+modeLabel.TextColor3 = COLORS.textDark
+modeLabel.Text = "Mode:"
+modeLabel.Font = Enum.Font.GothamBold
+modeLabel.TextSize = 10
+modeLabel.TextXAlignment = Enum.TextXAlignment.Left
+modeLabel.Parent = destroyerMiddle
 
-local velTog4 = Instance.new("TextButton")
-velTog4.Size = UDim2.new(0.5, -1, 0, 20)
-velTog4.Position = UDim2.new(0.5, 1, 0, 26)
-velTog4.BackgroundColor3 = COLORS.buttonSuccess
-velTog4.TextColor3 = COLORS.textLight
-velTog4.Text = "✓ Velocity"
-velTog4.Font = Enum.Font.Gotham
-velTog4.TextSize = 9
-velTog4.Parent = col4_C2
-local vtCorner4 = Instance.new("UICorner")
-vtCorner4.CornerRadius = UDim.new(0, 4)
-vtCorner4.Parent = velTog4
+local destroyerDevBtn = Instance.new("TextButton")
+destroyerDevBtn.Size = UDim2.new(0.33, -1, 0, 22)
+destroyerDevBtn.BackgroundColor3 = COLORS.buttonSuccess
+destroyerDevBtn.TextColor3 = COLORS.textLight
+destroyerDevBtn.Text = "✓ DEV"
+destroyerDevBtn.Font = Enum.Font.GothamBold
+destroyerDevBtn.TextSize = 9
+destroyerDevBtn.Parent = destroyerMiddle
 
-local angTog4 = Instance.new("TextButton")
-angTog4.Size = UDim2.new(0.5, -1, 0, 20)
-angTog4.Position = UDim2.new(0, 0, 0, 50)
-angTog4.BackgroundColor3 = COLORS.buttonSuccess
-angTog4.TextColor3 = COLORS.textLight
-angTog4.Text = "✓ Angular"
-angTog4.Font = Enum.Font.Gotham
-angTog4.TextSize = 9
-angTog4.Parent = col4_C2
-local atCorner4 = Instance.new("UICorner")
-atCorner4.CornerRadius = UDim.new(0, 4)
-atCorner4.Parent = angTog4
+local destroyerDevCorner = Instance.new("UICorner")
+destroyerDevCorner.CornerRadius = UDim.new(0, 4)
+destroyerDevCorner.Parent = destroyerDevBtn
 
-local tpTog4 = Instance.new("TextButton")
-tpTog4.Size = UDim2.new(0.5, -1, 0, 20)
-tpTog4.Position = UDim2.new(0.5, 1, 0, 50)
-tpTog4.BackgroundColor3 = COLORS.buttonSuccess
-tpTog4.TextColor3 = COLORS.textLight
-tpTog4.Text = "✓ Teleport"
-tpTog4.Font = Enum.Font.Gotham
-tpTog4.TextSize = 9
-tpTog4.Parent = col4_C2
-local tpCorner4 = Instance.new("UICorner")
-tpCorner4.CornerRadius = UDim.new(0, 4)
-tpCorner4.Parent = tpTog4
+local destroyerOrbBtn = Instance.new("TextButton")
+destroyerOrbBtn.Size = UDim2.new(0.33, -1, 0, 22)
+destroyerOrbBtn.Position = UDim2.new(0.33, 1, 0, 0)
+destroyerOrbBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+destroyerOrbBtn.TextColor3 = COLORS.textDark
+destroyerOrbBtn.Text = "ORB"
+destroyerOrbBtn.Font = Enum.Font.Gotham
+destroyerOrbBtn.TextSize = 9
+destroyerOrbBtn.Parent = destroyerMiddle
 
-local massTog4 = Instance.new("TextButton")
-massTog4.Size = UDim2.new(1, 0, 0, 20)
-massTog4.Position = UDim2.new(0, 0, 0, 74)
-massTog4.BackgroundColor3 = COLORS.buttonSuccess
-massTog4.TextColor3 = COLORS.textLight
-massTog4.Text = "✓ Mass Boost"
-massTog4.Font = Enum.Font.Gotham
-massTog4.TextSize = 9
-massTog4.Parent = col4_C2
-local mtCorner4 = Instance.new("UICorner")
-mtCorner4.CornerRadius = UDim.new(0, 4)
-mtCorner4.Parent = massTog4
+local destroyerOrbCorner = Instance.new("UICorner")
+destroyerOrbCorner.CornerRadius = UDim.new(0, 4)
+destroyerOrbCorner.Parent = destroyerOrbBtn
 
-local setLbl4 = Instance.new("TextLabel")
-setLbl4.Size = UDim2.new(1, 0, 0, 16)
-setLbl4.Position = UDim2.new(0, 0, 0, 98)
-setLbl4.BackgroundTransparency = 1
-setLbl4.TextColor3 = COLORS.textDark
-setLbl4.Text = "Power:"
-setLbl4.Font = Enum.Font.GothamBold
-setLbl4.TextSize = 10
-setLbl4.TextXAlignment = Enum.TextXAlignment.Left
-setLbl4.Parent = col4_C2
+local destroyerChaosBtn = Instance.new("TextButton")
+destroyerChaosBtn.Size = UDim2.new(0.34, -1, 0, 22)
+destroyerChaosBtn.Position = UDim2.new(0.66, 2, 0, 0)
+destroyerChaosBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+destroyerChaosBtn.TextColor3 = COLORS.textDark
+destroyerChaosBtn.Text = "CHAOS"
+destroyerChaosBtn.Font = Enum.Font.Gotham
+destroyerChaosBtn.TextSize = 9
+destroyerChaosBtn.Parent = destroyerMiddle
 
-local velInput4 = Instance.new("TextBox")
-velInput4.Size = UDim2.new(0.5, -1, 0, 20)
-velInput4.Position = UDim2.new(0, 0, 0, 116)
-velInput4.BackgroundColor3 = COLORS.inputBg
-velInput4.TextColor3 = COLORS.textDark
-velInput4.Text = "999999"
-velInput4.Font = Enum.Font.Gotham
-velInput4.TextSize = 9
-velInput4.PlaceholderText = "Vel"
-velInput4.Parent = col4_C2
-local viCorner4 = Instance.new("UICorner")
-viCorner4.CornerRadius = UDim.new(0, 4)
-viCorner4.Parent = velInput4
+local destroyerChaosCorner = Instance.new("UICorner")
+destroyerChaosCorner.CornerRadius = UDim.new(0, 4)
+destroyerChaosCorner.Parent = destroyerChaosBtn
 
-local angInput4 = Instance.new("TextBox")
-angInput4.Size = UDim2.new(0.5, -1, 0, 20)
-angInput4.Position = UDim2.new(0.5, 1, 0, 116)
-angInput4.BackgroundColor3 = COLORS.inputBg
-angInput4.TextColor3 = COLORS.textDark
-angInput4.Text = "999999"
-angInput4.Font = Enum.Font.Gotham
-angInput4.TextSize = 9
-angInput4.PlaceholderText = "Ang"
-angInput4.Parent = col4_C2
-local aiCorner4 = Instance.new("UICorner")
-aiCorner4.CornerRadius = UDim.new(0, 4)
-aiCorner4.Parent = angInput4
+local destroyerSwordToggle = Instance.new("TextButton")
+destroyerSwordToggle.Size = UDim2.new(0.5, -1, 0, 20)
+destroyerSwordToggle.Position = UDim2.new(0, 0, 0, 26)
+destroyerSwordToggle.BackgroundColor3 = COLORS.buttonSuccess
+destroyerSwordToggle.TextColor3 = COLORS.textLight
+destroyerSwordToggle.Text = "✓ Sword"
+destroyerSwordToggle.Font = Enum.Font.Gotham
+destroyerSwordToggle.TextSize = 9
+destroyerSwordToggle.Parent = destroyerMiddle
 
-local swingInput4 = Instance.new("TextBox")
-swingInput4.Size = UDim2.new(0.5, -1, 0, 20)
-swingInput4.Position = UDim2.new(0, 0, 0, 140)
-swingInput4.BackgroundColor3 = COLORS.inputBg
-swingInput4.TextColor3 = COLORS.textDark
-swingInput4.Text = "3"
-swingInput4.Font = Enum.Font.Gotham
-swingInput4.TextSize = 9
-swingInput4.PlaceholderText = "Swings"
-swingInput4.Parent = col4_C2
-local siCorner4 = Instance.new("UICorner")
-siCorner4.CornerRadius = UDim.new(0, 4)
-siCorner4.Parent = swingInput4
+local destroyerSwordCorner = Instance.new("UICorner")
+destroyerSwordCorner.CornerRadius = UDim.new(0, 4)
+destroyerSwordCorner.Parent = destroyerSwordToggle
 
-local reachInput4 = Instance.new("TextBox")
-reachInput4.Size = UDim2.new(0.5, -1, 0, 20)
-reachInput4.Position = UDim2.new(0.5, 1, 0, 140)
-reachInput4.BackgroundColor3 = COLORS.inputBg
-reachInput4.TextColor3 = COLORS.textDark
-reachInput4.Text = "15"
-reachInput4.Font = Enum.Font.Gotham
-reachInput4.TextSize = 9
-reachInput4.PlaceholderText = "Reach"
-reachInput4.Parent = col4_C2
-local riCorner4 = Instance.new("UICorner")
-riCorner4.CornerRadius = UDim.new(0, 4)
-riCorner4.Parent = reachInput4
+local destroyerVelToggle = Instance.new("TextButton")
+destroyerVelToggle.Size = UDim2.new(0.5, -1, 0, 20)
+destroyerVelToggle.Position = UDim2.new(0.5, 1, 0, 26)
+destroyerVelToggle.BackgroundColor3 = COLORS.buttonSuccess
+destroyerVelToggle.TextColor3 = COLORS.textLight
+destroyerVelToggle.Text = "✓ Velocity"
+destroyerVelToggle.Font = Enum.Font.Gotham
+destroyerVelToggle.TextSize = 9
+destroyerVelToggle.Parent = destroyerMiddle
 
--- Col 3
-local col4_C3 = Instance.new("Frame")
-col4_C3.Size = UDim2.new(0.32, -4, 1, 0)
-col4_C3.Position = UDim2.new(0.68, 2, 0, 0)
-col4_C3.BackgroundTransparency = 1
-col4_C3.Parent = tabContents[4]
+local destroyerVelCorner = Instance.new("UICorner")
+destroyerVelCorner.CornerRadius = UDim.new(0, 4)
+destroyerVelCorner.Parent = destroyerVelToggle
 
-local howLbl4 = Instance.new("TextLabel")
-howLbl4.Size = UDim2.new(1, 0, 0, 16)
-howLbl4.BackgroundTransparency = 1
-howLbl4.TextColor3 = COLORS.textDark
-howLbl4.Text = "How to use:"
-howLbl4.Font = Enum.Font.GothamBold
-howLbl4.TextSize = 10
-howLbl4.TextXAlignment = Enum.TextXAlignment.Left
-howLbl4.Parent = col4_C3
+local destroyerAngToggle = Instance.new("TextButton")
+destroyerAngToggle.Size = UDim2.new(0.5, -1, 0, 20)
+destroyerAngToggle.Position = UDim2.new(0, 0, 0, 50)
+destroyerAngToggle.BackgroundColor3 = COLORS.buttonSuccess
+destroyerAngToggle.TextColor3 = COLORS.textLight
+destroyerAngToggle.Text = "✓ Angular"
+destroyerAngToggle.Font = Enum.Font.Gotham
+destroyerAngToggle.TextSize = 9
+destroyerAngToggle.Parent = destroyerMiddle
 
-local info1_4 = Instance.new("TextLabel")
-info1_4.Size = UDim2.new(1, 0, 0, 45)
-info1_4.Position = UDim2.new(0, 0, 0, 18)
-info1_4.BackgroundTransparency = 1
-info1_4.TextColor3 = COLORS.textMuted
-info1_4.Text = "1. Select target\n2. Toggle DESTROY ON\n3. Combo activates"
-info1_4.Font = Enum.Font.Gotham
-info1_4.TextSize = 9
-info1_4.TextXAlignment = Enum.TextXAlignment.Left
-info1_4.Parent = col4_C3
+local destroyerAngCorner = Instance.new("UICorner")
+destroyerAngCorner.CornerRadius = UDim.new(0, 4)
+destroyerAngCorner.Parent = destroyerAngToggle
 
-local comboLbl4 = Instance.new("TextLabel")
-comboLbl4.Size = UDim2.new(1, 0, 0, 16)
-comboLbl4.Position = UDim2.new(0, 0, 0, 68)
-comboLbl4.BackgroundTransparency = 1
-comboLbl4.TextColor3 = COLORS.buttonPrimary
-comboLbl4.Text = "COMBO EFFECTS:"
-comboLbl4.Font = Enum.Font.GothamBold
-comboLbl4.TextSize = 10
-comboLbl4.TextXAlignment = Enum.TextXAlignment.Left
-comboLbl4.Parent = col4_C3
+local destroyerTpToggle = Instance.new("TextButton")
+destroyerTpToggle.Size = UDim2.new(0.5, -1, 0, 20)
+destroyerTpToggle.Position = UDim2.new(0.5, 1, 0, 50)
+destroyerTpToggle.BackgroundColor3 = COLORS.buttonSuccess
+destroyerTpToggle.TextColor3 = COLORS.textLight
+destroyerTpToggle.Text = "✓ Teleport"
+destroyerTpToggle.Font = Enum.Font.Gotham
+destroyerTpToggle.TextSize = 9
+destroyerTpToggle.Parent = destroyerMiddle
 
-local comboInfo4 = Instance.new("TextLabel")
-comboInfo4.Size = UDim2.new(1, 0, 0, 45)
-comboInfo4.Position = UDim2.new(0, 0, 0, 86)
-comboInfo4.BackgroundTransparency = 1
-comboInfo4.TextColor3 = COLORS.textMuted
-comboInfo4.Text = "• Fling into target\n• Auto-sword swing\n• Unavoidable combo"
-comboInfo4.Font = Enum.Font.Gotham
-comboInfo4.TextSize = 9
-comboInfo4.TextXAlignment = Enum.TextXAlignment.Left
-comboInfo4.Parent = col4_C3
+local destroyerTpCorner = Instance.new("UICorner")
+destroyerTpCorner.CornerRadius = UDim.new(0, 4)
+destroyerTpCorner.Parent = destroyerTpToggle
 
-local dangerZone4 = Instance.new("Frame")
-dangerZone4.Size = UDim2.new(1, 0, 0, 55)
-dangerZone4.Position = UDim2.new(0, 0, 1, -57)
-dangerZone4.BackgroundColor3 = Color3.fromRGB(255, 235, 235)
-dangerZone4.Parent = col4_C3
-local dzCorner4 = Instance.new("UICorner")
-dzCorner4.CornerRadius = UDim.new(0, 6)
-dzCorner4.Parent = dangerZone4
+local destroyerMassToggle = Instance.new("TextButton")
+destroyerMassToggle.Size = UDim2.new(1, 0, 0, 20)
+destroyerMassToggle.Position = UDim2.new(0, 0, 0, 74)
+destroyerMassToggle.BackgroundColor3 = COLORS.buttonSuccess
+destroyerMassToggle.TextColor3 = COLORS.textLight
+destroyerMassToggle.Text = "✓ Mass Boost"
+destroyerMassToggle.Font = Enum.Font.Gotham
+destroyerMassToggle.TextSize = 9
+destroyerMassToggle.Parent = destroyerMiddle
 
-local dangerLbl4 = Instance.new("TextLabel")
-dangerLbl4.Size = UDim2.new(1, 0, 0, 16)
-dangerLbl4.Position = UDim2.new(0, 0, 0, 4)
-dangerLbl4.BackgroundTransparency = 1
-dangerLbl4.TextColor3 = COLORS.buttonDanger
-dangerLbl4.Text = "⚠ DANGER ZONE"
-dangerLbl4.Font = Enum.Font.GothamBold
-dangerLbl4.TextSize = 10
-dangerLbl4.Parent = dangerZone4
+local destroyerMassCorner = Instance.new("UICorner")
+destroyerMassCorner.CornerRadius = UDim.new(0, 4)
+destroyerMassCorner.Parent = destroyerMassToggle
 
-local killGuiBtn4 = Instance.new("TextButton")
-killGuiBtn4.Size = UDim2.new(1, -8, 0, 28)
-killGuiBtn4.Position = UDim2.new(0, 4, 0, 23)
-killGuiBtn4.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-killGuiBtn4.TextColor3 = COLORS.textLight
-killGuiBtn4.Text = "☠ KILL GUI"
-killGuiBtn4.Font = Enum.Font.GothamBold
-killGuiBtn4.TextSize = 11
-killGuiBtn4.Parent = dangerZone4
-local killCorner4 = Instance.new("UICorner")
-killCorner4.CornerRadius = UDim.new(0, 5)
-killCorner4.Parent = killGuiBtn4
+local destroyerPowerLabel = Instance.new("TextLabel")
+destroyerPowerLabel.Size = UDim2.new(1, 0, 0, 16)
+destroyerPowerLabel.Position = UDim2.new(0, 0, 0, 98)
+destroyerPowerLabel.BackgroundTransparency = 1
+destroyerPowerLabel.TextColor3 = COLORS.textDark
+destroyerPowerLabel.Text = "Power:"
+destroyerPowerLabel.Font = Enum.Font.GothamBold
+destroyerPowerLabel.TextSize = 10
+destroyerPowerLabel.TextXAlignment = Enum.TextXAlignment.Left
+destroyerPowerLabel.Parent = destroyerMiddle
+
+local destroyerVelInput = Instance.new("TextBox")
+destroyerVelInput.Size = UDim2.new(0.5, -1, 0, 20)
+destroyerVelInput.Position = UDim2.new(0, 0, 0, 116)
+destroyerVelInput.BackgroundColor3 = COLORS.inputBg
+destroyerVelInput.TextColor3 = COLORS.textDark
+destroyerVelInput.Text = "999999"
+destroyerVelInput.Font = Enum.Font.Gotham
+destroyerVelInput.TextSize = 9
+destroyerVelInput.PlaceholderText = "Vel"
+destroyerVelInput.Parent = destroyerMiddle
+
+local destroyerVelInputCorner = Instance.new("UICorner")
+destroyerVelInputCorner.CornerRadius = UDim.new(0, 4)
+destroyerVelInputCorner.Parent = destroyerVelInput
+
+local destroyerAngInput = Instance.new("TextBox")
+destroyerAngInput.Size = UDim2.new(0.5, -1, 0, 20)
+destroyerAngInput.Position = UDim2.new(0.5, 1, 0, 116)
+destroyerAngInput.BackgroundColor3 = COLORS.inputBg
+destroyerAngInput.TextColor3 = COLORS.textDark
+destroyerAngInput.Text = "999999"
+destroyerAngInput.Font = Enum.Font.Gotham
+destroyerAngInput.TextSize = 9
+destroyerAngInput.PlaceholderText = "Ang"
+destroyerAngInput.Parent = destroyerMiddle
+
+local destroyerAngInputCorner = Instance.new("UICorner")
+destroyerAngInputCorner.CornerRadius = UDim.new(0, 4)
+destroyerAngInputCorner.Parent = destroyerAngInput
+
+local destroyerSwingInput = Instance.new("TextBox")
+destroyerSwingInput.Size = UDim2.new(0.5, -1, 0, 20)
+destroyerSwingInput.Position = UDim2.new(0, 0, 0, 140)
+destroyerSwingInput.BackgroundColor3 = COLORS.inputBg
+destroyerSwingInput.TextColor3 = COLORS.textDark
+destroyerSwingInput.Text = "3"
+destroyerSwingInput.Font = Enum.Font.Gotham
+destroyerSwingInput.TextSize = 9
+destroyerSwingInput.PlaceholderText = "Swings"
+destroyerSwingInput.Parent = destroyerMiddle
+
+local destroyerSwingCorner = Instance.new("UICorner")
+destroyerSwingCorner.CornerRadius = UDim.new(0, 4)
+destroyerSwingCorner.Parent = destroyerSwingInput
+
+local destroyerReachInput = Instance.new("TextBox")
+destroyerReachInput.Size = UDim2.new(0.5, -1, 0, 20)
+destroyerReachInput.Position = UDim2.new(0.5, 1, 0, 140)
+destroyerReachInput.BackgroundColor3 = COLORS.inputBg
+destroyerReachInput.TextColor3 = COLORS.textDark
+destroyerReachInput.Text = "15"
+destroyerReachInput.Font = Enum.Font.Gotham
+destroyerReachInput.TextSize = 9
+destroyerReachInput.PlaceholderText = "Reach"
+destroyerReachInput.Parent = destroyerMiddle
+
+local destroyerReachCorner = Instance.new("UICorner")
+destroyerReachCorner.CornerRadius = UDim.new(0, 4)
+destroyerReachCorner.Parent = destroyerReachInput
+
+-- Column 3 (Destroyer Right)
+local destroyerRight = Instance.new("Frame")
+destroyerRight.Size = UDim2.new(0.32, -4, 1, 0)
+destroyerRight.Position = UDim2.new(0.68, 2, 0, 0)
+destroyerRight.BackgroundTransparency = 1
+destroyerRight.Parent = tab4Content
+
+local destroyerHowLabel = Instance.new("TextLabel")
+destroyerHowLabel.Size = UDim2.new(1, 0, 0, 16)
+destroyerHowLabel.BackgroundTransparency = 1
+destroyerHowLabel.TextColor3 = COLORS.textDark
+destroyerHowLabel.Text = "How to use:"
+destroyerHowLabel.Font = Enum.Font.GothamBold
+destroyerHowLabel.TextSize = 10
+destroyerHowLabel.TextXAlignment = Enum.TextXAlignment.Left
+destroyerHowLabel.Parent = destroyerRight
+
+local destroyerInfo1 = Instance.new("TextLabel")
+destroyerInfo1.Size = UDim2.new(1, 0, 0, 45)
+destroyerInfo1.Position = UDim2.new(0, 0, 0, 18)
+destroyerInfo1.BackgroundTransparency = 1
+destroyerInfo1.TextColor3 = COLORS.textMuted
+destroyerInfo1.Text = "1. Select target\n2. Toggle DESTROY ON\n3. Combo activates"
+destroyerInfo1.Font = Enum.Font.Gotham
+destroyerInfo1.TextSize = 9
+destroyerInfo1.TextXAlignment = Enum.TextXAlignment.Left
+destroyerInfo1.Parent = destroyerRight
+
+local destroyerComboLabel = Instance.new("TextLabel")
+destroyerComboLabel.Size = UDim2.new(1, 0, 0, 16)
+destroyerComboLabel.Position = UDim2.new(0, 0, 0, 68)
+destroyerComboLabel.BackgroundTransparency = 1
+destroyerComboLabel.TextColor3 = COLORS.buttonPrimary
+destroyerComboLabel.Text = "COMBO EFFECTS:"
+destroyerComboLabel.Font = Enum.Font.GothamBold
+destroyerComboLabel.TextSize = 10
+destroyerComboLabel.TextXAlignment = Enum.TextXAlignment.Left
+destroyerComboLabel.Parent = destroyerRight
+
+local destroyerComboInfo = Instance.new("TextLabel")
+destroyerComboInfo.Size = UDim2.new(1, 0, 0, 45)
+destroyerComboInfo.Position = UDim2.new(0, 0, 0, 86)
+destroyerComboInfo.BackgroundTransparency = 1
+destroyerComboInfo.TextColor3 = COLORS.textMuted
+destroyerComboInfo.Text = "• Fling into target\n• Auto-sword swing\n• Unavoidable combo"
+destroyerComboInfo.Font = Enum.Font.Gotham
+destroyerComboInfo.TextSize = 9
+destroyerComboInfo.TextXAlignment = Enum.TextXAlignment.Left
+destroyerComboInfo.Parent = destroyerRight
+
+local destroyerDangerZone = Instance.new("Frame")
+destroyerDangerZone.Size = UDim2.new(1, 0, 0, 55)
+destroyerDangerZone.Position = UDim2.new(0, 0, 1, -57)
+destroyerDangerZone.BackgroundColor3 = Color3.fromRGB(255, 235, 235)
+destroyerDangerZone.Parent = destroyerRight
+
+local destroyerDangerCorner = Instance.new("UICorner")
+destroyerDangerCorner.CornerRadius = UDim.new(0, 6)
+destroyerDangerCorner.Parent = destroyerDangerZone
+
+local destroyerDangerLabel = Instance.new("TextLabel")
+destroyerDangerLabel.Size = UDim2.new(1, 0, 0, 16)
+destroyerDangerLabel.Position = UDim2.new(0, 0, 0, 4)
+destroyerDangerLabel.BackgroundTransparency = 1
+destroyerDangerLabel.TextColor3 = COLORS.buttonDanger
+destroyerDangerLabel.Text = "⚠ DANGER ZONE"
+destroyerDangerLabel.Font = Enum.Font.GothamBold
+destroyerDangerLabel.TextSize = 10
+destroyerDangerLabel.Parent = destroyerDangerZone
+
+local destroyerKillGuiBtn = Instance.new("TextButton")
+destroyerKillGuiBtn.Size = UDim2.new(1, -8, 0, 28)
+destroyerKillGuiBtn.Position = UDim2.new(0, 4, 0, 23)
+destroyerKillGuiBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+destroyerKillGuiBtn.TextColor3 = COLORS.textLight
+destroyerKillGuiBtn.Text = "☠ KILL GUI"
+destroyerKillGuiBtn.Font = Enum.Font.GothamBold
+destroyerKillGuiBtn.TextSize = 11
+destroyerKillGuiBtn.Parent = destroyerDangerZone
+
+local destroyerKillCorner = Instance.new("UICorner")
+destroyerKillCorner.CornerRadius = UDim.new(0, 5)
+destroyerKillCorner.Parent = destroyerKillGuiBtn
 
 -- ========== TAB 5: ANTI-AFK ==========
+
+local tab5Content = Instance.new("Frame")
+tab5Content.Size = UDim2.new(1, -20, 1, -82)
+tab5Content.Position = UDim2.new(0, 10, 0, 80)
+tab5Content.BackgroundTransparency = 1
+tab5Content.Visible = false
+tab5Content.Parent = mainFrame
 
 local afkTitle = Instance.new("TextLabel")
 afkTitle.Size = UDim2.new(1, 0, 0, 28)
@@ -1151,7 +1192,7 @@ afkTitle.TextColor3 = COLORS.textDark
 afkTitle.Text = "Anti-AFK Protection"
 afkTitle.Font = Enum.Font.GothamBold
 afkTitle.TextSize = 16
-afkTitle.Parent = tabContents[5]
+afkTitle.Parent = tab5Content
 
 local afkToggle = Instance.new("TextButton")
 afkToggle.Size = UDim2.new(0.7, 0, 0, 50)
@@ -1161,7 +1202,8 @@ afkToggle.TextColor3 = COLORS.textLight
 afkToggle.Text = "ANTI-AFK: OFF"
 afkToggle.Font = Enum.Font.GothamBold
 afkToggle.TextSize = 15
-afkToggle.Parent = tabContents[5]
+afkToggle.Parent = tab5Content
+
 local afkCorner = Instance.new("UICorner")
 afkCorner.CornerRadius = UDim.new(0, 10)
 afkCorner.Parent = afkToggle
@@ -1175,7 +1217,7 @@ afkInfo.Text = "Prevents getting kicked for inactivity.\n\nWorks in any game.\nS
 afkInfo.Font = Enum.Font.Gotham
 afkInfo.TextSize = 12
 afkInfo.TextWrapped = true
-afkInfo.Parent = tabContents[5]
+afkInfo.Parent = tab5Content
 
 local afkStatus = Instance.new("TextLabel")
 afkStatus.Size = UDim2.new(1, 0, 0, 22)
@@ -1185,7 +1227,7 @@ afkStatus.TextColor3 = COLORS.buttonPrimary
 afkStatus.Text = "Status: Inactive"
 afkStatus.Font = Enum.Font.Gotham
 afkStatus.TextSize = 11
-afkStatus.Parent = tabContents[5]
+afkStatus.Parent = tab5Content
 
 -- ========== DRAGGING ==========
 
@@ -1201,23 +1243,57 @@ hubButton.InputBegan:Connect(function(input)
 end)
 
 hubButton.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInput
+            hubButton.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        if dragging then
-            local delta = input.Position - dragStart
-            hubButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        hubButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
 hubButton.MouseButton1Click:Connect(function()
-    hubButton.Visible = false
-    mainFrame.Visible = true
+    wait(0.05)
+    if not dragging then
+        hubButton.Visible = false
+        mainFrame.Visible = true
+    end
+end)
+
+-- DRAGGING MAIN FRAME
+local mfDragging = false
+local mfDragInput, mfDragStart, mfDragPos
+
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        mfDragging = true
+        mfDragStart = input.Position
+        mfDragPos = mainFrame.Position
+    end
+end)
+
+titleBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        mfDragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == mfDragInput and mfDragging then
+        local delta = input.Position - mfDragStart
+        mainFrame.Position = UDim2.new(mfDragPos.X.Scale, mfDragPos.X.Offset + delta.X, mfDragPos.Y.Scale, mfDragPos.Y.Offset + delta.Y)
+    end
+end)
+
+titleBar.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        mfDragging = false
+    end
 end)
 
 collapseButton.MouseButton1Click:Connect(function()
@@ -1225,68 +1301,65 @@ collapseButton.MouseButton1Click:Connect(function()
     hubButton.Visible = true
 end)
 
-local hubDragging = false
-local hubDragInput, hubDragStart, hubDragPos
-
-titleBar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        hubDragging = true
-        hubDragStart = input.Position
-        hubDragPos = mainFrame.Position
-    end
-end)
-
-titleBar.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        hubDragging = false
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        if hubDragging then
-            local delta = input.Position - hubDragStart
-            mainFrame.Position = UDim2.new(hubDragPos.X.Scale, hubDragPos.X.Offset + delta.X, hubDragPos.Y.Scale, hubDragPos.Y.Offset + delta.Y)
-        end
-    end
-end)
-
 -- ========== TAB SWITCHING ==========
 
-for i, btn in ipairs(tabButtons) do
-    btn.MouseButton1Click:Connect(function()
-        -- Update Styles
-        for j, otherBtn in ipairs(tabButtons) do
-            otherBtn.BackgroundColor3 = COLORS.tabInactive
-            otherBtn.TextColor3 = COLORS.textDark
-        end
-        btn.BackgroundColor3 = COLORS.tabActive
-        btn.TextColor3 = COLORS.textLight
-        
-        -- Toggle Visibility
-        for k, frame in ipairs(tabContents) do
-            frame.Visible = (k == i)
-        end
+local function switchTab(tabIndex)
+    -- Hide all tabs
+    tab1Content.Visible = false
+    tab2Content.Visible = false
+    tab3Content.Visible = false
+    tab4Content.Visible = false
+    tab5Content.Visible = false
+    
+    -- Reset all tab colors
+    for i, tabBtn in ipairs(tabButtons) do
+        tabBtn.BackgroundColor3 = COLORS.tabInactive
+        tabBtn.TextColor3 = COLORS.textDark
+    end
+    
+    -- Activate selected tab
+    tabButtons[tabIndex].BackgroundColor3 = COLORS.tabActive
+    tabButtons[tabIndex].TextColor3 = COLORS.textLight
+    
+    -- Show selected tab content
+    if tabIndex == 1 then
+        tab1Content.Visible = true
+    elseif tabIndex == 2 then
+        tab2Content.Visible = true
+    elseif tabIndex == 3 then
+        tab3Content.Visible = true
+    elseif tabIndex == 4 then
+        tab4Content.Visible = true
+    else
+        tab5Content.Visible = true
+    end
+end
+
+-- Connect tab buttons
+for i, tabBtn in ipairs(tabButtons) do
+    tabBtn.MouseButton1Click:Connect(function()
+        switchTab(i)
     end)
 end
 
--- ========== GLOBAL HELPERS ==========
+-- ========== FLING SCRIPT (TAB 1 - UNCHANGED LOGIC) ==========
+
+local flingEnabled = false
+local targetPlayer1 = nil
+local flingLoop = nil
+local flingCount = 0
+local bodyAngularVel = nil
+local bodyVel = nil
+local playerButtons1 = {}
+
 local function getRoot(char)
     return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
 end
 
--- ========== LOGIC: TAB 1 (ORIGINAL FLING) ==========
-
-local flingEnabled1 = false
-local targetPlayer1 = nil
-local flingLoop1 = nil
-local flingCount1 = 0
-local bodyAngularVel1 = nil
-local bodyVel1 = nil
-local playerButtons1 = {}
-
 local function updatePlayerList1()
-    for _, btn in pairs(playerButtons1) do btn:Destroy() end
+    for _, btn in pairs(playerButtons1) do
+        btn:Destroy()
+    end
     playerButtons1 = {}
     
     for _, plr in pairs(Players:GetPlayers()) do
@@ -1299,124 +1372,223 @@ local function updatePlayerList1()
             btn.Font = Enum.Font.Gotham
             btn.TextSize = 10
             btn.Parent = playerScroll1
-            local bCorner = Instance.new("UICorner")
-            bCorner.CornerRadius = UDim.new(0, 5)
-            bCorner.Parent = btn
+            
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(0, 5)
+            btnCorner.Parent = btn
             
             btn.MouseButton1Click:Connect(function()
                 targetPlayer1 = plr
                 statusLabel1.Text = "Target: " .. plr.Name
                 updatePlayerList1()
             end)
+            
             table.insert(playerButtons1, btn)
         end
     end
+    
     playerScroll1.CanvasSize = UDim2.new(0, 0, 0, playerLayout1.AbsoluteContentSize.Y)
 end
 
 local function stopFling1()
-    if flingLoop1 then flingLoop1:Disconnect() flingLoop1 = nil end
-    if bodyAngularVel1 then bodyAngularVel1:Destroy() bodyAngularVel1 = nil end
-    if bodyVel1 then bodyVel1:Destroy() bodyVel1 = nil end
+    if flingLoop then
+        flingLoop:Disconnect()
+        flingLoop = nil
+    end
+    
+    if bodyAngularVel then
+        bodyAngularVel:Destroy()
+        bodyAngularVel = nil
+    end
+    
+    if bodyVel then
+        bodyVel:Destroy()
+        bodyVel = nil
+    end
     
     local myChar = player.Character
     if myChar then
         local myRoot = getRoot(myChar)
         local myHumanoid = myChar:FindFirstChild("Humanoid")
-        if myRoot then myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0) myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0) end
-        if myHumanoid then myHumanoid.PlatformStand = false end
+        
+        if myRoot then
+            myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+            myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        end
+        
+        if myHumanoid then
+            myHumanoid.PlatformStand = false
+        end
     end
 end
 
 local function startFling1()
-    if flingLoop1 then flingLoop1:Disconnect() end
-    local myChar = player.Character if not myChar then return end
-    local myRoot = getRoot(myChar) if not myRoot then return end
+    if flingLoop then
+        flingLoop:Disconnect()
+    end
+    
+    local myChar = player.Character
+    if not myChar then return end
+    
+    local myRoot = getRoot(myChar)
     local myHumanoid = myChar:FindFirstChild("Humanoid")
+    
+    if not myRoot then return end
+    
     local spinPower = tonumber(spinInput.Text) or 999999
     local launchPower = tonumber(launchInput.Text) or 999999
     
-    if bodyAngularVel1 then bodyAngularVel1:Destroy() end
-    bodyAngularVel1 = Instance.new("BodyAngularVelocity")
-    bodyAngularVel1.Name = "FlingSpin1"
-    bodyAngularVel1.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-    bodyAngularVel1.AngularVelocity = Vector3.new(spinPower, spinPower, spinPower)
-    bodyAngularVel1.P = math.huge
-    bodyAngularVel1.Parent = myRoot
+    if bodyAngularVel then bodyAngularVel:Destroy() end
+    bodyAngularVel = Instance.new("BodyAngularVelocity")
+    bodyAngularVel.Name = "FlingSpin"
+    bodyAngularVel.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+    bodyAngularVel.AngularVelocity = Vector3.new(spinPower, spinPower, spinPower)
+    bodyAngularVel.P = math.huge
+    bodyAngularVel.Parent = myRoot
     
-    if bodyVel1 then bodyVel1:Destroy() end
-    bodyVel1 = Instance.new("BodyVelocity")
-    bodyVel1.Name = "FlingLaunch1"
-    bodyVel1.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-    bodyVel1.Velocity = Vector3.new(0, launchPower, 0)
-    bodyVel1.P = math.huge
-    bodyVel1.Parent = myRoot
+    if bodyVel then bodyVel:Destroy() end
+    bodyVel = Instance.new("BodyVelocity")
+    bodyVel.Name = "FlingLaunch"
+    bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bodyVel.Velocity = Vector3.new(0, launchPower, 0)
+    bodyVel.P = math.huge
+    bodyVel.Parent = myRoot
     
-    if myHumanoid then myHumanoid.PlatformStand = true end
+    if myHumanoid then
+        myHumanoid.PlatformStand = true
+    end
     
-    flingLoop1 = RunService.Heartbeat:Connect(function()
-        if not flingEnabled1 then return end
-        local char = player.Character if not char then return end
-        local root = getRoot(char) if not root then return end
-        if not targetPlayer1 or not targetPlayer1.Character then return end
-        local targetRoot = getRoot(targetPlayer1.Character) if not targetRoot then return end
+    flingLoop = RunService.Heartbeat:Connect(function()
+        if not flingEnabled then return end
+        
+        local char = player.Character
+        if not char then return end
+        
+        local root = getRoot(char)
+        if not root then return end
+        
+        if not targetPlayer1 or not targetPlayer1.Character then
+            return
+        end
+        
+        local targetRoot = getRoot(targetPlayer1.Character)
+        if not targetRoot then return end
         
         root.CFrame = targetRoot.CFrame
         
-        if not root:FindFirstChild("FlingSpin1") then
-            local bv = Instance.new("BodyAngularVelocity")
-            bv.Name = "FlingSpin1"
-            bv.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-            bv.AngularVelocity = Vector3.new(spinPower, spinPower, spinPower)
-            bv.P = math.huge
-            bv.Parent = root
+        if not root:FindFirstChild("FlingSpin") then
+            bodyAngularVel = Instance.new("BodyAngularVelocity")
+            bodyAngularVel.Name = "FlingSpin"
+            bodyAngularVel.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+            bodyAngularVel.AngularVelocity = Vector3.new(spinPower, spinPower, spinPower)
+            bodyAngularVel.P = math.huge
+            bodyAngularVel.Parent = root
         end
         
-        if not root:FindFirstChild("FlingLaunch1") then
-            local bvel = Instance.new("BodyVelocity")
-            bvel.Name = "FlingLaunch1"
-            bvel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            bvel.Velocity = Vector3.new(0, launchPower, 0)
-            bvel.P = math.huge
-            bvel.Parent = root
+        if not root:FindFirstChild("FlingLaunch") then
+            bodyVel = Instance.new("BodyVelocity")
+            bodyVel.Name = "FlingLaunch"
+            bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            bodyVel.Velocity = Vector3.new(0, launchPower, 0)
+            bodyVel.P = math.huge
+            bodyVel.Parent = root
         end
     end)
 end
 
 toggleButton1.MouseButton1Click:Connect(function()
-    flingEnabled1 = not flingEnabled1
-    if flingEnabled1 then
+    flingEnabled = not flingEnabled
+    
+    if flingEnabled then
         toggleButton1.Text = "FLING: ON"
         toggleButton1.BackgroundColor3 = COLORS.buttonSuccess
-        statusLabel1.Text = targetPlayer1 and ("Flinging: " .. targetPlayer1.Name) or "No target"
+        statusLabel1.Text = targetPlayer1 and ("Flinging: " .. targetPlayer1.Name) or "No target selected"
+        
         startFling1()
     else
         toggleButton1.Text = "FLING: OFF"
         toggleButton1.BackgroundColor3 = COLORS.buttonDanger
-        statusLabel1.Text = targetPlayer1 and ("Target: " .. targetPlayer1.Name) or "No target"
+        statusLabel1.Text = targetPlayer1 and ("Target: " .. targetPlayer1.Name) or "No target selected"
+        
         stopFling1()
     end
 end)
 
-player.CharacterAdded:Connect(function()
+player.CharacterAdded:Connect(function(char)
     wait(0.3)
-    if flingEnabled1 then flingCount1 = flingCount1 + 1 flingCounter1.Text = "Flings: " .. flingCount1 startFling1() end
+    
+    if flingEnabled then
+        flingCount = flingCount + 1
+        flingCounter.Text = "Flings: " .. flingCount
+        startFling1()
+    end
 end)
-player.CharacterRemoving:Connect(stopFling1)
+
+player.CharacterRemoving:Connect(function()
+    stopFling1()
+end)
+
 Players.PlayerAdded:Connect(updatePlayerList1)
-Players.PlayerRemoving:Connect(function() wait(0.5) updatePlayerList1() end)
+Players.PlayerRemoving:Connect(function()
+    wait(0.5)
+    updatePlayerList1()
+end)
+
 updatePlayerList1()
 
+-- ========== TP KILL SCRIPT (TAB 2 - UNCHANGED LOGIC) ==========
 
--- ========== LOGIC: TAB 2 (TP KILL) ==========
-
-local killEnabled2 = false
+local killEnabled = false
 local targetPlayer2 = nil
+local attackDelay = 0.05
+local swingsPerAttack = 3
+local checkRate = 0.1
 local playerButtons2 = {}
 
+local function getSword()
+    local character = player.Character
+    if not character then return nil end
+    
+    for _, item in pairs(character:GetChildren()) do
+        if item:IsA("Tool") then
+            return item
+        end
+    end
+    return nil
+end
+
+local function equipSword()
+    local character = player.Character
+    local backpack = player:FindFirstChild("Backpack")
+    
+    if not character or not backpack then return nil end
+    
+    local currentTool = getSword()
+    if currentTool then return currentTool end
+    
+    for _, item in pairs(backpack:GetChildren()) do
+        if item:IsA("Tool") then
+            character.Humanoid:EquipTool(item)
+            wait(0.1)
+            return item
+        end
+    end
+    
+    return nil
+end
+
+local function hasProtection(targetPlr)
+    if not targetPlr or not targetPlr.Character then return false end
+    local forceField = targetPlr.Character:FindFirstChild("ForceField")
+    return forceField ~= nil
+end
+
 local function updatePlayerList2()
-    for _, btn in pairs(playerButtons2) do btn:Destroy() end
+    for _, btn in pairs(playerButtons2) do
+        btn:Destroy()
+    end
     playerButtons2 = {}
+    
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= player then
             local btn = Instance.new("TextButton")
@@ -1427,136 +1599,188 @@ local function updatePlayerList2()
             btn.Font = Enum.Font.Gotham
             btn.TextSize = 10
             btn.Parent = playerScroll2
-            local c = Instance.new("UICorner") c.CornerRadius = UDim.new(0, 5) c.Parent = btn
+            
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(0, 5)
+            btnCorner.Parent = btn
+            
             btn.MouseButton1Click:Connect(function()
                 targetPlayer2 = plr
                 statusLabel2.Text = "Target: " .. plr.Name
                 updatePlayerList2()
             end)
+            
             table.insert(playerButtons2, btn)
         end
     end
+    
     playerScroll2.CanvasSize = UDim2.new(0, 0, 0, playerLayout2.AbsoluteContentSize.Y)
-end
-
-local function getSword()
-    local char = player.Character if not char then return nil end
-    for _, item in pairs(char:GetChildren()) do if item:IsA("Tool") then return item end end
-    return nil
-end
-
-local function equipSword()
-    local char = player.Character local backpack = player:FindFirstChild("Backpack")
-    if not char or not backpack then return nil end
-    local tool = getSword() if tool then return tool end
-    for _, item in pairs(backpack:GetChildren()) do
-        if item:IsA("Tool") then char.Humanoid:EquipTool(item) wait(0.1) return item end
-    end
-    return nil
-end
-
-local function hasProtection(targetPlr)
-    if not targetPlr or not targetPlr.Character then return false end
-    return targetPlr.Character:FindFirstChild("ForceField") ~= nil
 end
 
 local function attackTarget()
     if not targetPlayer2 then return end
-    local myChar = player.Character local myHum = myChar and getRoot(myChar)
+    
+    local myChar = player.Character
+    local myHum = myChar and myChar:FindFirstChild("HumanoidRootPart")
     local myHumanoid = myChar and myChar:FindFirstChild("Humanoid")
-    local targetChar = targetPlayer2.Character local targetHum = targetChar and getRoot(targetChar)
+    
+    local targetChar = targetPlayer2.Character
+    local targetHum = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
     local targetHumanoid = targetChar and targetChar:FindFirstChild("Humanoid")
     
-    if not myHum or not myHumanoid or not targetHum or not targetHumanoid then return end
-    if targetHumanoid.Health <= 0 then return end
+    if not myHum or not myHumanoid or not targetHum or not targetHumanoid then
+        return
+    end
     
-    local sword = getSword() if not sword then sword = equipSword() end
+    if targetHumanoid.Health <= 0 then
+        return
+    end
+    
+    local sword = getSword()
+    if not sword then
+        sword = equipSword()
+    end
+    
     myHum.CFrame = targetHum.CFrame * CFrame.new(0, 0, 2)
     
     if sword then
-        local swings = tonumber(swingsInput.Text) or 3
-        for i = 1, swings do sword:Activate() wait(0.01) end
+        for i = 1, swingsPerAttack do
+            sword:Activate()
+            wait(0.01)
+        end
     end
 end
 
 toggleButton2.MouseButton1Click:Connect(function()
-    killEnabled2 = not killEnabled2
-    if killEnabled2 then
+    killEnabled = not killEnabled
+    attackDelay = tonumber(delayInput.Text) or 0.05
+    if attackDelay < 0.01 then attackDelay = 0.01 end
+    
+    swingsPerAttack = tonumber(swingsInput.Text) or 3
+    if swingsPerAttack < 1 then swingsPerAttack = 1 end
+    if swingsPerAttack > 10 then swingsPerAttack = 10 end
+    
+    checkRate = tonumber(checkInput.Text) or 0.1
+    if checkRate < 0.05 then checkRate = 0.05 end
+    
+    if killEnabled then
         toggleButton2.Text = "KILL AURA: ON"
         toggleButton2.BackgroundColor3 = COLORS.buttonSuccess
-        statusLabel2.Text = targetPlayer2 and ("Hunting: " .. targetPlayer2.Name) or "No target"
+        statusLabel2.Text = targetPlayer2 and ("Hunting: " .. targetPlayer2.Name) or "No target selected"
+        
         equipSword()
+        
         spawn(function()
-            while killEnabled2 do
+            while killEnabled do
                 if targetPlayer2 and targetPlayer2.Character then
-                    local tHum = targetPlayer2.Character:FindFirstChild("Humanoid")
-                    if tHum then
-                        if tHum.Health > 0 then
+                    local targetHumanoid = targetPlayer2.Character:FindFirstChild("Humanoid")
+                    
+                    if targetHumanoid then
+                        if targetHumanoid.Health > 0 then
                             if hasProtection(targetPlayer2) then
                                 protectionLabel.Text = "Protection: TARGET PROTECTED"
                                 protectionLabel.TextColor3 = COLORS.buttonWarning
-                                statusLabel2.Text = "Waiting..."
+                                statusLabel2.Text = "Waiting for target protection to end..."
                             else
                                 protectionLabel.Text = "Protection: TARGET VULNERABLE"
                                 protectionLabel.TextColor3 = COLORS.buttonSuccess
                                 statusLabel2.Text = "ATTACKING!"
+                                
                                 attackTarget()
-                                wait(tonumber(delayInput.Text) or 0.05)
+                                wait(attackDelay)
                             end
                         else
-                            protectionLabel.Text = "Target dead"
+                            protectionLabel.Text = "Protection: Target dead"
                             protectionLabel.TextColor3 = COLORS.textMuted
+                            statusLabel2.Text = "Waiting for target respawn..."
                         end
+                    else
+                        protectionLabel.Text = "Protection: No humanoid"
+                        protectionLabel.TextColor3 = COLORS.textMuted
                     end
+                else
+                    protectionLabel.Text = "Protection: No target"
+                    protectionLabel.TextColor3 = COLORS.textMuted
+                    statusLabel2.Text = "Target left or respawning..."
                 end
-                wait(tonumber(checkInput.Text) or 0.1)
+                
+                wait(checkRate)
             end
         end)
     else
         toggleButton2.Text = "KILL AURA: OFF"
         toggleButton2.BackgroundColor3 = COLORS.buttonDanger
-        statusLabel2.Text = targetPlayer2 and ("Target: " .. targetPlayer2.Name) or "No target"
+        statusLabel2.Text = targetPlayer2 and ("Target: " .. targetPlayer2.Name) or "No target selected"
         protectionLabel.Text = "Protection: Waiting..."
         protectionLabel.TextColor3 = COLORS.textMuted
     end
 end)
 
-player.CharacterAdded:Connect(function() wait(1) if killEnabled2 then equipSword() end end)
+player.CharacterAdded:Connect(function()
+    wait(1)
+    if killEnabled then
+        equipSword()
+    end
+end)
+
 Players.PlayerAdded:Connect(updatePlayerList2)
-Players.PlayerRemoving:Connect(function() wait(0.5) updatePlayerList2() end)
+Players.PlayerRemoving:Connect(function()
+    wait(0.5)
+    updatePlayerList2()
+end)
+
 updatePlayerList2()
 
--- ========== LOGIC: TAB 3 (ULTIMATE COLLISION) ==========
+-- ========== ULTIMATE COLLISION FLING (TAB 3 - UNCHANGED LOGIC) ==========
 
 local flingEnabled3 = false
 local targetPlayer3 = nil
 local flingLoop3 = nil
 local flingCount3 = 0
+local playerButtons3 = {}
+
+-- Power Settings
+local teleportMultiplier = 1
 local velocityPower3 = 999999
 local angularPower3 = 999999
-local teleportSpeed3 = 500
-local collisionMode3 = "devastate"
+local collisionMode = "devastate"
+
+-- Toggle states
 local velocityEnabled3 = true
 local angularEnabled3 = true
 local teleportEnabled3 = true
 local massEnabled3 = true
+
 local bodyVel3 = nil
 local bodyAngVel3 = nil
-local angle3 = 0
-local playerButtons3 = {}
+local angle = 0
+
+local function getRoot3(char)
+    return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+end
 
 local function boostMass3(char)
     if not massEnabled3 then return end
-    local root = getRoot(char) if root then root.CustomPhysicalProperties = PhysicalProperties.new(100, 0.5, 0.5) end end
+    
+    local root = getRoot3(char)
+    if not root then return end
+    
+    root.CustomPhysicalProperties = PhysicalProperties.new(100, 0.5, 0.5)
 end
 
 local function resetMass3(char)
-    local root = getRoot(char) if root then root.CustomPhysicalProperties = nil end end
+    local root = getRoot3(char)
+    if root then
+        root.CustomPhysicalProperties = nil
+    end
 end
 
 local function updatePlayerList3()
-    for _, btn in pairs(playerButtons3) do btn:Destroy() end
+    for _, btn in pairs(playerButtons3) do
+        btn:Destroy()
+    end
     playerButtons3 = {}
+    
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= player then
             local btn = Instance.new("TextButton")
@@ -1567,164 +1791,346 @@ local function updatePlayerList3()
             btn.Font = Enum.Font.Gotham
             btn.TextSize = 9
             btn.Parent = playerScroll3
-            local c = Instance.new("UICorner") c.CornerRadius = UDim.new(0, 4) c.Parent = btn
+            
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(0, 4)
+            btnCorner.Parent = btn
+            
             btn.MouseButton1Click:Connect(function()
                 targetPlayer3 = plr
                 statusLabel3.Text = "Target: " .. plr.Name
                 updatePlayerList3()
             end)
+            
             table.insert(playerButtons3, btn)
         end
     end
+    
     playerScroll3.CanvasSize = UDim2.new(0, 0, 0, playerLayout3.AbsoluteContentSize.Y)
 end
 
 local function stopFling3()
-    if flingLoop3 then flingLoop3:Disconnect() flingLoop3 = nil end
-    if bodyVel3 then bodyVel3:Destroy() bodyVel3 = nil end
-    if bodyAngVel3 then bodyAngVel3:Destroy() bodyAngVel3 = nil end
+    if flingLoop3 then
+        flingLoop3:Disconnect()
+        flingLoop3 = nil
+    end
+    
+    if bodyVel3 then
+        bodyVel3:Destroy()
+        bodyVel3 = nil
+    end
+    
+    if bodyAngVel3 then
+        bodyAngVel3:Destroy()
+        bodyAngVel3 = nil
+    end
     
     local myChar = player.Character
     if myChar then
-        local myRoot = getRoot(myChar)
+        local myRoot = getRoot3(myChar)
         local myHumanoid = myChar:FindFirstChild("Humanoid")
-        if myRoot then myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0) myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0) end
-        if myHumanoid then myHumanoid.PlatformStand = false end
+        
+        if myRoot then
+            myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+            myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        end
+        
+        if myHumanoid then
+            myHumanoid.PlatformStand = false
+        end
+        
         resetMass3(myChar)
     end
 end
 
+local function devastateFling(targetRoot, myRoot, myHumanoid)
+    velocityPower3 = tonumber(velocityInput3.Text) or 999999
+    angularPower3 = tonumber(angularInput3.Text) or 999999
+    
+    if massEnabled3 then
+        boostMass3(player.Character)
+    end
+    
+    if teleportEnabled3 then
+        myRoot.CFrame = targetRoot.CFrame * CFrame.new(math.random(-1, 1), math.random(-1, 1), math.random(-1, 1))
+    end
+    
+    if velocityEnabled3 then
+        if bodyVel3 then bodyVel3:Destroy() end
+        bodyVel3 = Instance.new("BodyVelocity")
+        bodyVel3.Name = "CollisionBurst"
+        bodyVel3.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyVel3.Velocity = Vector3.new(math.random(-1, 1) * velocityPower3, velocityPower3, math.random(-1, 1) * velocityPower3)
+        bodyVel3.P = math.huge
+        bodyVel3.Parent = myRoot
+    end
+    
+    if angularEnabled3 then
+        if bodyAngVel3 then bodyAngVel3:Destroy() end
+        bodyAngVel3 = Instance.new("BodyAngularVelocity")
+        bodyAngVel3.Name = "CollisionSpin"
+        bodyAngVel3.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        bodyAngVel3.AngularVelocity = Vector3.new(angularPower3, angularPower3, angularPower3)
+        bodyAngVel3.P = math.huge
+        bodyAngVel3.Parent = myRoot
+    end
+    
+    if myHumanoid then
+        myHumanoid.PlatformStand = true
+    end
+end
+
+local function orbitalFling(targetRoot, myRoot, myHumanoid)
+    velocityPower3 = tonumber(velocityInput3.Text) or 999999
+    angularPower3 = tonumber(angularInput3.Text) or 999999
+    teleportMultiplier = tonumber(teleportInput3.Text) or 500
+    
+    angle = angle + (math.pi * 2 / teleportMultiplier)
+    
+    local offsetX = math.cos(angle) * 2
+    local offsetZ = math.sin(angle) * 2
+    
+    if massEnabled3 then
+        boostMass3(player.Character)
+    end
+    
+    if teleportEnabled3 then
+        myRoot.CFrame = targetRoot.CFrame * CFrame.new(offsetX, 1, offsetZ)
+    end
+    
+    if velocityEnabled3 then
+        local direction = (targetRoot.Position - myRoot.Position).Unit
+        
+        if bodyVel3 then bodyVel3:Destroy() end
+        bodyVel3 = Instance.new("BodyVelocity")
+        bodyVel3.Name = "CollisionBurst"
+        bodyVel3.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyVel3.Velocity = direction * velocityPower3
+        bodyVel3.P = math.huge
+        bodyVel3.Parent = myRoot
+    end
+    
+    if angularEnabled3 then
+        if bodyAngVel3 then bodyAngVel3:Destroy() end
+        bodyAngVel3 = Instance.new("BodyAngularVelocity")
+        bodyAngVel3.Name = "CollisionSpin"
+        bodyAngVel3.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        bodyAngVel3.AngularVelocity = Vector3.new(angularPower3, angularPower3, angularPower3)
+        bodyAngVel3.P = math.huge
+        bodyAngVel3.Parent = myRoot
+    end
+    
+    if myHumanoid then
+        myHumanoid.PlatformStand = true
+    end
+end
+
+local function chaosFling(targetRoot, myRoot, myHumanoid)
+    velocityPower3 = tonumber(velocityInput3.Text) or 999999
+    angularPower3 = tonumber(angularInput3.Text) or 999999
+    
+    if massEnabled3 then
+        boostMass3(player.Character)
+    end
+    
+    if teleportEnabled3 then
+        myRoot.CFrame = targetRoot.CFrame * CFrame.new(
+            math.random(-3, 3),
+            math.random(-2, 2),
+            math.random(-3, 3)
+        )
+    end
+    
+    if velocityEnabled3 then
+        if bodyVel3 then bodyVel3:Destroy() end
+        bodyVel3 = Instance.new("BodyVelocity")
+        bodyVel3.Name = "CollisionBurst"
+        bodyVel3.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyVel3.Velocity = Vector3.new(
+            math.random(-1, 1) * velocityPower3,
+            math.random(-1, 1) * velocityPower3,
+            math.random(-1, 1) * velocityPower3
+        )
+        bodyVel3.P = math.huge
+        bodyVel3.Parent = myRoot
+    end
+    
+    if angularEnabled3 then
+        if bodyAngVel3 then bodyAngVel3:Destroy() end
+        bodyAngVel3 = Instance.new("BodyAngularVelocity")
+        bodyAngVel3.Name = "CollisionSpin"
+        bodyAngVel3.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        bodyAngVel3.AngularVelocity = Vector3.new(
+            math.random(-1, 1) * angularPower3,
+            math.random(-1, 1) * angularPower3,
+            math.random(-1, 1) * angularPower3
+        )
+        bodyAngVel3.P = math.huge
+        bodyAngVel3.Parent = myRoot
+    end
+    
+    if myHumanoid then
+        myHumanoid.PlatformStand = true
+    end
+end
+
 local function startFling3()
-    if flingLoop3 then flingLoop3:Disconnect() end
+    if flingLoop3 then
+        flingLoop3:Disconnect()
+    end
     
     flingLoop3 = RunService.Heartbeat:Connect(function()
         if not flingEnabled3 then return end
-        local myChar = player.Character if not myChar then return end
-        local myRoot = getRoot(myChar) if not myRoot then return end
+        
+        local myChar = player.Character
+        if not myChar then return end
+        
+        local myRoot = getRoot3(myChar)
         local myHumanoid = myChar:FindFirstChild("Humanoid")
-        if not targetPlayer3 or not targetPlayer3.Character then return end
-        local targetRoot = getRoot(targetPlayer3.Character) if not targetRoot then return end
         
-        velocityPower3 = tonumber(velocityInput3.Text) or 999999
-        angularPower3 = tonumber(angularInput3.Text) or 999999
-        teleportSpeed3 = tonumber(teleportInput3.Text) or 500
+        if not myRoot then return end
         
-        boostMass3(player.Character)
-        
-        if teleportEnabled3 then
-            if collisionMode3 == "orbital" then
-                angle3 = angle3 + (math.pi * 2 / teleportSpeed3)
-                local offset = Vector3.new(math.cos(angle3)*2, 1, math.sin(angle3)*2)
-                myRoot.CFrame = targetRoot.CFrame * CFrame.new(offset)
-            else
-                myRoot.CFrame = targetRoot.CFrame * CFrame.new(math.random(-1, 1), math.random(-1, 1), math.random(-1, 1))
-            end
+        if not targetPlayer3 or not targetPlayer3.Character then
+            return
         end
         
-        if velocityEnabled3 then
-            if bodyVel3 then bodyVel3:Destroy() end
-            bodyVel3 = Instance.new("BodyVelocity")
-            bodyVel3.Name = "UltVel"
-            bodyVel3.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            
-            if collisionMode3 == "orbital" then
-                bodyVel3.Velocity = (targetRoot.Position - myRoot.Position).Unit * velocityPower3
-            else
-                bodyVel3.Velocity = Vector3.new(math.random(-1, 1)*velocityPower3, velocityPower3, math.random(-1, 1)*velocityPower3)
-            end
-            bodyVel3.P = math.huge
-            bodyVel3.Parent = myRoot
-        end
+        local targetRoot = getRoot3(targetPlayer3.Character)
+        if not targetRoot then return end
         
-        if angularEnabled3 then
-            if bodyAngVel3 then bodyAngVel3:Destroy() end
-            bodyAngVel3 = Instance.new("BodyAngularVelocity")
-            bodyAngVel3.Name = "UltAng"
-            bodyAngVel3.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-            bodyAngVel3.AngularVelocity = Vector3.new(angularPower3, angularPower3, angularPower3)
-            bodyAngVel3.P = math.huge
-            bodyAngVel3.Parent = myRoot
+        if collisionMode == "devastate" then
+            devastateFling(targetRoot, myRoot, myHumanoid)
+        elseif collisionMode == "orbital" then
+            orbitalFling(targetRoot, myRoot, myHumanoid)
+        else
+            chaosFling(targetRoot, myRoot, myHumanoid)
         end
-        
-        if myHumanoid then myHumanoid.PlatformStand = true end
     end)
 end
 
-toggleButton3.MouseButton1Click:Connect(function()
-    flingEnabled3 = not flingEnabled3
-    if flingEnabled3 then
-        if not targetPlayer3 then statusLabel3.Text = "Select a target first!" flingEnabled3 = false return end
-        toggleButton3.Text = "FLING: ON"
-        toggleButton3.BackgroundColor3 = COLORS.buttonSuccess
-        statusLabel3.Text = "Flinging: " .. targetPlayer3.Name .. " (" .. collisionMode3:upper() .. ")"
-        startFling3()
-    else
-        toggleButton3.Text = "FLING: OFF"
-        toggleButton3.BackgroundColor3 = COLORS.buttonDanger
-        statusLabel3.Text = targetPlayer3 and ("Target: " .. targetPlayer3.Name) or "No target"
-        stopFling3()
-    end
-end)
-
--- Tab 3 UI Hooks
+-- Mode Buttons
 devastateModeBtn.MouseButton1Click:Connect(function()
-    collisionMode3 = "devastate"
-    devastateModeBtn.Text = "✓ DEVASTATE" devastateModeBtn.BackgroundColor3 = COLORS.buttonSuccess devastateModeBtn.TextColor3 = COLORS.textLight
-    orbitalModeBtn.Text = "Orbital" orbitalModeBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200) orbitalModeBtn.TextColor3 = COLORS.textDark
-    chaosModeBtn.Text = "Chaos" chaosModeBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200) chaosModeBtn.TextColor3 = COLORS.textDark
-end)
-orbitalModeBtn.MouseButton1Click:Connect(function()
-    collisionMode3 = "orbital"
-    orbitalModeBtn.Text = "✓ Orbital" orbitalModeBtn.BackgroundColor3 = COLORS.buttonSuccess orbitalModeBtn.TextColor3 = COLORS.textLight
-    devastateModeBtn.Text = "DEVASTATE" devastateModeBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200) devastateModeBtn.TextColor3 = COLORS.textDark
-    chaosModeBtn.Text = "Chaos" chaosModeBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200) chaosModeBtn.TextColor3 = COLORS.textDark
-end)
-chaosModeBtn.MouseButton1Click:Connect(function()
-    collisionMode3 = "chaos"
-    chaosModeBtn.Text = "✓ Chaos" chaosModeBtn.BackgroundColor3 = COLORS.buttonSuccess chaosModeBtn.TextColor3 = COLORS.textLight
-    devastateModeBtn.Text = "DEVASTATE" devastateModeBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200) devastateModeBtn.TextColor3 = COLORS.textDark
-    orbitalModeBtn.Text = "Orbital" orbitalModeBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200) orbitalModeBtn.TextColor3 = COLORS.textDark
+    collisionMode = "devastate"
+    devastateModeBtn.Text = "✓ DEVASTATE"
+    devastateModeBtn.BackgroundColor3 = COLORS.buttonSuccess
+    devastateModeBtn.TextColor3 = COLORS.textLight
+    orbitalModeBtn.Text = "Orbital"
+    orbitalModeBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    orbitalModeBtn.TextColor3 = COLORS.textDark
+    chaosModeBtn.Text = "Chaos"
+    chaosModeBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    chaosModeBtn.TextColor3 = COLORS.textDark
 end)
 
+orbitalModeBtn.MouseButton1Click:Connect(function()
+    collisionMode = "orbital"
+    orbitalModeBtn.Text = "✓ Orbital"
+    orbitalModeBtn.BackgroundColor3 = COLORS.buttonSuccess
+    orbitalModeBtn.TextColor3 = COLORS.textLight
+    devastateModeBtn.Text = "DEVASTATE"
+    devastateModeBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    devastateModeBtn.TextColor3 = COLORS.textDark
+    chaosModeBtn.Text = "Chaos"
+    chaosModeBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    chaosModeBtn.TextColor3 = COLORS.textDark
+end)
+
+chaosModeBtn.MouseButton1Click:Connect(function()
+    collisionMode = "chaos"
+    chaosModeBtn.Text = "✓ Chaos"
+    chaosModeBtn.BackgroundColor3 = COLORS.buttonSuccess
+    chaosModeBtn.TextColor3 = COLORS.textLight
+    devastateModeBtn.Text = "DEVASTATE"
+    devastateModeBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    devastateModeBtn.TextColor3 = COLORS.textDark
+    orbitalModeBtn.Text = "Orbital"
+    orbitalModeBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    orbitalModeBtn.TextColor3 = COLORS.textDark
+end)
+
+-- Layer Toggles
 velocityToggle3.MouseButton1Click:Connect(function()
     velocityEnabled3 = not velocityEnabled3
     velocityToggle3.Text = velocityEnabled3 and "✓ Velocity Burst" or "✗ Velocity Burst"
     velocityToggle3.BackgroundColor3 = velocityEnabled3 and COLORS.buttonSuccess or COLORS.buttonDanger
 end)
+
 angularToggle3.MouseButton1Click:Connect(function()
     angularEnabled3 = not angularEnabled3
     angularToggle3.Text = angularEnabled3 and "✓ Angular Force" or "✗ Angular Force"
     angularToggle3.BackgroundColor3 = angularEnabled3 and COLORS.buttonSuccess or COLORS.buttonDanger
 end)
+
 teleportToggle3.MouseButton1Click:Connect(function()
     teleportEnabled3 = not teleportEnabled3
     teleportToggle3.Text = teleportEnabled3 and "✓ Rapid Teleport" or "✗ Rapid Teleport"
     teleportToggle3.BackgroundColor3 = teleportEnabled3 and COLORS.buttonSuccess or COLORS.buttonDanger
 end)
+
 massToggle3.MouseButton1Click:Connect(function()
     massEnabled3 = not massEnabled3
     massToggle3.Text = massEnabled3 and "✓ Mass Boost" or "✗ Mass Boost"
     massToggle3.BackgroundColor3 = massEnabled3 and COLORS.buttonSuccess or COLORS.buttonDanger
 end)
 
-player.CharacterAdded:Connect(function() wait(0.3) if flingEnabled3 then flingCount3 = flingCount3 + 1 flingCounter3.Text = "Flings: " .. flingCount3 startFling3() end end)
-player.CharacterRemoving:Connect(stopFling3)
+-- Fling Toggle
+toggleButton3.MouseButton1Click:Connect(function()
+    flingEnabled3 = not flingEnabled3
+    
+    if flingEnabled3 then
+        if not targetPlayer3 then
+            statusLabel3.Text = "Select a target first!"
+            flingEnabled3 = false
+            return
+        end
+        
+        toggleButton3.Text = "FLING: ON"
+        toggleButton3.BackgroundColor3 = COLORS.buttonSuccess
+        statusLabel3.Text = "Flinging: " .. targetPlayer3.Name .. " (" .. collisionMode:upper() .. ")"
+        
+        startFling3()
+    else
+        toggleButton3.Text = "FLING: OFF"
+        toggleButton3.BackgroundColor3 = COLORS.buttonDanger
+        statusLabel3.Text = targetPlayer3 and ("Target: " .. targetPlayer3.Name) or "No target selected"
+        
+        stopFling3()
+    end
+end)
+
+player.CharacterAdded:Connect(function()
+    wait(0.3)
+    
+    if flingEnabled3 then
+        flingCount3 = flingCount3 + 1
+        flingCounter3.Text = "Flings: " .. flingCount3
+        startFling3()
+    end
+end)
+
+player.CharacterRemoving:Connect(function()
+    stopFling3()
+end)
+
 Players.PlayerAdded:Connect(updatePlayerList3)
-Players.PlayerRemoving:Connect(function() wait(0.5) updatePlayerList3() end)
+Players.PlayerRemoving:Connect(function()
+    wait(0.5)
+    updatePlayerList3()
+end)
+
 updatePlayerList3()
 
--- ========== LOGIC: TAB 4 (COMBO DESTROYER) ==========
+-- ========== TAB 4: COMBO DESTROYER LOGIC ==========
 
--- Variables for Combo
-local destroyEnabled4 = false
+-- Variables for Tab 4
+local destroyEnabled = false
 local targetPlayer4 = nil
 local flingCount4 = 0
 local velocityPower4 = 999999
 local angularPower4 = 999999
 local collisionMode4 = "devastate"
-local swordSwings4 = 3
-local swingDelay4 = 0.01
-local swordReach4 = 15
+local swordSwings = 3
+local swingDelay = 0.01
+local swordReach = 15
 local velocityEnabled4 = true
 local angularEnabled4 = true
 local teleportEnabled4 = true
@@ -1736,117 +2142,60 @@ local bodyAngVel4 = nil
 local angle4 = 0
 local playerButtons4 = {}
 
--- Shared helper functions for Combo (using mobile-friendly logic)
-local function devastateFling4(targetRoot, myRoot, myHumanoid)
-    velocityPower4 = tonumber(velInput4.Text) or 999999
-    angularPower4 = tonumber(angInput4.Text) or 999999
-    
-    if massEnabled4 then boostMass3(player.Character) end -- Reuse boostMass from Tab 3 logic
-    if teleportEnabled4 then
-        myRoot.CFrame = targetRoot.CFrame * CFrame.new(math.random(-1, 1), math.random(-1, 1), math.random(-1, 1))
-    end
-    if velocityEnabled4 then
-        if bodyVel4 then bodyVel4:Destroy() end
-        bodyVel4 = Instance.new("BodyVelocity")
-        bodyVel4.Name = "CollisionBurst4"
-        bodyVel4.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyVel4.Velocity = Vector3.new(math.random(-1, 1) * velocityPower4, velocityPower4, math.random(-1, 1) * velocityPower4)
-        bodyVel4.P = math.huge
-        bodyVel4.Parent = myRoot
-    end
-    if angularEnabled4 then
-        if bodyAngVel4 then bodyAngVel4:Destroy() end
-        bodyAngVel4 = Instance.new("BodyAngularVelocity")
-        bodyAngVel4.Name = "CollisionSpin4"
-        bodyAngVel4.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-        bodyAngVel4.AngularVelocity = Vector3.new(angularPower4, angularPower4, angularPower4)
-        bodyAngVel4.P = math.huge
-        bodyAngVel4.Parent = myRoot
-    end
-    if myHumanoid then myHumanoid.PlatformStand = true end
+local function getRoot4(char)
+    return char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
 end
 
-local function orbitalFling4(targetRoot, myRoot, myHumanoid)
-    velocityPower4 = tonumber(velInput4.Text) or 999999
-    angularPower4 = tonumber(angInput4.Text) or 999999
-    
-    angle4 = angle4 + (math.pi * 2 / 500)
-    local offsetX = math.cos(angle4) * 2
-    local offsetZ = math.sin(angle4) * 2
-    
-    if massEnabled4 then boostMass3(player.Character) end
-    if teleportEnabled4 then
-        myRoot.CFrame = targetRoot.CFrame * CFrame.new(offsetX, 1, offsetZ)
-    end
-    if velocityEnabled4 then
-        local direction = (targetRoot.Position - myRoot.Position).Unit
-        if bodyVel4 then bodyVel4:Destroy() end
-        bodyVel4 = Instance.new("BodyVelocity")
-        bodyVel4.Name = "CollisionBurst4"
-        bodyVel4.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyVel4.Velocity = direction * velocityPower4
-        bodyVel4.P = math.huge
-        bodyVel4.Parent = myRoot
-    end
-    if angularEnabled4 then
-        if bodyAngVel4 then bodyAngVel4:Destroy() end
-        bodyAngVel4 = Instance.new("BodyAngularVelocity")
-        bodyAngVel4.Name = "CollisionSpin4"
-        bodyAngVel4.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-        bodyAngVel4.AngularVelocity = Vector3.new(angularPower4, angularPower4, angularPower4)
-        bodyAngVel4.P = math.huge
-        bodyAngVel4.Parent = myRoot
-    end
-    if myHumanoid then myHumanoid.PlatformStand = true end
-end
-
-local function chaosFling4(targetRoot, myRoot, myHumanoid)
-    velocityPower4 = tonumber(velInput4.Text) or 999999
-    angularPower4 = tonumber(angInput4.Text) or 999999
-    
-    if massEnabled4 then boostMass3(player.Character) end
-    if teleportEnabled4 then
-        myRoot.CFrame = targetRoot.CFrame * CFrame.new(math.random(-3, 3), math.random(-2, 2), math.random(-3, 3))
-    end
-    if velocityEnabled4 then
-        if bodyVel4 then bodyVel4:Destroy() end
-        bodyVel4 = Instance.new("BodyVelocity")
-        bodyVel4.Name = "CollisionBurst4"
-        bodyVel4.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyVel4.Velocity = Vector3.new(math.random(-1, 1) * velocityPower4, math.random(-1, 1) * velocityPower4, math.random(-1, 1) * velocityPower4)
-        bodyVel4.P = math.huge
-        bodyVel4.Parent = myRoot
-    end
-    if angularEnabled4 then
-        if bodyAngVel4 then bodyAngVel4:Destroy() end
-        bodyAngVel4 = Instance.new("BodyAngularVelocity")
-        bodyAngVel4.Name = "CollisionSpin4"
-        bodyAngVel4.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-        bodyAngVel4.AngularVelocity = Vector3.new(math.random(-1, 1) * angularPower4, math.random(-1, 1) * angularPower4, math.random(-1, 1) * angularPower4)
-        bodyAngVel4.P = math.huge
-        bodyAngVel4.Parent = myRoot
-    end
-    if myHumanoid then myHumanoid.PlatformStand = true end
-end
-
-local function swordAttack4(targetRoot, myRoot)
-    if not swordEnabled4 then return end
-    swordReach4 = tonumber(reachInput4.Text) or 15
-    swordSwings4 = tonumber(swingInput4.Text) or 3
-    local sword = getSword()
-    if not sword then sword = equipSword() if not sword then return end end
-    local distance = (targetRoot.Position - myRoot.Position).Magnitude
-    if distance <= swordReach4 then
-        for i = 1, swordSwings4 do
-            sword:Activate()
-            wait(swingDelay4)
+local function getSword4()
+    local character = player.Character
+    if not character then return nil end
+    for _, item in pairs(character:GetChildren()) do
+        if item:IsA("Tool") then
+            return item
         end
+    end
+    return nil
+end
+
+local function equipSword4()
+    local character = player.Character
+    local backpack = player:FindFirstChild("Backpack")
+    if not character or not backpack then return nil end
+    local currentTool = getSword4()
+    if currentTool then return currentTool end
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not humanoid then return nil end
+    for _, item in pairs(backpack:GetChildren()) do
+        if item:IsA("Tool") then
+            humanoid:EquipTool(item)
+            wait(0.05)
+            return item
+        end
+    end
+    return nil
+end
+
+local function boostMass4(char)
+    if not massEnabled4 then return end
+    local root = getRoot4(char)
+    if root then
+        root.CustomPhysicalProperties = PhysicalProperties.new(100, 0.5, 0.5)
+    end
+end
+
+local function resetMass4(char)
+    local root = getRoot4(char)
+    if root then
+        root.CustomPhysicalProperties = nil
     end
 end
 
 local function updatePlayerList4()
-    for _, btn in pairs(playerButtons4) do btn:Destroy() end
+    for _, btn in pairs(playerButtons4) do
+        btn:Destroy()
+    end
     playerButtons4 = {}
+    
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= player then
             local btn = Instance.new("TextButton")
@@ -1856,42 +2205,186 @@ local function updatePlayerList4()
             btn.Text = plr.Name
             btn.Font = Enum.Font.Gotham
             btn.TextSize = 9
-            btn.Parent = playerScroll4
-            local c = Instance.new("UICorner") c.CornerRadius = UDim.new(0, 4) c.Parent = btn
+            btn.Parent = destroyerPlayerScroll
+            
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(0, 4)
+            btnCorner.Parent = btn
+            
             btn.MouseButton1Click:Connect(function()
                 targetPlayer4 = plr
-                statusLbl4.Text = "Target: " .. plr.Name
+                destroyerStatus.Text = "Target: " .. plr.Name
                 updatePlayerList4()
             end)
+            
             table.insert(playerButtons4, btn)
         end
     end
-    playerScroll4.CanvasSize = UDim2.new(0, 0, 0, plLayout4.AbsoluteContentSize.Y)
+    
+    destroyerPlayerScroll.CanvasSize = UDim2.new(0, 0, 0, #playerButtons4 * 22)
 end
 
-local function stopAll4()
-    if flingLoop4 then flingLoop4:Disconnect() flingLoop4 = nil end
-    if bodyVel4 then bodyVel4:Destroy() bodyVel4 = nil end
-    if bodyAngVel4 then bodyAngVel4:Destroy() bodyAngVel4 = nil end
-    local myChar = player.Character
-    if myChar then
-        local myRoot = getRoot(myChar)
-        local myHumanoid = myChar:FindFirstChild("Humanoid")
-        if myRoot then myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0) myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0) end
-        if myHumanoid then myHumanoid.PlatformStand = false end
-        resetMass3(myChar)
+local function devastateFling4(targetRoot, myRoot, myHumanoid)
+    velocityPower4 = tonumber(destroyerVelInput.Text) or 999999
+    angularPower4 = tonumber(destroyerAngInput.Text) or 999999
+    
+    if massEnabled4 then boostMass4(player.Character) end
+    if teleportEnabled4 then
+        myRoot.CFrame = targetRoot.CFrame * CFrame.new(math.random(-1, 1), math.random(-1, 1), math.random(-1, 1))
+    end
+    if velocityEnabled4 then
+        if bodyVel4 then bodyVel4:Destroy() end
+        bodyVel4 = Instance.new("BodyVelocity")
+        bodyVel4.Name = "DestroyerBurst"
+        bodyVel4.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyVel4.Velocity = Vector3.new(math.random(-1, 1) * velocityPower4, velocityPower4, math.random(-1, 1) * velocityPower4)
+        bodyVel4.P = math.huge
+        bodyVel4.Parent = myRoot
+    end
+    if angularEnabled4 then
+        if bodyAngVel4 then bodyAngVel4:Destroy() end
+        bodyAngVel4 = Instance.new("BodyAngularVelocity")
+        bodyAngVel4.Name = "DestroyerSpin"
+        bodyAngVel4.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        bodyAngVel4.AngularVelocity = Vector3.new(angularPower4, angularPower4, angularPower4)
+        bodyAngVel4.P = math.huge
+        bodyAngVel4.Parent = myRoot
+    end
+    if myHumanoid then myHumanoid.PlatformStand = true end
+end
+
+local function orbitalFling4(targetRoot, myRoot, myHumanoid)
+    velocityPower4 = tonumber(destroyerVelInput.Text) or 999999
+    angularPower4 = tonumber(destroyerAngInput.Text) or 999999
+    
+    angle4 = angle4 + (math.pi * 2 / 500)
+    local offsetX = math.cos(angle4) * 2
+    local offsetZ = math.sin(angle4) * 2
+    
+    if massEnabled4 then boostMass4(player.Character) end
+    if teleportEnabled4 then
+        myRoot.CFrame = targetRoot.CFrame * CFrame.new(offsetX, 1, offsetZ)
+    end
+    if velocityEnabled4 then
+        local direction = (targetRoot.Position - myRoot.Position).Unit
+        if bodyVel4 then bodyVel4:Destroy() end
+        bodyVel4 = Instance.new("BodyVelocity")
+        bodyVel4.Name = "DestroyerBurst"
+        bodyVel4.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyVel4.Velocity = direction * velocityPower4
+        bodyVel4.P = math.huge
+        bodyVel4.Parent = myRoot
+    end
+    if angularEnabled4 then
+        if bodyAngVel4 then bodyAngVel4:Destroy() end
+        bodyAngVel4 = Instance.new("BodyAngularVelocity")
+        bodyAngVel4.Name = "DestroyerSpin"
+        bodyAngVel4.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        bodyAngVel4.AngularVelocity = Vector3.new(angularPower4, angularPower4, angularPower4)
+        bodyAngVel4.P = math.huge
+        bodyAngVel4.Parent = myRoot
+    end
+    
+    if myHumanoid then
+        myHumanoid.PlatformStand = true
     end
 end
 
-local function startDestroy4()
-    if flingLoop4 then flingLoop4:Disconnect() end
+local function chaosFling4(targetRoot, myRoot, myHumanoid)
+    velocityPower4 = tonumber(destroyerVelInput.Text) or 999999
+    angularPower4 = tonumber(destroyerAngInput.Text) or 999999
+    
+    if massEnabled4 then
+        boostMass4(player.Character)
+    end
+    
+    if teleportEnabled4 then
+        myRoot.CFrame = targetRoot.CFrame * CFrame.new(
+            math.random(-3, 3),
+            math.random(-2, 2),
+            math.random(-3, 3)
+        )
+    end
+    
+    if velocityEnabled4 then
+        if bodyVel4 then bodyVel4:Destroy() end
+        bodyVel4 = Instance.new("BodyVelocity")
+        bodyVel4.Name = "DestroyerBurst"
+        bodyVel4.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyVel4.Velocity = Vector3.new(
+            math.random(-1, 1) * velocityPower4,
+            math.random(-1, 1) * velocityPower4,
+            math.random(-1, 1) * velocityPower4
+        )
+        bodyVel4.P = math.huge
+        bodyVel4.Parent = myRoot
+    end
+    
+    if angularEnabled4 then
+        if bodyAngVel4 then bodyAngVel4:Destroy() end
+        bodyAngVel4 = Instance.new("BodyAngularVelocity")
+        bodyAngVel4.Name = "DestroyerSpin"
+        bodyAngVel4.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        bodyAngVel4.AngularVelocity = Vector3.new(
+            math.random(-1, 1) * angularPower4,
+            math.random(-1, 1) * angularPower4,
+            math.random(-1, 1) * angularPower4
+        )
+        bodyAngVel4.P = math.huge
+        bodyAngVel4.Parent = myRoot
+    end
+    
+    if myHumanoid then
+        myHumanoid.PlatformStand = true
+    end
+end
+
+local function performSwordAttack()
+    if not swordEnabled4 then return end
+    
+    local sword = getSword4()
+    if not sword then
+        sword = equipSword4()
+    end
+    
+    if sword then
+        swordSwings = tonumber(destroyerSwingInput.Text) or 3
+        if swordSwings < 1 then swordSwings = 1 end
+        if swordSwings > 10 then swordSwings = 10 end
+        
+        swordReach = tonumber(destroyerReachInput.Text) or 15
+        if swordReach < 1 then swordReach = 1 end
+        if swordReach > 50 then swordReach = 50 end
+        
+        for i = 1, swordSwings do
+            sword:Activate()
+            wait(swingDelay)
+        end
+    end
+end
+
+local function startFling4()
+    if flingLoop4 then
+        flingLoop4:Disconnect()
+    end
+    
     flingLoop4 = RunService.Heartbeat:Connect(function()
-        if not destroyEnabled4 then return end
-        local myChar = player.Character if not myChar then return end
-        local myRoot = getRoot(myChar) if not myRoot then return end
+        if not destroyEnabled then return end
+        
+        local myChar = player.Character
+        if not myChar then return end
+        
+        local myRoot = getRoot4(myChar)
         local myHumanoid = myChar:FindFirstChild("Humanoid")
-        if not targetPlayer4 or not targetPlayer4.Character then return end
-        local targetRoot = getRoot(targetPlayer4.Character) if not targetRoot then return end
+        
+        if not myRoot then return end
+        
+        if not targetPlayer4 or not targetPlayer4.Character then
+            return
+        end
+        
+        local targetRoot = getRoot4(targetPlayer4.Character)
+        if not targetRoot then return end
         
         if collisionMode4 == "devastate" then
             devastateFling4(targetRoot, myRoot, myHumanoid)
@@ -1900,127 +2393,266 @@ local function startDestroy4()
         else
             chaosFling4(targetRoot, myRoot, myHumanoid)
         end
-        swordAttack4(targetRoot, myRoot)
+        
+        performSwordAttack()
     end)
 end
 
--- UI Hooks for Tab 4
-toggleButton4.MouseButton1Click:Connect(function()
-    destroyEnabled4 = not destroyEnabled4
-    if destroyEnabled4 then
-        if not targetPlayer4 then statusLbl4.Text = "Select target!" destroyEnabled4 = false return end
-        toggleButton4.Text = "DESTROY: ON"
-        toggleButton4.BackgroundColor3 = COLORS.buttonSuccess
-        statusLbl4.Text = "Destroying: " .. targetPlayer4.Name
-        equipSword()
-        startDestroy4()
+local function stopFling4()
+    if flingLoop4 then
+        flingLoop4:Disconnect()
+        flingLoop4 = nil
+    end
+    
+    if bodyVel4 then
+        bodyVel4:Destroy()
+        bodyVel4 = nil
+    end
+    
+    if bodyAngVel4 then
+        bodyAngVel4:Destroy()
+        bodyAngVel4 = nil
+    end
+    
+    local myChar = player.Character
+    if myChar then
+        local myRoot = getRoot4(myChar)
+        local myHumanoid = myChar:FindFirstChild("Humanoid")
+        
+        if myRoot then
+            myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+            myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        end
+        
+        if myHumanoid then
+            myHumanoid.PlatformStand = false
+        end
+        
+        resetMass4(myChar)
+    end
+end
+
+-- Destroyer Mode Buttons
+destroyerDevBtn.MouseButton1Click:Connect(function()
+    collisionMode4 = "devastate"
+    destroyerDevBtn.Text = "✓ DEV"
+    destroyerDevBtn.BackgroundColor3 = COLORS.buttonSuccess
+    destroyerDevBtn.TextColor3 = COLORS.textLight
+    destroyerOrbBtn.Text = "ORB"
+    destroyerOrbBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    destroyerOrbBtn.TextColor3 = COLORS.textDark
+    destroyerChaosBtn.Text = "CHAOS"
+    destroyerChaosBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    destroyerChaosBtn.TextColor3 = COLORS.textDark
+end)
+
+destroyerOrbBtn.MouseButton1Click:Connect(function()
+    collisionMode4 = "orbital"
+    destroyerOrbBtn.Text = "✓ ORB"
+    destroyerOrbBtn.BackgroundColor3 = COLORS.buttonSuccess
+    destroyerOrbBtn.TextColor3 = COLORS.textLight
+    destroyerDevBtn.Text = "DEV"
+    destroyerDevBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    destroyerDevBtn.TextColor3 = COLORS.textDark
+    destroyerChaosBtn.Text = "CHAOS"
+    destroyerChaosBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    destroyerChaosBtn.TextColor3 = COLORS.textDark
+end)
+
+destroyerChaosBtn.MouseButton1Click:Connect(function()
+    collisionMode4 = "chaos"
+    destroyerChaosBtn.Text = "✓ CHAOS"
+    destroyerChaosBtn.BackgroundColor3 = COLORS.buttonSuccess
+    destroyerChaosBtn.TextColor3 = COLORS.textLight
+    destroyerDevBtn.Text = "DEV"
+    destroyerDevBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    destroyerDevBtn.TextColor3 = COLORS.textDark
+    destroyerOrbBtn.Text = "ORB"
+    destroyerOrbBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+    destroyerOrbBtn.TextColor3 = COLORS.textDark
+end)
+
+-- Destroyer Layer Toggles
+destroyerSwordToggle.MouseButton1Click:Connect(function()
+    swordEnabled4 = not swordEnabled4
+    destroyerSwordToggle.Text = swordEnabled4 and "✓ Sword" or "✗ Sword"
+    destroyerSwordToggle.BackgroundColor3 = swordEnabled4 and COLORS.buttonSuccess or COLORS.buttonDanger
+end)
+
+destroyerVelToggle.MouseButton1Click:Connect(function()
+    velocityEnabled4 = not velocityEnabled4
+    destroyerVelToggle.Text = velocityEnabled4 and "✓ Velocity" or "✗ Velocity"
+    destroyerVelToggle.BackgroundColor3 = velocityEnabled4 and COLORS.buttonSuccess or COLORS.buttonDanger
+end)
+
+destroyerAngToggle.MouseButton1Click:Connect(function()
+    angularEnabled4 = not angularEnabled4
+    destroyerAngToggle.Text = angularEnabled4 and "✓ Angular" or "✗ Angular"
+    destroyerAngToggle.BackgroundColor3 = angularEnabled4 and COLORS.buttonSuccess or COLORS.buttonDanger
+end)
+
+destroyerTpToggle.MouseButton1Click:Connect(function()
+    teleportEnabled4 = not teleportEnabled4
+    destroyerTpToggle.Text = teleportEnabled4 and "✓ Teleport" or "✗ Teleport"
+    destroyerTpToggle.BackgroundColor3 = teleportEnabled4 and COLORS.buttonSuccess or COLORS.buttonDanger
+end)
+
+destroyerMassToggle.MouseButton1Click:Connect(function()
+    massEnabled4 = not massEnabled4
+    destroyerMassToggle.Text = massEnabled4 and "✓ Mass Boost" or "✗ Mass Boost"
+    destroyerMassToggle.BackgroundColor3 = massEnabled4 and COLORS.buttonSuccess or COLORS.buttonDanger
+end)
+
+-- Destroyer Toggle
+destroyerToggle.MouseButton1Click:Connect(function()
+    destroyEnabled = not destroyEnabled
+    
+    if destroyEnabled then
+        if not targetPlayer4 then
+            destroyerStatus.Text = "Select a target first!"
+            destroyEnabled = false
+            return
+        end
+        
+        destroyerToggle.Text = "DESTROY: ON"
+        destroyerToggle.BackgroundColor3 = COLORS.buttonSuccess
+        destroyerStatus.Text = "Destroying: " .. targetPlayer4.Name .. " (" .. collisionMode4:upper() .. ")"
+        
+        -- Ensure we have a sword if enabled
+        if swordEnabled4 then
+            equipSword4()
+        end
+        
+        startFling4()
     else
-        toggleButton4.Text = "DESTROY: OFF"
-        toggleButton4.BackgroundColor3 = COLORS.buttonDanger
-        statusLbl4.Text = targetPlayer4 and ("Target: " .. targetPlayer4.Name) or "No target"
-        stopAll4()
+        destroyerToggle.Text = "DESTROY: OFF"
+        destroyerToggle.BackgroundColor3 = COLORS.buttonDanger
+        destroyerStatus.Text = targetPlayer4 and ("Target: " .. targetPlayer4.Name) or "No target"
+        
+        stopFling4()
     end
 end)
 
-devBtn4.MouseButton1Click:Connect(function()
-    collisionMode4 = "devastate"
-    devBtn4.Text = "✓ DEV" devBtn4.BackgroundColor3 = COLORS.buttonSuccess devBtn4.TextColor3 = COLORS.textLight
-    orbBtn4.Text = "ORB" orbBtn4.BackgroundColor3 = Color3.fromRGB(200, 200, 200) orbBtn4.TextColor3 = COLORS.textDark
-    chaosBtn4.Text = "CHAOS" chaosBtn4.BackgroundColor3 = Color3.fromRGB(200, 200, 200) chaosBtn4.TextColor3 = COLORS.textDark
-end)
-orbBtn4.MouseButton1Click:Connect(function()
-    collisionMode4 = "orbital"
-    orbBtn4.Text = "✓ ORB" orbBtn4.BackgroundColor3 = COLORS.buttonSuccess orbBtn4.TextColor3 = COLORS.textLight
-    devBtn4.Text = "DEV" devBtn4.BackgroundColor3 = Color3.fromRGB(200, 200, 200) devBtn4.TextColor3 = COLORS.textDark
-    chaosBtn4.Text = "CHAOS" chaosBtn4.BackgroundColor3 = Color3.fromRGB(200, 200, 200) chaosBtn4.TextColor3 = COLORS.textDark
-end)
-chaosBtn4.MouseButton1Click:Connect(function()
-    collisionMode4 = "chaos"
-    chaosBtn4.Text = "✓ CHAOS" chaosBtn4.BackgroundColor3 = COLORS.buttonSuccess chaosBtn4.TextColor3 = COLORS.textLight
-    devBtn4.Text = "DEV" devBtn4.BackgroundColor3 = Color3.fromRGB(200, 200, 200) devBtn4.TextColor3 = COLORS.textDark
-    orbBtn4.Text = "ORB" orbBtn4.BackgroundColor3 = Color3.fromRGB(200, 200, 200) orbBtn4.TextColor3 = COLORS.textDark
-end)
-
-swordTog4.MouseButton1Click:Connect(function()
-    swordEnabled4 = not swordEnabled4
-    swordTog4.Text = swordEnabled4 and "✓ Sword" or "✗ Sword"
-    swordTog4.BackgroundColor3 = swordEnabled4 and COLORS.buttonSuccess or COLORS.buttonDanger
-end)
-velTog4.MouseButton1Click:Connect(function()
-    velocityEnabled4 = not velocityEnabled4
-    velTog4.Text = velocityEnabled4 and "✓ Velocity" or "✗ Velocity"
-    velTog4.BackgroundColor3 = velocityEnabled4 and COLORS.buttonSuccess or COLORS.buttonDanger
-end)
-angTog4.MouseButton1Click:Connect(function()
-    angularEnabled4 = not angularEnabled4
-    angTog4.Text = angularEnabled4 and "✓ Angular" or "✗ Angular"
-    angTog4.BackgroundColor3 = angularEnabled4 and COLORS.buttonSuccess or COLORS.buttonDanger
-end)
-tpTog4.MouseButton1Click:Connect(function()
-    teleportEnabled4 = not teleportEnabled4
-    tpTog4.Text = teleportEnabled4 and "✓ Teleport" or "✗ Teleport"
-    tpTog4.BackgroundColor3 = teleportEnabled4 and COLORS.buttonSuccess or COLORS.buttonDanger
-end)
-massTog4.MouseButton1Click:Connect(function()
-    massEnabled4 = not massEnabled4
-    massTog4.Text = massEnabled4 and "✓ Mass Boost" or "✗ Mass Boost"
-    massTog4.BackgroundColor3 = massEnabled4 and COLORS.buttonSuccess or COLORS.buttonDanger
-end)
-
-killGuiBtn4.MouseButton1Click:Connect(function()
-    destroyEnabled4 = false
-    stopAll4()
+-- Kill GUI Button
+destroyerKillGuiBtn.MouseButton1Click:Connect(function()
     screenGui:Destroy()
+    script.Parent:Destroy()
 end)
 
 player.CharacterAdded:Connect(function()
     wait(0.3)
-    if destroyEnabled4 then flingCount4 = flingCount4 + 1 equipSword() startDestroy4() end
+    
+    if destroyEnabled then
+        flingCount4 = flingCount4 + 1
+        startFling4()
+        if swordEnabled4 then
+            equipSword4()
+        end
+    end
 end)
-player.CharacterRemoving:Connect(stopAll4)
+
+player.CharacterRemoving:Connect(function()
+    stopFling4()
+end)
+
 Players.PlayerAdded:Connect(updatePlayerList4)
-Players.PlayerRemoving:Connect(function() wait(0.5) updatePlayerList4() end)
+Players.PlayerRemoving:Connect(function()
+    wait(0.5)
+    updatePlayerList4()
+end)
+
 updatePlayerList4()
 
--- ========== LOGIC: TAB 5 (ANTI-AFK) ==========
+-- ========== TAB 5: ANTI-AFK LOGIC ==========
 
-local antiAfkEnabled5 = false
+local antiAFKEnabled = false
+local antiAFKConnection = nil
+
+local function simulateActivity()
+    if player.Character then
+        local humanoid = player.Character:FindFirstChild("Humanoid")
+        if humanoid then
+            -- Simulate movement
+            humanoid:Move(Vector3.new(math.random(-1, 1), 0, math.random(-1, 1)))
+            
+            -- Simulate camera movement
+            local camera = workspace.CurrentCamera
+            if camera then
+                local currentCF = camera.CFrame
+                camera.CFrame = currentCF * CFrame.Angles(math.rad(1), 0, 0)
+                wait(0.01)
+                camera.CFrame = currentCF
+            end
+        end
+    end
+end
 
 afkToggle.MouseButton1Click:Connect(function()
-    antiAfkEnabled5 = not antiAfkEnabled5
-    if antiAfkEnabled5 then
+    antiAFKEnabled = not antiAFKEnabled
+    
+    if antiAFKEnabled then
         afkToggle.Text = "ANTI-AFK: ON"
         afkToggle.BackgroundColor3 = COLORS.buttonSuccess
-        afkStatus.Text = "Status: Active - Protecting"
+        afkStatus.Text = "Status: Active"
+        
+        if antiAFKConnection then
+            antiAFKConnection:Disconnect()
+        end
+        
+        antiAFKConnection = RunService.Heartbeat:Connect(function()
+            wait(60) -- Run every 60 seconds
+            simulateActivity()
+        end)
+        
+        -- Run immediately once
+        simulateActivity()
     else
         afkToggle.Text = "ANTI-AFK: OFF"
         afkToggle.BackgroundColor3 = COLORS.buttonDanger
         afkStatus.Text = "Status: Inactive"
-    end
-end)
-
-spawn(function()
-    while true do
-        wait(60)
-        if antiAfkEnabled5 then
-            local vu = game:GetService("VirtualUser")
-            vu:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
-            wait(0.1)
-            vu:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+        
+        if antiAFKConnection then
+            antiAFKConnection:Disconnect()
+            antiAFKConnection = nil
         end
     end
 end)
 
--- ========== KEYBIND ==========
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if input.KeyCode == Enum.KeyCode.RightControl then
-        if mainFrame.Visible then
-            mainFrame.Visible = false
-            hubButton.Visible = true
-        else
-            hubButton.Visible = not hubButton.Visible
-        end
+-- ========== INITIALIZATION ==========
+
+-- Set initial tab
+switchTab(1)
+
+-- Position GUI
+local screenSize = game:GetService("GuiService"):GetScreenResolution()
+hubButton.Position = UDim2.new(0, screenSize.X - 70, 0, screenSize.Y/2 - 35)
+mainFrame.Position = UDim2.new(0, screenSize.X/2 - 200, 0, screenSize.Y/2 - 200)
+
+-- Ensure GUI is visible
+screenGui.Parent = game:GetService("CoreGui") or game:GetService("StarterGui")
+hubButton.Visible = true
+
+-- Display welcome message
+print("🗡️ Combo Destroyer GUI Loaded!")
+print("✨ Features:")
+print("  • Tab 1: Classic Fling (simple velocity fling)")
+print("  • Tab 2: Teleport Kill (sword-based attacks)")
+print("  • Tab 3: Collision Fling (multiple fling modes)")
+print("  • Tab 4: Combo Destroyer (all-in-one)")
+print("  • Tab 5: Anti-AFK (prevent inactivity kick)")
+print("")
+print("🎯 How to use:")
+print("  1. Select a target from the player list")
+print("  2. Toggle the feature ON")
+print("  3. Watch the chaos unfold!")
+print("")
+print("⚠️ Warning: This GUI is for entertainment purposes only.")
+print("Use at your own risk in private servers only.")
+
+-- Clean up when player leaves
+player:GetPropertyChangedSignal("Parent"):Connect(function()
+    if player.Parent == nil then
+        screenGui:Destroy()
+        script.Parent:Destroy()
     end
 end)
-
-print("✅ 5-Tab Ultimate Hub Loaded Successfully")
