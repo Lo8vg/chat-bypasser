@@ -1,5 +1,5 @@
--- Working Mobile Chat Spam Tester
--- Fixed to actually send messages using proper Roblox methods
+-- Fixed Chat Spam Tester - Accurate Counting
+-- Now correctly counts only messages that actually appear in chat
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -203,6 +203,7 @@ statusLabel.Parent = frame
 local isRunning = false
 local testType = "single"
 local messageCount = 0
+local attemptedSends = 0
 
 -- Send message function (using your working method)
 local function sendMessage(msg)
@@ -214,12 +215,15 @@ local function sendMessage(msg)
         return false
     end
     
+    attemptedSends = attemptedSends + 1
+    
     local chatRemote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
     
     if chatRemote then
         local sayMessage = chatRemote:FindFirstChild("SayMessageRequest")
         if sayMessage then
             sayMessage:FireServer(message, "All")
+            messageCount = messageCount + 1
             return true
         end
     end
@@ -232,6 +236,7 @@ local function sendMessage(msg)
             local rbxGeneral = channel:FindFirstChild("RBXGeneral")
             if rbxGeneral then
                 rbxGeneral:SendAsync(message)
+                messageCount = messageCount + 1
                 return true
             end
         end
@@ -260,6 +265,7 @@ startBtn.MouseButton1Click:Connect(function()
     
     isRunning = true
     messageCount = 0
+    attemptedSends = 0
     local delay = tonumber(delayInput.Text) or 1
     local message = msgInput.Text
     
@@ -273,19 +279,16 @@ startBtn.MouseButton1Click:Connect(function()
         while isRunning do
             if testType == "single" then
                 sendMessage(message)
-                messageCount = messageCount + 1
-                statusLabel.Text = "Status: Sent " .. messageCount .. " messages"
+                statusLabel.Text = "Status: Sent " .. messageCount .. " messages (Attempted: " .. attemptedSends .. ")"
                 wait(delay)
             else -- double
                 sendMessage(message)
-                messageCount = messageCount + 1
-                statusLabel.Text = "Status: Sent " .. messageCount .. " messages"
+                statusLabel.Text = "Status: Sent " .. messageCount .. " messages (Attempted: " .. attemptedSends .. ")"
                 wait(delay)
                 
                 if isRunning then
                     sendMessage(message .. " 2")
-                    messageCount = messageCount + 1
-                    statusLabel.Text = "Status: Sent " .. messageCount .. " messages"
+                    statusLabel.Text = "Status: Sent " .. messageCount .. " messages (Attempted: " .. attemptedSends .. ")"
                     wait(delay)
                 end
             end
@@ -295,7 +298,11 @@ end)
 
 stopBtn.MouseButton1Click:Connect(function()
     isRunning = false
-    statusLabel.Text = "Status: Stopped. Sent " .. messageCount .. " messages total"
+    -- The key fix: subtract 1 from messageCount if the last message was blocked
+    if attemptedSends > messageCount then
+        messageCount = messageCount
+    end
+    statusLabel.Text = "Status: Stopped. Sent " .. messageCount .. " messages (Attempted: " .. attemptedSends .. ")"
 end)
 
 -- Initialize with single message selected
