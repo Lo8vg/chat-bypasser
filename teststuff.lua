@@ -1,4 +1,4 @@
--- Custom Chat GUI with Gear Menu Backup Tabs (Mobile Version)
+-- Custom Chat GUI with Gear Menu Backup Tabs
 -- Original GUI unchanged + gear icon with two backup tabs
 
 local Players = game:GetService("Players")
@@ -59,8 +59,8 @@ screenGui.Parent = playerGui
 -- ========== ORIGINAL MAIN FRAME (UNCHANGED) ==========
 local frame = Instance.new("Frame")
 frame.Name = "ChatFrame"
-frame.Size = UDim2.new(0, 280, 0, 250) -- Slightly larger for mobile
-frame.Position = UDim2.new(0.5, -140, 0.5, -125)
+frame.Size = UDim2.new(0, 200, 0, 180) -- Original size
+frame.Position = UDim2.new(0.5, -100, 0.5, -90)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.BorderSizePixel = 2
 frame.BorderColor3 = Color3.fromRGB(60, 60, 60)
@@ -73,7 +73,7 @@ frameCorner.Parent = frame
 -- Title Bar
 local titleBar = Instance.new("Frame")
 titleBar.Name = "TitleBar"
-titleBar.Size = UDim2.new(1, 0, 0, 32) -- Taller for mobile
+titleBar.Size = UDim2.new(1, 0, 0, 28) -- Original size
 titleBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 titleBar.BorderSizePixel = 0
 titleBar.Parent = frame
@@ -90,25 +90,25 @@ titleFix.BorderSizePixel = 0
 titleFix.Parent = titleBar
 
 local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, -70, 1, 0)
+titleLabel.Size = UDim2.new(1, -10, 1, 0)
 titleLabel.Position = UDim2.new(0, 10, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.Text = "💬 Chat"
 titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextSize = 16 -- Larger for mobile
+titleLabel.TextSize = 13 -- Original size
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = titleBar
 
--- Gear Icon Button (NEW) - Larger for mobile
+-- Gear Icon Button (NEW)
 local gearBtn = Instance.new("TextButton")
-gearBtn.Size = UDim2.new(0, 40, 0, 28) -- Larger for mobile
-gearBtn.Position = UDim2.new(1, -45, 0.5, -14)
+gearBtn.Size = UDim2.new(0, 28, 0, 22) -- Original size
+gearBtn.Position = UDim2.new(1, -32, 0.5, -11)
 gearBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 gearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 gearBtn.Text = "⚙"
 gearBtn.Font = Enum.Font.GothamBold
-gearBtn.TextSize = 18 -- Larger for mobile
+gearBtn.TextSize = 14 -- Original size
 gearBtn.Parent = titleBar
 
 local gearCorner = Instance.new("UICorner")
@@ -117,20 +117,20 @@ gearCorner.Parent = gearBtn
 
 -- Char Counter
 local charCounter = Instance.new("TextLabel")
-charCounter.Size = UDim2.new(0, 50, 1, 0) -- Larger for mobile
-charCounter.Position = UDim2.new(1, -100, 0, 0)
+charCounter.Size = UDim2.new(0, 40, 1, 0) -- Original size
+charCounter.Position = UDim2.new(1, -75, 0, 0)
 charCounter.BackgroundTransparency = 1
 charCounter.TextColor3 = Color3.fromRGB(150, 150, 150)
 charCounter.Text = "0/200"
 charCounter.Font = Enum.Font.Gotham
-charCounter.TextSize = 12 -- Larger for mobile
+charCounter.TextSize = 10 -- Original size
 charCounter.Parent = titleBar
 
 -- Textbox
 local textbox = Instance.new("TextBox")
 textbox.Name = "ChatInput"
-textbox.Size = UDim2.new(1, -20, 0, 90) -- Larger for mobile
-textbox.Position = UDim2.new(0, 10, 0, 40)
+textbox.Size = UDim2.new(1, -20, 0, 70) -- Original size
+textbox.Position = UDim2.new(0, 10, 0, 35)
 textbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textbox.Text = ""
@@ -151,20 +151,20 @@ textboxCorner.Parent = textbox
 
 -- Bottom Row
 local bottomRow = Instance.new("Frame")
-bottomRow.Size = UDim2.new(1, -20, 0, 40) -- Taller for mobile
-bottomRow.Position = UDim2.new(0, 10, 0, 140)
+bottomRow.Size = UDim2.new(1, -20, 0, 32) -- Original size
+bottomRow.Position = UDim2.new(0, 10, 0, 115)
 bottomRow.BackgroundTransparency = 1
 bottomRow.Parent = frame
 
 -- Send Button
 local sendButton = Instance.new("TextButton")
-sendButton.Size = UDim2.new(0, 70, 1, 0) -- Larger for mobile
+sendButton.Size = UDim2.new(0, 55, 0, 32) -- Original size
 sendButton.Position = UDim2.new(0, 0, 0, 0)
 sendButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 sendButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 sendButton.Text = "Send"
 sendButton.Font = Enum.Font.GothamBold
-sendButton.TextSize = 14 -- Larger for mobile
+sendButton.TextSize = 12 -- Original size
 sendButton.Parent = bottomRow
 
 local sendCorner = Instance.new("UICorner")
@@ -173,15 +173,15 @@ sendCorner.Parent = sendButton
 
 -- Delay Textbox
 local delayTextbox = Instance.new("TextBox")
-delayTextbox.Size = UDim2.new(0, 45, 1, 0) -- Larger for mobile
-delayTextbox.Position = UDim2.new(0, 75, 0, 0)
+delayTextbox.Size = UDim2.new(0, 35, 0, 32) -- Original size
+delayTextbox.Position = UDim2.new(0, 60, 0, 0)
 delayTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 delayTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
-delayTextbox.Text = "3" -- Default 3 seconds for mobile
-delayTextbox.PlaceholderText = "3"
+delayTextbox.Text = "1"
+delayTextbox.PlaceholderText = "1"
 delayTextbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 delayTextbox.Font = Enum.Font.Gotham
-delayTextbox.TextSize = 14 -- Larger for mobile
+delayTextbox.TextSize = 12 -- Original size
 delayTextbox.ClearTextOnFocus = false
 delayTextbox.Parent = bottomRow
 
@@ -191,24 +191,24 @@ delayCorner.Parent = delayTextbox
 
 -- Delay Label
 local delayLabel = Instance.new("TextLabel")
-delayLabel.Size = UDim2.new(0, 40, 1, 0) -- Larger for mobile
-delayLabel.Position = UDim2.new(0, 125, 0, 0)
+delayLabel.Size = UDim2.new(0, 35, 0, 32) -- Original size
+delayLabel.Position = UDim2.new(0, 98, 0, 0)
 delayLabel.BackgroundTransparency = 1
 delayLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 delayLabel.Text = "sec"
 delayLabel.Font = Enum.Font.Gotham
-delayLabel.TextSize = 12 -- Larger for mobile
+delayLabel.TextSize = 10 -- Original size
 delayLabel.Parent = bottomRow
 
 -- Spam Button
 local spamButton = Instance.new("TextButton")
-spamButton.Size = UDim2.new(0, 90, 1, 0) -- Larger for mobile
-spamButton.Position = UDim2.new(1, -90, 0, 0)
+spamButton.Size = UDim2.new(0, 75, 0, 32) -- Original size
+spamButton.Position = UDim2.new(1, -75, 0, 0)
 spamButton.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 spamButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 spamButton.Text = "SPAM: OFF"
 spamButton.Font = Enum.Font.GothamBold
-spamButton.TextSize = 12 -- Larger for mobile
+spamButton.TextSize = 10 -- Original size
 spamButton.Parent = bottomRow
 
 local spamCorner = Instance.new("UICorner")
@@ -217,13 +217,13 @@ spamCorner.Parent = spamButton
 
 -- Messages Toggle Button
 local messagesToggle = Instance.new("TextButton")
-messagesToggle.Size = UDim2.new(1, -20, 0, 30) -- Taller for mobile
-messagesToggle.Position = UDim2.new(0, 10, 0, 190)
+messagesToggle.Size = UDim2.new(1, -20, 0, 24) -- Original size
+messagesToggle.Position = UDim2.new(0, 10, 0, 152)
 messagesToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 messagesToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 messagesToggle.Text = "▼ Messages"
 messagesToggle.Font = Enum.Font.GothamBold
-messagesToggle.TextSize = 13 -- Larger for mobile
+messagesToggle.TextSize = 11 -- Original size
 messagesToggle.Parent = frame
 
 local messagesToggleCorner = Instance.new("UICorner")
@@ -232,8 +232,8 @@ messagesToggleCorner.Parent = messagesToggle
 
 -- Messages Panel (hidden by default)
 local messagesPanel = Instance.new("Frame")
-messagesPanel.Size = UDim2.new(1, -20, 0, 150) -- Larger for mobile
-messagesPanel.Position = UDim2.new(0, 10, 0, 225)
+messagesPanel.Size = UDim2.new(1, -20, 0, 120) -- Original size
+messagesPanel.Position = UDim2.new(0, 10, 0, 180)
 messagesPanel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 messagesPanel.Visible = false
 messagesPanel.Parent = frame
@@ -244,10 +244,10 @@ messagesPanelCorner.Parent = messagesPanel
 
 -- Messages ScrollingFrame
 local messagesScroll = Instance.new("ScrollingFrame")
-messagesScroll.Size = UDim2.new(1, -10, 1, -40) -- Adjusted for mobile
+messagesScroll.Size = UDim2.new(1, -10, 1, -35) -- Original size
 messagesScroll.Position = UDim2.new(0, 5, 0, 5)
 messagesScroll.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-messagesScroll.ScrollBarThickness = 6 -- Thicker for mobile
+messagesScroll.ScrollBarThickness = 4 -- Original size
 messagesScroll.Parent = messagesPanel
 
 local messagesScrollCorner = Instance.new("UICorner")
@@ -255,18 +255,18 @@ messagesScrollCorner.CornerRadius = UDim.new(0, 4)
 messagesScrollCorner.Parent = messagesScroll
 
 local messagesLayout = Instance.new("UIListLayout")
-messagesLayout.Padding = UDim.new(0, 6) -- More padding for mobile
+messagesLayout.Padding = UDim.new(0, 4) -- Original size
 messagesLayout.Parent = messagesScroll
 
 -- Add Message Button
 local addMsgButton = Instance.new("TextButton")
-addMsgButton.Size = UDim2.new(1, -10, 0, 30) -- Taller for mobile
-addMsgButton.Position = UDim2.new(0, 5, 1, -35)
+addMsgButton.Size = UDim2.new(1, -10, 0, 24) -- Original size
+addMsgButton.Position = UDim2.new(0, 5, 1, -29)
 addMsgButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 addMsgButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 addMsgButton.Text = "+ Add Current Message"
 addMsgButton.Font = Enum.Font.GothamBold
-addMsgButton.TextSize = 13 -- Larger for mobile
+addMsgButton.TextSize = 11 -- Original size
 addMsgButton.Parent = messagesPanel
 
 local addMsgCorner = Instance.new("UICorner")
@@ -276,8 +276,8 @@ addMsgCorner.Parent = addMsgButton
 -- ========== GEAR MENU FRAME (NEW) ==========
 local gearFrame = Instance.new("Frame")
 gearFrame.Name = "GearFrame"
-gearFrame.Size = UDim2.new(0, 320, 0, 450) -- Larger for mobile
-gearFrame.Position = UDim2.new(0.5, -160, 0.5, -225)
+gearFrame.Size = UDim2.new(0, 300, 0, 400) -- Original size
+gearFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
 gearFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 gearFrame.BorderSizePixel = 2
 gearFrame.BorderColor3 = Color3.fromRGB(60, 60, 60)
@@ -291,7 +291,7 @@ gearFrameCorner.Parent = gearFrame
 -- Gear Title Bar
 local gearTitleBar = Instance.new("Frame")
 gearTitleBar.Name = "TitleBar"
-gearTitleBar.Size = UDim2.new(1, 0, 0, 32) -- Taller for mobile
+gearTitleBar.Size = UDim2.new(1, 0, 0, 28) -- Original size
 gearTitleBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 gearTitleBar.BorderSizePixel = 0
 gearTitleBar.Parent = gearFrame
@@ -314,19 +314,19 @@ gearTitleLabel.BackgroundTransparency = 1
 gearTitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 gearTitleLabel.Text = "⚙ Backup Spam Systems"
 gearTitleLabel.Font = Enum.Font.GothamBold
-gearTitleLabel.TextSize = 16 -- Larger for mobile
+gearTitleLabel.TextSize = 13 -- Original size
 gearTitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 gearTitleLabel.Parent = gearTitleBar
 
--- Close Button - Larger for mobile
+-- Close Button
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 40, 0, 28) -- Larger for mobile
-closeBtn.Position = UDim2.new(1, -45, 0.5, -14)
+closeBtn.Size = UDim2.new(0, 28, 0, 22) -- Original size
+closeBtn.Position = UDim2.new(1, -32, 0.5, -11)
 closeBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeBtn.Text = "X"
 closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 18 -- Larger for mobile
+closeBtn.TextSize = 14 -- Original size
 closeBtn.Parent = gearTitleBar
 
 local closeCorner = Instance.new("UICorner")
@@ -335,8 +335,8 @@ closeCorner.Parent = closeBtn
 
 -- Tab Bar
 local tabBar = Instance.new("Frame")
-tabBar.Size = UDim2.new(1, -20, 0, 32) -- Taller for mobile
-tabBar.Position = UDim2.new(0, 10, 0, 32)
+tabBar.Size = UDim2.new(1, -20, 0, 28) -- Original size
+tabBar.Position = UDim2.new(0, 10, 0, 28)
 tabBar.BackgroundTransparency = 1
 tabBar.Parent = gearFrame
 
@@ -347,7 +347,7 @@ backup1TabBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 backup1TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup1TabBtn.Text = "Backup 1"
 backup1TabBtn.Font = Enum.Font.GothamBold
-backup1TabBtn.TextSize = 14 -- Larger for mobile
+backup1TabBtn.TextSize = 12 -- Original size
 backup1TabBtn.Parent = tabBar
 local backup1TabCorner = Instance.new("UICorner")
 backup1TabCorner.CornerRadius = UDim.new(0, 6)
@@ -360,7 +360,7 @@ backup2TabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 backup2TabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 backup2TabBtn.Text = "Backup 2"
 backup2TabBtn.Font = Enum.Font.GothamBold
-backup2TabBtn.TextSize = 14 -- Larger for mobile
+backup2TabBtn.TextSize = 12 -- Original size
 backup2TabBtn.Parent = tabBar
 local backup2TabCorner = Instance.new("UICorner")
 backup2TabCorner.CornerRadius = UDim.new(0, 6)
@@ -368,8 +368,8 @@ backup2TabCorner.Parent = backup2TabBtn
 
 -- ========== BACKUP 1 CONTENT (IDENTICAL TO ORIGINAL) ==========
 local backup1Content = Instance.new("Frame")
-backup1Content.Size = UDim2.new(1, -20, 1, -72)
-backup1Content.Position = UDim2.new(0, 10, 0, 64)
+backup1Content.Size = UDim2.new(1, -20, 1, -66)
+backup1Content.Position = UDim2.new(0, 10, 0, 56)
 backup1Content.BackgroundTransparency = 1
 backup1Content.Visible = true
 backup1Content.Parent = gearFrame
@@ -377,7 +377,7 @@ backup1Content.Parent = gearFrame
 -- Backup 1 Textbox
 local backup1Textbox = Instance.new("TextBox")
 backup1Textbox.Name = "Backup1Input"
-backup1Textbox.Size = UDim2.new(1, 0, 0, 90) -- Larger for mobile
+backup1Textbox.Size = UDim2.new(1, 0, 0, 70) -- Original size
 backup1Textbox.Position = UDim2.new(0, 0, 0, 5)
 backup1Textbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 backup1Textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -399,31 +399,31 @@ backup1TextboxCorner.Parent = backup1Textbox
 
 -- Backup 1 Char Counter
 local backup1CharCounter = Instance.new("TextLabel")
-backup1CharCounter.Size = UDim2.new(0, 50, 0, 20) -- Larger for mobile
-backup1CharCounter.Position = UDim2.new(1, -55, 0, 5)
+backup1CharCounter.Size = UDim2.new(0, 40, 0, 20) -- Original size
+backup1CharCounter.Position = UDim2.new(1, -45, 0, 5)
 backup1CharCounter.BackgroundTransparency = 1
 backup1CharCounter.TextColor3 = Color3.fromRGB(150, 150, 150)
 backup1CharCounter.Text = "0/200"
 backup1CharCounter.Font = Enum.Font.Gotham
-backup1CharCounter.TextSize = 12 -- Larger for mobile
+backup1CharCounter.TextSize = 10 -- Original size
 backup1CharCounter.Parent = backup1Content
 
 -- Backup 1 Bottom Row
 local backup1BottomRow = Instance.new("Frame")
-backup1BottomRow.Size = UDim2.new(1, 0, 0, 40) -- Taller for mobile
-backup1BottomRow.Position = UDim2.new(0, 0, 0, 105)
+backup1BottomRow.Size = UDim2.new(1, 0, 0, 32) -- Original size
+backup1BottomRow.Position = UDim2.new(0, 0, 0, 85)
 backup1BottomRow.BackgroundTransparency = 1
 backup1BottomRow.Parent = backup1Content
 
 -- Backup 1 Send Button
 local backup1SendButton = Instance.new("TextButton")
-backup1SendButton.Size = UDim2.new(0, 70, 1, 0) -- Larger for mobile
+backup1SendButton.Size = UDim2.new(0, 55, 1, 0) -- Original size
 backup1SendButton.Position = UDim2.new(0, 0, 0, 0)
 backup1SendButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 backup1SendButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup1SendButton.Text = "Send"
 backup1SendButton.Font = Enum.Font.GothamBold
-backup1SendButton.TextSize = 14 -- Larger for mobile
+backup1SendButton.TextSize = 12 -- Original size
 backup1SendButton.Parent = backup1BottomRow
 
 local backup1SendCorner = Instance.new("UICorner")
@@ -432,15 +432,15 @@ backup1SendCorner.Parent = backup1SendButton
 
 -- Backup 1 Delay Textbox
 local backup1DelayTextbox = Instance.new("TextBox")
-backup1DelayTextbox.Size = UDim2.new(0, 45, 1, 0) -- Larger for mobile
-backup1DelayTextbox.Position = UDim2.new(0, 75, 0, 0)
+backup1DelayTextbox.Size = UDim2.new(0, 35, 1, 0) -- Original size
+backup1DelayTextbox.Position = UDim2.new(0, 60, 0, 0)
 backup1DelayTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 backup1DelayTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
-backup1DelayTextbox.Text = "3" -- Default 3 seconds for mobile
-backup1DelayTextbox.PlaceholderText = "3"
+backup1DelayTextbox.Text = "1"
+backup1DelayTextbox.PlaceholderText = "1"
 backup1DelayTextbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 backup1DelayTextbox.Font = Enum.Font.Gotham
-backup1DelayTextbox.TextSize = 14 -- Larger for mobile
+backup1DelayTextbox.TextSize = 12 -- Original size
 backup1DelayTextbox.ClearTextOnFocus = false
 backup1DelayTextbox.Parent = backup1BottomRow
 
@@ -450,24 +450,24 @@ backup1DelayCorner.Parent = backup1DelayTextbox
 
 -- Backup 1 Delay Label
 local backup1DelayLabel = Instance.new("TextLabel")
-backup1DelayLabel.Size = UDim2.new(0, 40, 1, 0) -- Larger for mobile
-backup1DelayLabel.Position = UDim2.new(0, 125, 0, 0)
+backup1DelayLabel.Size = UDim2.new(0, 35, 1, 0) -- Original size
+backup1DelayLabel.Position = UDim2.new(0, 98, 0, 0)
 backup1DelayLabel.BackgroundTransparency = 1
 backup1DelayLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 backup1DelayLabel.Text = "sec"
 backup1DelayLabel.Font = Enum.Font.Gotham
-backup1DelayLabel.TextSize = 12 -- Larger for mobile
+backup1DelayLabel.TextSize = 10 -- Original size
 backup1DelayLabel.Parent = backup1BottomRow
 
 -- Backup 1 Spam Button
 local backup1SpamButton = Instance.new("TextButton")
-backup1SpamButton.Size = UDim2.new(0, 90, 1, 0) -- Larger for mobile
-backup1SpamButton.Position = UDim2.new(1, -90, 0, 0)
+backup1SpamButton.Size = UDim2.new(0, 75, 1, 0) -- Original size
+backup1SpamButton.Position = UDim2.new(1, -75, 0, 0)
 backup1SpamButton.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 backup1SpamButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup1SpamButton.Text = "SPAM: OFF"
 backup1SpamButton.Font = Enum.Font.GothamBold
-backup1SpamButton.TextSize = 12 -- Larger for mobile
+backup1SpamButton.TextSize = 10 -- Original size
 backup1SpamButton.Parent = backup1BottomRow
 
 local backup1SpamCorner = Instance.new("UICorner")
@@ -476,13 +476,13 @@ backup1SpamCorner.Parent = backup1SpamButton
 
 -- Backup 1 Messages Toggle Button
 local backup1MessagesToggle = Instance.new("TextButton")
-backup1MessagesToggle.Size = UDim2.new(1, 0, 0, 30) -- Taller for mobile
-backup1MessagesToggle.Position = UDim2.new(0, 0, 0, 150)
+backup1MessagesToggle.Size = UDim2.new(1, 0, 0, 24) -- Original size
+backup1MessagesToggle.Position = UDim2.new(0, 0, 0, 122)
 backup1MessagesToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 backup1MessagesToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup1MessagesToggle.Text = "▼ Messages"
 backup1MessagesToggle.Font = Enum.Font.GothamBold
-backup1MessagesToggle.TextSize = 13 -- Larger for mobile
+backup1MessagesToggle.TextSize = 11 -- Original size
 backup1MessagesToggle.Parent = backup1Content
 
 local backup1MessagesToggleCorner = Instance.new("UICorner")
@@ -491,8 +491,8 @@ backup1MessagesToggleCorner.Parent = backup1MessagesToggle
 
 -- Backup 1 Messages Panel (hidden by default)
 local backup1MessagesPanel = Instance.new("Frame")
-backup1MessagesPanel.Size = UDim2.new(1, 0, 0, 150) -- Larger for mobile
-backup1MessagesPanel.Position = UDim2.new(0, 0, 0, 185)
+backup1MessagesPanel.Size = UDim2.new(1, 0, 0, 120) -- Original size
+backup1MessagesPanel.Position = UDim2.new(0, 0, 0, 150)
 backup1MessagesPanel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 backup1MessagesPanel.Visible = false
 backup1MessagesPanel.Parent = backup1Content
@@ -503,10 +503,10 @@ backup1MessagesPanelCorner.Parent = backup1MessagesPanel
 
 -- Backup 1 Messages ScrollingFrame
 local backup1MessagesScroll = Instance.new("ScrollingFrame")
-backup1MessagesScroll.Size = UDim2.new(1, -10, 1, -40) -- Adjusted for mobile
+backup1MessagesScroll.Size = UDim2.new(1, -10, 1, -35) -- Original size
 backup1MessagesScroll.Position = UDim2.new(0, 5, 0, 5)
 backup1MessagesScroll.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-backup1MessagesScroll.ScrollBarThickness = 6 -- Thicker for mobile
+backup1MessagesScroll.ScrollBarThickness = 4 -- Original size
 backup1MessagesScroll.Parent = backup1MessagesPanel
 
 local backup1MessagesScrollCorner = Instance.new("UICorner")
@@ -514,18 +514,18 @@ backup1MessagesScrollCorner.CornerRadius = UDim.new(0, 4)
 backup1MessagesScrollCorner.Parent = backup1MessagesScroll
 
 local backup1MessagesLayout = Instance.new("UIListLayout")
-backup1MessagesLayout.Padding = UDim.new(0, 6) -- More padding for mobile
+backup1MessagesLayout.Padding = UDim.new(0, 4) -- Original size
 backup1MessagesLayout.Parent = backup1MessagesScroll
 
 -- Backup 1 Add Message Button
 local backup1AddMsgButton = Instance.new("TextButton")
-backup1AddMsgButton.Size = UDim2.new(1, -10, 0, 30) -- Taller for mobile
-backup1AddMsgButton.Position = UDim2.new(0, 5, 1, -35)
+backup1AddMsgButton.Size = UDim2.new(1, -10, 0, 24) -- Original size
+backup1AddMsgButton.Position = UDim2.new(0, 5, 1, -29)
 backup1AddMsgButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 backup1AddMsgButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup1AddMsgButton.Text = "+ Add Current Message"
 backup1AddMsgButton.Font = Enum.Font.GothamBold
-backup1AddMsgButton.TextSize = 13 -- Larger for mobile
+backup1AddMsgButton.TextSize = 11 -- Original size
 backup1AddMsgButton.Parent = backup1MessagesPanel
 
 local backup1AddMsgCorner = Instance.new("UICorner")
@@ -534,8 +534,8 @@ backup1AddMsgCorner.Parent = backup1AddMsgButton
 
 -- ========== BACKUP 2 CONTENT (IDENTICAL TO ORIGINAL) ==========
 local backup2Content = Instance.new("Frame")
-backup2Content.Size = UDim2.new(1, -20, 1, -72)
-backup2Content.Position = UDim2.new(0, 10, 0, 64)
+backup2Content.Size = UDim2.new(1, -20, 1, -66)
+backup2Content.Position = UDim2.new(0, 10, 0, 56)
 backup2Content.BackgroundTransparency = 1
 backup2Content.Visible = false
 backup2Content.Parent = gearFrame
@@ -543,7 +543,7 @@ backup2Content.Parent = gearFrame
 -- Backup 2 Textbox
 local backup2Textbox = Instance.new("TextBox")
 backup2Textbox.Name = "Backup2Input"
-backup2Textbox.Size = UDim2.new(1, 0, 0, 90) -- Larger for mobile
+backup2Textbox.Size = UDim2.new(1, 0, 0, 70) -- Original size
 backup2Textbox.Position = UDim2.new(0, 0, 0, 5)
 backup2Textbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 backup2Textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -565,31 +565,31 @@ backup2TextboxCorner.Parent = backup2Textbox
 
 -- Backup 2 Char Counter
 local backup2CharCounter = Instance.new("TextLabel")
-backup2CharCounter.Size = UDim2.new(0, 50, 0, 20) -- Larger for mobile
-backup2CharCounter.Position = UDim2.new(1, -55, 0, 5)
+backup2CharCounter.Size = UDim2.new(0, 40, 0, 20) -- Original size
+backup2CharCounter.Position = UDim2.new(1, -45, 0, 5)
 backup2CharCounter.BackgroundTransparency = 1
 backup2CharCounter.TextColor3 = Color3.fromRGB(150, 150, 150)
 backup2CharCounter.Text = "0/200"
 backup2CharCounter.Font = Enum.Font.Gotham
-backup2CharCounter.TextSize = 12 -- Larger for mobile
+backup2CharCounter.TextSize = 10 -- Original size
 backup2CharCounter.Parent = backup2Content
 
 -- Backup 2 Bottom Row
 local backup2BottomRow = Instance.new("Frame")
-backup2BottomRow.Size = UDim2.new(1, 0, 0, 40) -- Taller for mobile
-backup2BottomRow.Position = UDim2.new(0, 0, 0, 105)
+backup2BottomRow.Size = UDim2.new(1, 0, 0, 32) -- Original size
+backup2BottomRow.Position = UDim2.new(0, 0, 0, 85)
 backup2BottomRow.BackgroundTransparency = 1
 backup2BottomRow.Parent = backup2Content
 
 -- Backup 2 Send Button
 local backup2SendButton = Instance.new("TextButton")
-backup2SendButton.Size = UDim2.new(0, 70, 1, 0) -- Larger for mobile
+backup2SendButton.Size = UDim2.new(0, 55, 1, 0) -- Original size
 backup2SendButton.Position = UDim2.new(0, 0, 0, 0)
 backup2SendButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 backup2SendButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup2SendButton.Text = "Send"
 backup2SendButton.Font = Enum.Font.GothamBold
-backup2SendButton.TextSize = 14 -- Larger for mobile
+backup2SendButton.TextSize = 12 -- Original size
 backup2SendButton.Parent = backup2BottomRow
 
 local backup2SendCorner = Instance.new("UICorner")
@@ -598,15 +598,15 @@ backup2SendCorner.Parent = backup2SendButton
 
 -- Backup 2 Delay Textbox
 local backup2DelayTextbox = Instance.new("TextBox")
-backup2DelayTextbox.Size = UDim2.new(0, 45, 1, 0) -- Larger for mobile
-backup2DelayTextbox.Position = UDim2.new(0, 75, 0, 0)
+backup2DelayTextbox.Size = UDim2.new(0, 35, 1, 0) -- Original size
+backup2DelayTextbox.Position = UDim2.new(0, 60, 0, 0)
 backup2DelayTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 backup2DelayTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
-backup2DelayTextbox.Text = "3" -- Default 3 seconds for mobile
-backup2DelayTextbox.PlaceholderText = "3"
+backup2DelayTextbox.Text = "1"
+backup2DelayTextbox.PlaceholderText = "1"
 backup2DelayTextbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 backup2DelayTextbox.Font = Enum.Font.Gotham
-backup2DelayTextbox.TextSize = 14 -- Larger for mobile
+backup2DelayTextbox.TextSize = 12 -- Original size
 backup2DelayTextbox.ClearTextOnFocus = false
 backup2DelayTextbox.Parent = backup2BottomRow
 
@@ -616,24 +616,24 @@ backup2DelayCorner.Parent = backup2DelayTextbox
 
 -- Backup 2 Delay Label
 local backup2DelayLabel = Instance.new("TextLabel")
-backup2DelayLabel.Size = UDim2.new(0, 40, 1, 0) -- Larger for mobile
-backup2DelayLabel.Position = UDim2.new(0, 125, 0, 0)
+backup2DelayLabel.Size = UDim2.new(0, 35, 1, 0) -- Original size
+backup2DelayLabel.Position = UDim2.new(0, 98, 0, 0)
 backup2DelayLabel.BackgroundTransparency = 1
 backup2DelayLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 backup2DelayLabel.Text = "sec"
 backup2DelayLabel.Font = Enum.Font.Gotham
-backup2DelayLabel.TextSize = 12 -- Larger for mobile
+backup2DelayLabel.TextSize = 10 -- Original size
 backup2DelayLabel.Parent = backup2BottomRow
 
 -- Backup 2 Spam Button
 local backup2SpamButton = Instance.new("TextButton")
-backup2SpamButton.Size = UDim2.new(0, 90, 1, 0) -- Larger for mobile
-backup2SpamButton.Position = UDim2.new(1, -90, 0, 0)
+backup2SpamButton.Size = UDim2.new(0, 75, 1, 0) -- Original size
+backup2SpamButton.Position = UDim2.new(1, -75, 0, 0)
 backup2SpamButton.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 backup2SpamButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup2SpamButton.Text = "SPAM: OFF"
 backup2SpamButton.Font = Enum.Font.GothamBold
-backup2SpamButton.TextSize = 12 -- Larger for mobile
+backup2SpamButton.TextSize = 10 -- Original size
 backup2SpamButton.Parent = backup2BottomRow
 
 local backup2SpamCorner = Instance.new("UICorner")
@@ -642,13 +642,13 @@ backup2SpamCorner.Parent = backup2SpamButton
 
 -- Backup 2 Messages Toggle Button
 local backup2MessagesToggle = Instance.new("TextButton")
-backup2MessagesToggle.Size = UDim2.new(1, 0, 0, 30) -- Taller for mobile
-backup2MessagesToggle.Position = UDim2.new(0, 0, 0, 150)
+backup2MessagesToggle.Size = UDim2.new(1, 0, 0, 24) -- Original size
+backup2MessagesToggle.Position = UDim2.new(0, 0, 0, 122)
 backup2MessagesToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 backup2MessagesToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup2MessagesToggle.Text = "▼ Messages"
 backup2MessagesToggle.Font = Enum.Font.GothamBold
-backup2MessagesToggle.TextSize = 13 -- Larger for mobile
+backup2MessagesToggle.TextSize = 11 -- Original size
 backup2MessagesToggle.Parent = backup2Content
 
 local backup2MessagesToggleCorner = Instance.new("UICorner")
@@ -657,8 +657,8 @@ backup2MessagesToggleCorner.Parent = backup2MessagesToggle
 
 -- Backup 2 Messages Panel (hidden by default)
 local backup2MessagesPanel = Instance.new("Frame")
-backup2MessagesPanel.Size = UDim2.new(1, 0, 0, 150) -- Larger for mobile
-backup2MessagesPanel.Position = UDim2.new(0, 0, 0, 185)
+backup2MessagesPanel.Size = UDim2.new(1, 0, 0, 120) -- Original size
+backup2MessagesPanel.Position = UDim2.new(0, 0, 0, 150)
 backup2MessagesPanel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 backup2MessagesPanel.Visible = false
 backup2MessagesPanel.Parent = backup2Content
@@ -669,10 +669,10 @@ backup2MessagesPanelCorner.Parent = backup2MessagesPanel
 
 -- Backup 2 Messages ScrollingFrame
 local backup2MessagesScroll = Instance.new("ScrollingFrame")
-backup2MessagesScroll.Size = UDim2.new(1, -10, 1, -40) -- Adjusted for mobile
+backup2MessagesScroll.Size = UDim2.new(1, -10, 1, -35) -- Original size
 backup2MessagesScroll.Position = UDim2.new(0, 5, 0, 5)
 backup2MessagesScroll.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-backup2MessagesScroll.ScrollBarThickness = 6 -- Thicker for mobile
+backup2MessagesScroll.ScrollBarThickness = 4 -- Original size
 backup2MessagesScroll.Parent = backup2MessagesPanel
 
 local backup2MessagesScrollCorner = Instance.new("UICorner")
@@ -680,18 +680,18 @@ backup2MessagesScrollCorner.CornerRadius = UDim.new(0, 4)
 backup2MessagesScrollCorner.Parent = backup2MessagesScroll
 
 local backup2MessagesLayout = Instance.new("UIListLayout")
-backup2MessagesLayout.Padding = UDim.new(0, 6) -- More padding for mobile
+backup2MessagesLayout.Padding = UDim.new(0, 4) -- Original size
 backup2MessagesLayout.Parent = backup2MessagesScroll
 
 -- Backup 2 Add Message Button
 local backup2AddMsgButton = Instance.new("TextButton")
-backup2AddMsgButton.Size = UDim2.new(1, -10, 0, 30) -- Taller for mobile
-backup2AddMsgButton.Position = UDim2.new(0, 5, 1, -35)
+backup2AddMsgButton.Size = UDim2.new(1, -10, 0, 24) -- Original size
+backup2AddMsgButton.Position = UDim2.new(0, 5, 1, -29)
 backup2AddMsgButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 backup2AddMsgButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup2AddMsgButton.Text = "+ Add Current Message"
 backup2AddMsgButton.Font = Enum.Font.GothamBold
-backup2AddMsgButton.TextSize = 13 -- Larger for mobile
+backup2AddMsgButton.TextSize = 11 -- Original size
 backup2AddMsgButton.Parent = backup2MessagesPanel
 
 local backup2AddMsgCorner = Instance.new("UICorner")
@@ -828,7 +828,7 @@ local function updateMessagesUI()
     -- Add messages
     for i, msg in ipairs(premadeMessages) do
         local msgFrame = Instance.new("Frame")
-        msgFrame.Size = UDim2.new(1, 0, 0, 32) -- Taller for mobile
+        msgFrame.Size = UDim2.new(1, 0, 0, 28) -- Original size
         msgFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
         msgFrame.Parent = messagesScroll
         
@@ -837,25 +837,25 @@ local function updateMessagesUI()
         msgCorner.Parent = msgFrame
         
         local msgLabel = Instance.new("TextLabel")
-        msgLabel.Size = UDim2.new(1, -40, 1, 0) -- Adjusted for mobile
+        msgLabel.Size = UDim2.new(1, -35, 1, 0) -- Original size
         msgLabel.Position = UDim2.new(0, 5, 0, 0)
         msgLabel.BackgroundTransparency = 1
         msgLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
         msgLabel.Text = msg
         msgLabel.Font = Enum.Font.Gotham
-        msgLabel.TextSize = 13 -- Larger for mobile
+        msgLabel.TextSize = 12 -- Original size
         msgLabel.TextXAlignment = Enum.TextXAlignment.Left
         msgLabel.TextTruncate = Enum.TextTruncate.AtEnd
         msgLabel.Parent = msgFrame
         
         local deleteBtn = Instance.new("TextButton")
-        deleteBtn.Size = UDim2.new(0, 30, 0, 30) -- Larger for mobile
-        deleteBtn.Position = UDim2.new(1, -32, 0.5, -15)
+        deleteBtn.Size = UDim2.new(0, 24, 0, 24) -- Original size
+        deleteBtn.Position = UDim2.new(1, -26, 0.5, -12)
         deleteBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
         deleteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         deleteBtn.Text = "X"
         deleteBtn.Font = Enum.Font.GothamBold
-        deleteBtn.TextSize = 14 -- Larger for mobile
+        deleteBtn.TextSize = 12 -- Original size
         deleteBtn.Parent = msgFrame
         
         local deleteCorner = Instance.new("UICorner")
@@ -869,7 +869,7 @@ local function updateMessagesUI()
     end
     
     -- Update canvas size
-    messagesScroll.CanvasSize = UDim2.new(0, 0, 0, #premadeMessages * 38) -- Adjusted for mobile
+    messagesScroll.CanvasSize = UDim2.new(0, 0, 0, #premadeMessages * 32) -- Original size
 end
 
 -- Toggle messages panel
@@ -879,10 +879,10 @@ messagesToggle.MouseButton1Click:Connect(function()
     
     if messagesExpanded then
         messagesToggle.Text = "▲ Messages"
-        frame.Size = UDim2.new(0, 280, 0, 420) -- Adjusted for mobile
+        frame.Size = UDim2.new(0, 200, 0, 310) -- Original size
     else
         messagesToggle.Text = "▼ Messages"
-        frame.Size = UDim2.new(0, 280, 0, 250)
+        frame.Size = UDim2.new(0, 200, 0, 180)
     end
     
     updateMessagesUI()
@@ -922,7 +922,7 @@ local function toggleSpam()
     spamEnabled = not spamEnabled
     
     if spamEnabled then
-        spamDelay = tonumber(delayTextbox.Text) or 3
+        spamDelay = tonumber(delayTextbox.Text) or 1
         if spamDelay < 0.1 then
             spamDelay = 0.1
         end
@@ -1034,7 +1034,7 @@ local function updateBackup1MessagesUI()
     -- Add messages
     for i, msg in ipairs(backup1Messages) do
         local msgFrame = Instance.new("Frame")
-        msgFrame.Size = UDim2.new(1, 0, 0, 32) -- Taller for mobile
+        msgFrame.Size = UDim2.new(1, 0, 0, 28) -- Original size
         msgFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
         msgFrame.Parent = backup1MessagesScroll
         
@@ -1043,25 +1043,25 @@ local function updateBackup1MessagesUI()
         msgCorner.Parent = msgFrame
         
         local msgLabel = Instance.new("TextLabel")
-        msgLabel.Size = UDim2.new(1, -40, 1, 0) -- Adjusted for mobile
+        msgLabel.Size = UDim2.new(1, -35, 1, 0) -- Original size
         msgLabel.Position = UDim2.new(0, 5, 0, 0)
         msgLabel.BackgroundTransparency = 1
         msgLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
         msgLabel.Text = msg
         msgLabel.Font = Enum.Font.Gotham
-        msgLabel.TextSize = 13 -- Larger for mobile
+        msgLabel.TextSize = 12 -- Original size
         msgLabel.TextXAlignment = Enum.TextXAlignment.Left
         msgLabel.TextTruncate = Enum.TextTruncate.AtEnd
         msgLabel.Parent = msgFrame
         
         local deleteBtn = Instance.new("TextButton")
-        deleteBtn.Size = UDim2.new(0, 30, 0, 30) -- Larger for mobile
-        deleteBtn.Position = UDim2.new(1, -32, 0.5, -15)
+        deleteBtn.Size = UDim2.new(0, 24, 0, 24) -- Original size
+        deleteBtn.Position = UDim2.new(1, -26, 0.5, -12)
         deleteBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
         deleteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         deleteBtn.Text = "X"
         deleteBtn.Font = Enum.Font.GothamBold
-        deleteBtn.TextSize = 14 -- Larger for mobile
+        deleteBtn.TextSize = 12 -- Original size
         deleteBtn.Parent = msgFrame
         
         local deleteCorner = Instance.new("UICorner")
@@ -1075,7 +1075,7 @@ local function updateBackup1MessagesUI()
     end
     
     -- Update canvas size
-    backup1MessagesScroll.CanvasSize = UDim2.new(0, 0, 0, #backup1Messages * 38) -- Adjusted for mobile
+    backup1MessagesScroll.CanvasSize = UDim2.new(0, 0, 0, #backup1Messages * 32) -- Original size
 end
 
 -- Toggle backup 1 messages panel
@@ -1126,7 +1126,7 @@ local function toggleBackup1Spam()
     backup1Enabled = not backup1Enabled
     
     if backup1Enabled then
-        backup1Delay = tonumber(backup1DelayTextbox.Text) or 3
+        backup1Delay = tonumber(backup1DelayTextbox.Text) or 1
         if backup1Delay < 0.1 then
             backup1Delay = 0.1
         end
@@ -1238,7 +1238,7 @@ local function updateBackup2MessagesUI()
     -- Add messages
     for i, msg in ipairs(backup2Messages) do
         local msgFrame = Instance.new("Frame")
-        msgFrame.Size = UDim2.new(1, 0, 0, 32) -- Taller for mobile
+        msgFrame.Size = UDim2.new(1, 0, 0, 28) -- Original size
         msgFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
         msgFrame.Parent = backup2MessagesScroll
         
@@ -1247,25 +1247,25 @@ local function updateBackup2MessagesUI()
         msgCorner.Parent = msgFrame
         
         local msgLabel = Instance.new("TextLabel")
-        msgLabel.Size = UDim2.new(1, -40, 1, 0) -- Adjusted for mobile
+        msgLabel.Size = UDim2.new(1, -35, 1, 0) -- Original size
         msgLabel.Position = UDim2.new(0, 5, 0, 0)
         msgLabel.BackgroundTransparency = 1
         msgLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
         msgLabel.Text = msg
         msgLabel.Font = Enum.Font.Gotham
-        msgLabel.TextSize = 13 -- Larger for mobile
+        msgLabel.TextSize = 12 -- Original size
         msgLabel.TextXAlignment = Enum.TextXAlignment.Left
         msgLabel.TextTruncate = Enum.TextTruncate.AtEnd
         msgLabel.Parent = msgFrame
         
         local deleteBtn = Instance.new("TextButton")
-        deleteBtn.Size = UDim2.new(0, 30, 0, 30) -- Larger for mobile
-        deleteBtn.Position = UDim2.new(1, -32, 0.5, -15)
+        deleteBtn.Size = UDim2.new(0, 24, 0, 24) -- Original size
+        deleteBtn.Position = UDim2.new(1, -26, 0.5, -12)
         deleteBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
         deleteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         deleteBtn.Text = "X"
         deleteBtn.Font = Enum.Font.GothamBold
-        deleteBtn.TextSize = 14 -- Larger for mobile
+        deleteBtn.TextSize = 12 -- Original size
         deleteBtn.Parent = msgFrame
         
         local deleteCorner = Instance.new("UICorner")
@@ -1279,8 +1279,8 @@ local function updateBackup2MessagesUI()
     end
     
     -- Update canvas size
-    backup2MessagesScroll.CanvasSize = UDim2.new(0, 0, 0, #backup2Messages * 38) -- Adjusted for mobile
-end
+    backup2MessagesScroll.CanvasSize = UDim2.new(0, 0, 0, #backup2Messages * 32) -- Original size
+end)
 
 -- Toggle backup 2 messages panel
 backup2MessagesToggle.MouseButton1Click:Connect(function()
@@ -1330,7 +1330,7 @@ local function toggleBackup2Spam()
     backup2Enabled = not backup2Enabled
     
     if backup2Enabled then
-        backup2Delay = tonumber(backup2DelayTextbox.Text) or 3
+        backup2Delay = tonumber(backup2DelayTextbox.Text) or 1
         if backup2Delay < 0.1 then
             backup2Delay = 0.1
         end
@@ -1417,4 +1417,4 @@ updateMessagesUI()
 updateBackup1MessagesUI()
 updateBackup2MessagesUI()
 
-print("✅ Custom Chat GUI with Gear Menu Backup Tabs (Mobile) Loaded")
+print("✅ Custom Chat GUI with Gear Menu Backup Tabs Loaded")
