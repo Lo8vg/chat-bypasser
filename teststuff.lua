@@ -1,6 +1,5 @@
 -- Custom Chat GUI with Gear Menu Backup Tabs
 -- Original GUI unchanged + gear icon with two backup tabs
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
