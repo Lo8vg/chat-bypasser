@@ -8,21 +8,33 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 local MAX_CHARS = 200
 local spamEnabled = false
-local spamDelay = 1
+local spamDelay = 3
 local messagesExpanded = false
 local spamIndex = 1
 local backup1Enabled = false
-local backup1Delay = 1
+local backup1Delay = 3
 local backup1Index = 1
 local backup1Expanded = false
 local backup2Enabled = false
-local backup2Delay = 1
+local backup2Delay = 3
 local backup2Index = 1
 local backup2Expanded = false
 
-local premadeMessages = {"Hello", "GG", "What's up", "Bye"}
-local backup1Messages = {"Backup 1 - Message 1", "Backup 1 - Message 2", "Backup 1 - Message 3", "Backup 1 - Message 4"}
-local backup2Messages = {"Backup 2 - Message 1", "Backup 2 - Message 2", "Backup 2 - Message 3", "Backup 2 - Message 4"}
+local premadeMessages = {
+    "LOOOOOOOOOOOOL PEDRO IS THE GREATEST BULLY TO EVER EXIST AHAHAHAHAHAHAHAHAHAH EZZZZZZZZZZZZZZZZ IM SUPERIOR TO EVERYONE KNEEL DOWN TO ME HAHA KEEP ENTERTAINING ME IM NEVER STOPPING LOLOO IM #1 AHAHAHA",
+    "LOOOOOOOOOOOOOOOOOOOOLOLOOOOOLOOOOOOOO PEDRO IS UNDEFEATED AHAHAHAHAHAHAHAHA EZZZZZZZZZZZZZZZZ EVERYONE SERVES ME LOOOOOOOOOOOOL I DONT CARE ABOUT WHAT ANY OF MY FANS HAVE TO SAY I REMAIN THE BEST",
+    "BAHABHABAHAHBHABHABAHBAHA EZZZZZZZZZZZZZZZZZZZZZZZZZZ PEDRO IS UNSTOPPABLE AHAHAHAHAHAHAHAHAHAA LOOOOOOOOOOOOOOOOOOOOOOOOOOOL ALL OF U KNEEL DOWN HAHAHAHAHAHA IM THE BEST EVER NO ONE COMES CLOSE TO ME"
+}
+
+local backup1Messages = {
+    "HAHHAHHAHAHHAHAHHAHAHAHAHA BAHAHBAHABAHAHAHAHAHAHAHAHAHAHAHAHAHAHA LOLOLOLOOOLOLOOLOOLOOOOLOLOLOLOLOL BAHAHHAHHAHHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAAHAHAHAHAHAHAHAH WHY AM I THIS GOOD AND PERFECT",
+    "HAHHAHHAHAHHAHAHHAHAHAHAHA BAHABAHABAHABAHAHAHAHAHAHHAHAHAHAHAHAHAHAHAHA LOLOLOLOOOLOLOOOOLOOOOOOOLOLOLOLOLOLOL BAHAHHAHHAHHAHAHAHAHAHAHAHAAHAHAHAHHAHAHAHAHAHAHHAHAHAHAHAHAHAAHAHHAAH PEDRO IS SUPERIOR",
+    "BAHABHABAAHAHAHAHAHAHAHHAHAHAHAHAHAHAHABAHBAHABA AGAGAHAHAHHAHAHAHAGAHAGHAGAHAAGHAHAHAHAHA LOLOLOLOLOOOOLOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOLOLOLOLO BAHAHAHAHAHAAAHAHAHAHAHAHA PEDRO IS THE BEST EVER"
+}
+
+local backup2Messages = {
+    "BAHABHABAHABAHBAHAHAHAHAHAHAHA LOOOOOOOOOOOOOOOOOOOOOOOL AGHAGAHAGHAGAHAGHAHAHAHAHAHAHAHAHAHA VHABHABAHABAHBAHABAHABHABAHABHAHAHA AHAHHAHAHAHAHAHAHA LOLOLOLOLOLOLOLOLOLOLOLOLOLOL ITS DYINGG LOLOLOZOLZ"
+}
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "CustomChatGui"
@@ -59,16 +71,17 @@ titleFix.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 titleFix.BorderSizePixel = 0
 titleFix.Parent = titleBar
 
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, -10, 1, 0)
-titleLabel.Position = UDim2.new(0, 10, 0, 0)
-titleLabel.BackgroundTransparency = 1
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.Text = "💬 Chat"
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextSize = 13
-titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-titleLabel.Parent = titleBar
+-- Character Counter (replaced title)
+local charCounter = Instance.new("TextLabel")
+charCounter.Size = UDim2.new(1, -10, 1, 0)
+charCounter.Position = UDim2.new(0, 10, 0, 0)
+charCounter.BackgroundTransparency = 1
+charCounter.TextColor3 = Color3.fromRGB(255, 255, 255)
+charCounter.Text = "0/200"
+charCounter.Font = Enum.Font.GothamBold
+charCounter.TextSize = 13
+charCounter.TextXAlignment = Enum.TextXAlignment.Left
+charCounter.Parent = titleBar
 
 -- Gear Button
 local gearBtn = Instance.new("TextButton")
@@ -83,17 +96,6 @@ gearBtn.Parent = titleBar
 local gearCorner = Instance.new("UICorner")
 gearCorner.CornerRadius = UDim.new(0, 6)
 gearCorner.Parent = gearBtn
-
--- Char Counter
-local charCounter = Instance.new("TextLabel")
-charCounter.Size = UDim2.new(0, 40, 1, 0)
-charCounter.Position = UDim2.new(1, -75, 0, 0)
-charCounter.BackgroundTransparency = 1
-charCounter.TextColor3 = Color3.fromRGB(150, 150, 150)
-charCounter.Text = "0/200"
-charCounter.Font = Enum.Font.Gotham
-charCounter.TextSize = 10
-charCounter.Parent = titleBar
 
 -- Textbox
 local textbox = Instance.new("TextBox")
@@ -142,8 +144,8 @@ delayTextbox.Size = UDim2.new(0, 35, 0, 32)
 delayTextbox.Position = UDim2.new(0, 60, 0, 0)
 delayTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 delayTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
-delayTextbox.Text = "1"
-delayTextbox.PlaceholderText = "1"
+delayTextbox.Text = "3"
+delayTextbox.PlaceholderText = "3"
 delayTextbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 delayTextbox.Font = Enum.Font.Gotham
 delayTextbox.TextSize = 12
@@ -228,11 +230,11 @@ local addMsgCorner = Instance.new("UICorner")
 addMsgCorner.CornerRadius = UDim.new(0, 6)
 addMsgCorner.Parent = addMsgButton
 
--- Gear Frame
+-- Gear Frame (smaller height)
 local gearFrame = Instance.new("Frame")
 gearFrame.Name = "GearFrame"
-gearFrame.Size = UDim2.new(0, 300, 0, 400)
-gearFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+gearFrame.Size = UDim2.new(0, 280, 0, 320)
+gearFrame.Position = UDim2.new(0.5, -140, 0.5, -160)
 gearFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 gearFrame.BorderSizePixel = 2
 gearFrame.BorderColor3 = Color3.fromRGB(60, 60, 60)
@@ -295,9 +297,9 @@ backup1TabBtn.Size = UDim2.new(0.5, -5, 1, -4)
 backup1TabBtn.Position = UDim2.new(0, 2, 0, 2)
 backup1TabBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 backup1TabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-backup1TabBtn.Text = "Backup 1"
+backup1TabBtn.Text = "Safe Spam"
 backup1TabBtn.Font = Enum.Font.GothamBold
-backup1TabBtn.TextSize = 12
+backup1TabBtn.TextSize = 11
 backup1TabBtn.Parent = tabBar
 local backup1TabCorner = Instance.new("UICorner")
 backup1TabCorner.CornerRadius = UDim.new(0, 6)
@@ -308,9 +310,9 @@ backup2TabBtn.Size = UDim2.new(0.5, -5, 1, -4)
 backup2TabBtn.Position = UDim2.new(0.5, 3, 0, 2)
 backup2TabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 backup2TabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-backup2TabBtn.Text = "Backup 2"
+backup2TabBtn.Text = "Victim Dying"
 backup2TabBtn.Font = Enum.Font.GothamBold
-backup2TabBtn.TextSize = 12
+backup2TabBtn.TextSize = 11
 backup2TabBtn.Parent = tabBar
 local backup2TabCorner = Instance.new("UICorner")
 backup2TabCorner.CornerRadius = UDim.new(0, 6)
@@ -326,15 +328,15 @@ backup1Content.Parent = gearFrame
 
 local backup1Textbox = Instance.new("TextBox")
 backup1Textbox.Name = "Backup1Input"
-backup1Textbox.Size = UDim2.new(1, 0, 0, 70)
+backup1Textbox.Size = UDim2.new(1, 0, 0, 60)
 backup1Textbox.Position = UDim2.new(0, 0, 0, 5)
 backup1Textbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 backup1Textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup1Textbox.Text = ""
-backup1Textbox.PlaceholderText = "Backup 1 Message..."
+backup1Textbox.PlaceholderText = "Safe Spam Message..."
 backup1Textbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 backup1Textbox.Font = Enum.Font.Gotham
-backup1Textbox.TextSize = 16
+backup1Textbox.TextSize = 14
 backup1Textbox.TextXAlignment = Enum.TextXAlignment.Left
 backup1Textbox.TextYAlignment = Enum.TextYAlignment.Top
 backup1Textbox.ClearTextOnFocus = false
@@ -356,34 +358,34 @@ backup1CharCounter.TextSize = 10
 backup1CharCounter.Parent = backup1Content
 
 local backup1BottomRow = Instance.new("Frame")
-backup1BottomRow.Size = UDim2.new(1, 0, 0, 32)
-backup1BottomRow.Position = UDim2.new(0, 0, 0, 85)
+backup1BottomRow.Size = UDim2.new(1, 0, 0, 28)
+backup1BottomRow.Position = UDim2.new(0, 0, 0, 70)
 backup1BottomRow.BackgroundTransparency = 1
 backup1BottomRow.Parent = backup1Content
 
 local backup1SendButton = Instance.new("TextButton")
-backup1SendButton.Size = UDim2.new(0, 55, 1, 0)
+backup1SendButton.Size = UDim2.new(0, 50, 1, 0)
 backup1SendButton.Position = UDim2.new(0, 0, 0, 0)
 backup1SendButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 backup1SendButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup1SendButton.Text = "Send"
 backup1SendButton.Font = Enum.Font.GothamBold
-backup1SendButton.TextSize = 12
+backup1SendButton.TextSize = 11
 backup1SendButton.Parent = backup1BottomRow
 local backup1SendCorner = Instance.new("UICorner")
 backup1SendCorner.CornerRadius = UDim.new(0, 6)
 backup1SendCorner.Parent = backup1SendButton
 
 local backup1DelayTextbox = Instance.new("TextBox")
-backup1DelayTextbox.Size = UDim2.new(0, 35, 1, 0)
-backup1DelayTextbox.Position = UDim2.new(0, 60, 0, 0)
+backup1DelayTextbox.Size = UDim2.new(0, 30, 1, 0)
+backup1DelayTextbox.Position = UDim2.new(0, 55, 0, 0)
 backup1DelayTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 backup1DelayTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
-backup1DelayTextbox.Text = "1"
-backup1DelayTextbox.PlaceholderText = "1"
+backup1DelayTextbox.Text = "3"
+backup1DelayTextbox.PlaceholderText = "3"
 backup1DelayTextbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 backup1DelayTextbox.Font = Enum.Font.Gotham
-backup1DelayTextbox.TextSize = 12
+backup1DelayTextbox.TextSize = 11
 backup1DelayTextbox.ClearTextOnFocus = false
 backup1DelayTextbox.Parent = backup1BottomRow
 local backup1DelayCorner = Instance.new("UICorner")
@@ -391,44 +393,44 @@ backup1DelayCorner.CornerRadius = UDim.new(0, 6)
 backup1DelayCorner.Parent = backup1DelayTextbox
 
 local backup1DelayLabel = Instance.new("TextLabel")
-backup1DelayLabel.Size = UDim2.new(0, 35, 1, 0)
-backup1DelayLabel.Position = UDim2.new(0, 98, 0, 0)
+backup1DelayLabel.Size = UDim2.new(0, 25, 1, 0)
+backup1DelayLabel.Position = UDim2.new(0, 88, 0, 0)
 backup1DelayLabel.BackgroundTransparency = 1
 backup1DelayLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 backup1DelayLabel.Text = "sec"
 backup1DelayLabel.Font = Enum.Font.Gotham
-backup1DelayLabel.TextSize = 10
+backup1DelayLabel.TextSize = 9
 backup1DelayLabel.Parent = backup1BottomRow
 
 local backup1SpamButton = Instance.new("TextButton")
-backup1SpamButton.Size = UDim2.new(0, 75, 1, 0)
-backup1SpamButton.Position = UDim2.new(1, -75, 0, 0)
+backup1SpamButton.Size = UDim2.new(0, 70, 1, 0)
+backup1SpamButton.Position = UDim2.new(1, -70, 0, 0)
 backup1SpamButton.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 backup1SpamButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup1SpamButton.Text = "SPAM: OFF"
 backup1SpamButton.Font = Enum.Font.GothamBold
-backup1SpamButton.TextSize = 10
+backup1SpamButton.TextSize = 9
 backup1SpamButton.Parent = backup1BottomRow
 local backup1SpamCorner = Instance.new("UICorner")
 backup1SpamCorner.CornerRadius = UDim.new(0, 6)
 backup1SpamCorner.Parent = backup1SpamButton
 
 local backup1MessagesToggle = Instance.new("TextButton")
-backup1MessagesToggle.Size = UDim2.new(1, 0, 0, 24)
-backup1MessagesToggle.Position = UDim2.new(0, 0, 0, 122)
+backup1MessagesToggle.Size = UDim2.new(1, 0, 0, 22)
+backup1MessagesToggle.Position = UDim2.new(0, 0, 0, 102)
 backup1MessagesToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 backup1MessagesToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup1MessagesToggle.Text = "▼ Messages"
 backup1MessagesToggle.Font = Enum.Font.GothamBold
-backup1MessagesToggle.TextSize = 11
+backup1MessagesToggle.TextSize = 10
 backup1MessagesToggle.Parent = backup1Content
 local backup1MessagesToggleCorner = Instance.new("UICorner")
 backup1MessagesToggleCorner.CornerRadius = UDim.new(0, 6)
 backup1MessagesToggleCorner.Parent = backup1MessagesToggle
 
 local backup1MessagesPanel = Instance.new("Frame")
-backup1MessagesPanel.Size = UDim2.new(1, 0, 0, 120)
-backup1MessagesPanel.Position = UDim2.new(0, 0, 0, 150)
+backup1MessagesPanel.Size = UDim2.new(1, 0, 0, 100)
+backup1MessagesPanel.Position = UDim2.new(0, 0, 0, 128)
 backup1MessagesPanel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 backup1MessagesPanel.Visible = false
 backup1MessagesPanel.Parent = backup1Content
@@ -437,7 +439,7 @@ backup1MessagesPanelCorner.CornerRadius = UDim.new(0, 6)
 backup1MessagesPanelCorner.Parent = backup1MessagesPanel
 
 local backup1MessagesScroll = Instance.new("ScrollingFrame")
-backup1MessagesScroll.Size = UDim2.new(1, -10, 1, -35)
+backup1MessagesScroll.Size = UDim2.new(1, -10, 1, -28)
 backup1MessagesScroll.Position = UDim2.new(0, 5, 0, 5)
 backup1MessagesScroll.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 backup1MessagesScroll.ScrollBarThickness = 4
@@ -447,17 +449,17 @@ backup1MessagesScrollCorner.CornerRadius = UDim.new(0, 4)
 backup1MessagesScrollCorner.Parent = backup1MessagesScroll
 
 local backup1MessagesLayout = Instance.new("UIListLayout")
-backup1MessagesLayout.Padding = UDim.new(0, 4)
+backup1MessagesLayout.Padding = UDim.new(0, 3)
 backup1MessagesLayout.Parent = backup1MessagesScroll
 
 local backup1AddMsgButton = Instance.new("TextButton")
-backup1AddMsgButton.Size = UDim2.new(1, -10, 0, 24)
-backup1AddMsgButton.Position = UDim2.new(0, 5, 1, -29)
+backup1AddMsgButton.Size = UDim2.new(1, -10, 0, 20)
+backup1AddMsgButton.Position = UDim2.new(0, 5, 1, -24)
 backup1AddMsgButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 backup1AddMsgButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup1AddMsgButton.Text = "+ Add Current Message"
 backup1AddMsgButton.Font = Enum.Font.GothamBold
-backup1AddMsgButton.TextSize = 11
+backup1AddMsgButton.TextSize = 10
 backup1AddMsgButton.Parent = backup1MessagesPanel
 local backup1AddMsgCorner = Instance.new("UICorner")
 backup1AddMsgCorner.CornerRadius = UDim.new(0, 6)
@@ -473,15 +475,15 @@ backup2Content.Parent = gearFrame
 
 local backup2Textbox = Instance.new("TextBox")
 backup2Textbox.Name = "Backup2Input"
-backup2Textbox.Size = UDim2.new(1, 0, 0, 70)
+backup2Textbox.Size = UDim2.new(1, 0, 0, 60)
 backup2Textbox.Position = UDim2.new(0, 0, 0, 5)
 backup2Textbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 backup2Textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup2Textbox.Text = ""
-backup2Textbox.PlaceholderText = "Backup 2 Message..."
+backup2Textbox.PlaceholderText = "Victim Dying Message..."
 backup2Textbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 backup2Textbox.Font = Enum.Font.Gotham
-backup2Textbox.TextSize = 16
+backup2Textbox.TextSize = 14
 backup2Textbox.TextXAlignment = Enum.TextXAlignment.Left
 backup2Textbox.TextYAlignment = Enum.TextYAlignment.Top
 backup2Textbox.ClearTextOnFocus = false
@@ -503,34 +505,34 @@ backup2CharCounter.TextSize = 10
 backup2CharCounter.Parent = backup2Content
 
 local backup2BottomRow = Instance.new("Frame")
-backup2BottomRow.Size = UDim2.new(1, 0, 0, 32)
-backup2BottomRow.Position = UDim2.new(0, 0, 0, 85)
+backup2BottomRow.Size = UDim2.new(1, 0, 0, 28)
+backup2BottomRow.Position = UDim2.new(0, 0, 0, 70)
 backup2BottomRow.BackgroundTransparency = 1
 backup2BottomRow.Parent = backup2Content
 
 local backup2SendButton = Instance.new("TextButton")
-backup2SendButton.Size = UDim2.new(0, 55, 1, 0)
+backup2SendButton.Size = UDim2.new(0, 50, 1, 0)
 backup2SendButton.Position = UDim2.new(0, 0, 0, 0)
 backup2SendButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 backup2SendButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup2SendButton.Text = "Send"
 backup2SendButton.Font = Enum.Font.GothamBold
-backup2SendButton.TextSize = 12
+backup2SendButton.TextSize = 11
 backup2SendButton.Parent = backup2BottomRow
 local backup2SendCorner = Instance.new("UICorner")
 backup2SendCorner.CornerRadius = UDim.new(0, 6)
 backup2SendCorner.Parent = backup2SendButton
 
 local backup2DelayTextbox = Instance.new("TextBox")
-backup2DelayTextbox.Size = UDim2.new(0, 35, 1, 0)
-backup2DelayTextbox.Position = UDim2.new(0, 60, 0, 0)
+backup2DelayTextbox.Size = UDim2.new(0, 30, 1, 0)
+backup2DelayTextbox.Position = UDim2.new(0, 55, 0, 0)
 backup2DelayTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 backup2DelayTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
-backup2DelayTextbox.Text = "1"
-backup2DelayTextbox.PlaceholderText = "1"
+backup2DelayTextbox.Text = "3"
+backup2DelayTextbox.PlaceholderText = "3"
 backup2DelayTextbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 backup2DelayTextbox.Font = Enum.Font.Gotham
-backup2DelayTextbox.TextSize = 12
+backup2DelayTextbox.TextSize = 11
 backup2DelayTextbox.ClearTextOnFocus = false
 backup2DelayTextbox.Parent = backup2BottomRow
 local backup2DelayCorner = Instance.new("UICorner")
@@ -538,44 +540,44 @@ backup2DelayCorner.CornerRadius = UDim.new(0, 6)
 backup2DelayCorner.Parent = backup2DelayTextbox
 
 local backup2DelayLabel = Instance.new("TextLabel")
-backup2DelayLabel.Size = UDim2.new(0, 35, 1, 0)
-backup2DelayLabel.Position = UDim2.new(0, 98, 0, 0)
+backup2DelayLabel.Size = UDim2.new(0, 25, 1, 0)
+backup2DelayLabel.Position = UDim2.new(0, 88, 0, 0)
 backup2DelayLabel.BackgroundTransparency = 1
 backup2DelayLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 backup2DelayLabel.Text = "sec"
 backup2DelayLabel.Font = Enum.Font.Gotham
-backup2DelayLabel.TextSize = 10
+backup2DelayLabel.TextSize = 9
 backup2DelayLabel.Parent = backup2BottomRow
 
 local backup2SpamButton = Instance.new("TextButton")
-backup2SpamButton.Size = UDim2.new(0, 75, 1, 0)
-backup2SpamButton.Position = UDim2.new(1, -75, 0, 0)
+backup2SpamButton.Size = UDim2.new(0, 70, 1, 0)
+backup2SpamButton.Position = UDim2.new(1, -70, 0, 0)
 backup2SpamButton.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 backup2SpamButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup2SpamButton.Text = "SPAM: OFF"
 backup2SpamButton.Font = Enum.Font.GothamBold
-backup2SpamButton.TextSize = 10
+backup2SpamButton.TextSize = 9
 backup2SpamButton.Parent = backup2BottomRow
 local backup2SpamCorner = Instance.new("UICorner")
 backup2SpamCorner.CornerRadius = UDim.new(0, 6)
 backup2SpamCorner.Parent = backup2SpamButton
 
 local backup2MessagesToggle = Instance.new("TextButton")
-backup2MessagesToggle.Size = UDim2.new(1, 0, 0, 24)
-backup2MessagesToggle.Position = UDim2.new(0, 0, 0, 122)
+backup2MessagesToggle.Size = UDim2.new(1, 0, 0, 22)
+backup2MessagesToggle.Position = UDim2.new(0, 0, 0, 102)
 backup2MessagesToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 backup2MessagesToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup2MessagesToggle.Text = "▼ Messages"
 backup2MessagesToggle.Font = Enum.Font.GothamBold
-backup2MessagesToggle.TextSize = 11
+backup2MessagesToggle.TextSize = 10
 backup2MessagesToggle.Parent = backup2Content
 local backup2MessagesToggleCorner = Instance.new("UICorner")
 backup2MessagesToggleCorner.CornerRadius = UDim.new(0, 6)
 backup2MessagesToggleCorner.Parent = backup2MessagesToggle
 
 local backup2MessagesPanel = Instance.new("Frame")
-backup2MessagesPanel.Size = UDim2.new(1, 0, 0, 120)
-backup2MessagesPanel.Position = UDim2.new(0, 0, 0, 150)
+backup2MessagesPanel.Size = UDim2.new(1, 0, 0, 100)
+backup2MessagesPanel.Position = UDim2.new(0, 0, 0, 128)
 backup2MessagesPanel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 backup2MessagesPanel.Visible = false
 backup2MessagesPanel.Parent = backup2Content
@@ -584,7 +586,7 @@ backup2MessagesPanelCorner.CornerRadius = UDim.new(0, 6)
 backup2MessagesPanelCorner.Parent = backup2MessagesPanel
 
 local backup2MessagesScroll = Instance.new("ScrollingFrame")
-backup2MessagesScroll.Size = UDim2.new(1, -10, 1, -35)
+backup2MessagesScroll.Size = UDim2.new(1, -10, 1, -28)
 backup2MessagesScroll.Position = UDim2.new(0, 5, 0, 5)
 backup2MessagesScroll.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 backup2MessagesScroll.ScrollBarThickness = 4
@@ -594,21 +596,35 @@ backup2MessagesScrollCorner.CornerRadius = UDim.new(0, 4)
 backup2MessagesScrollCorner.Parent = backup2MessagesScroll
 
 local backup2MessagesLayout = Instance.new("UIListLayout")
-backup2MessagesLayout.Padding = UDim.new(0, 4)
+backup2MessagesLayout.Padding = UDim.new(0, 3)
 backup2MessagesLayout.Parent = backup2MessagesScroll
 
 local backup2AddMsgButton = Instance.new("TextButton")
-backup2AddMsgButton.Size = UDim2.new(1, -10, 0, 24)
-backup2AddMsgButton.Position = UDim2.new(0, 5, 1, -29)
+backup2AddMsgButton.Size = UDim2.new(1, -10, 0, 20)
+backup2AddMsgButton.Position = UDim2.new(0, 5, 1, -24)
 backup2AddMsgButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 backup2AddMsgButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup2AddMsgButton.Text = "+ Add Current Message"
 backup2AddMsgButton.Font = Enum.Font.GothamBold
-backup2AddMsgButton.TextSize = 11
+backup2AddMsgButton.TextSize = 10
 backup2AddMsgButton.Parent = backup2MessagesPanel
 local backup2AddMsgCorner = Instance.new("UICorner")
 backup2AddMsgCorner.CornerRadius = UDim.new(0, 6)
 backup2AddMsgCorner.Parent = backup2AddMsgButton
+
+-- Kill Button (bottom of gear frame)
+local killButton = Instance.new("TextButton")
+killButton.Size = UDim2.new(1, -20, 0, 24)
+killButton.Position = UDim2.new(0, 10, 1, -28)
+killButton.BackgroundColor3 = Color3.fromRGB(100, 20, 20)
+killButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+killButton.Text = "☠ KILL GUI"
+killButton.Font = Enum.Font.GothamBold
+killButton.TextSize = 11
+killButton.Parent = gearFrame
+local killCorner = Instance.new("UICorner")
+killCorner.CornerRadius = UDim.new(0, 6)
+killCorner.Parent = killButton
 
 -- Dragging
 local dragging = false
@@ -681,7 +697,7 @@ textbox:GetPropertyChangedSignal("Text"):Connect(function()
     elseif #textbox.Text >= MAX_CHARS * 0.8 then
         charCounter.TextColor3 = Color3.fromRGB(255, 200, 100)
     else
-        charCounter.TextColor3 = Color3.fromRGB(150, 150, 150)
+        charCounter.TextColor3 = Color3.fromRGB(255, 255, 255)
     end
 end)
 
@@ -792,7 +808,7 @@ end)
 local function toggleSpam()
     spamEnabled = not spamEnabled
     if spamEnabled then
-        spamDelay = tonumber(delayTextbox.Text) or 1
+        spamDelay = tonumber(delayTextbox.Text) or 3
         if spamDelay < 0.1 then spamDelay = 0.1 end
         spamButton.Text = "SPAM: ON"
         spamButton.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
@@ -943,7 +959,7 @@ end)
 local function toggleBackup1Spam()
     backup1Enabled = not backup1Enabled
     if backup1Enabled then
-        backup1Delay = tonumber(backup1DelayTextbox.Text) or 1
+        backup1Delay = tonumber(backup1DelayTextbox.Text) or 3
         if backup1Delay < 0.1 then backup1Delay = 0.1 end
         backup1SpamButton.Text = "SPAM: ON"
         backup1SpamButton.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
@@ -1094,7 +1110,7 @@ end)
 local function toggleBackup2Spam()
     backup2Enabled = not backup2Enabled
     if backup2Enabled then
-        backup2Delay = tonumber(backup2DelayTextbox.Text) or 1
+        backup2Delay = tonumber(backup2DelayTextbox.Text) or 3
         if backup2Delay < 0.1 then backup2Delay = 0.1 end
         backup2SpamButton.Text = "SPAM: ON"
         backup2SpamButton.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
@@ -1133,6 +1149,11 @@ end)
 
 closeBtn.MouseButton1Click:Connect(function()
     gearFrame.Visible = false
+end)
+
+-- Kill Button
+killButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
 end)
 
 local function switchTab(tab)
