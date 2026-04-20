@@ -739,9 +739,14 @@ end)
 local function toggleAdvancedMode()
     advancedMode = not advancedMode
     
+    -- Get current position
+    local currentPos = mainFrame.Position
+    
     if advancedMode then
+        -- Expand from current position (center expands, so shift up by half the height difference)
+        -- Height difference: 250 - 145 = 105, half = 52.5
         mainFrame.Size = UDim2.new(0, 220, 0, 250)
-        mainFrame.Position = UDim2.new(0, 20, 0.5, -125)
+        mainFrame.Position = UDim2.new(currentPos.X.Scale, currentPos.X.Offset, currentPos.Y.Scale, currentPos.Y.Offset - 52)
         
         compactContent.Visible = false
         
@@ -754,8 +759,9 @@ local function toggleAdvancedMode()
         titleLabel.Text = "⚙ Settings"
         settingsBtn.Text = "◀"
     else
+        -- Shrink back (center stays same, so shift down by half the height difference)
         mainFrame.Size = UDim2.new(0, 220, 0, 145)
-        mainFrame.Position = UDim2.new(0, 20, 0.5, -72)
+        mainFrame.Position = UDim2.new(currentPos.X.Scale, currentPos.X.Offset, currentPos.Y.Scale, currentPos.Y.Offset + 52)
         
         compactContent.Visible = true
         
@@ -769,10 +775,6 @@ local function toggleAdvancedMode()
         settingsBtn.Text = "⚙"
     end
 end
-
-settingsBtn.MouseButton1Click:Connect(function()
-    toggleAdvancedMode()
-end)
 
 -- ========== TAB SWITCHING ==========
 local function switchTab(tab)
