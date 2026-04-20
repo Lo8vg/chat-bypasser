@@ -1,4 +1,4 @@
--- Compact Chat Hub (Fixed Layout + Speed Tab)
+-- Compact Chat Hub (Fixed Position on Expand)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -10,16 +10,16 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 -- Settings
 local MAX_CHARS = 200
-local caseMode = "upper" -- Changed default to upper
+local caseMode = "upper"
 local mimicEnabled = false
 local targetPlayer = nil
-local suffixes = {"🤓🤓🤓", "NB READ WHAT IT SAID LOL"} -- Default suffixes
+local suffixes = {"🤓🤓🤓", "NB READ WHAT IT SAID LOL"}
 local suffixIndex = 1
 local currentTab = "chat"
 local advancedMode = false
 
 -- Delay Settings
-local delayMode = "random" -- "random", "sequential", "constant"
+local delayMode = "random"
 local delayList = {0.7, 0.9, 1, 2, 0.8}
 local delayIndex = 1
 local constantDelay = 0.5
@@ -150,7 +150,7 @@ compactContent.Position = UDim2.new(0, 0, 0, 28)
 compactContent.BackgroundTransparency = 1
 compactContent.Parent = mainFrame
 
--- Textbox (Bigger)
+-- Textbox
 local textbox = Instance.new("TextBox")
 textbox.Name = "MultiInput"
 textbox.Size = UDim2.new(1, -20, 0, 65)
@@ -173,7 +173,7 @@ local textboxCorner = Instance.new("UICorner")
 textboxCorner.CornerRadius = UDim.new(0, 6)
 textboxCorner.Parent = textbox
 
--- Button Row (Compact)
+-- Button Row
 local compactRow = Instance.new("Frame")
 compactRow.Size = UDim2.new(1, -20, 0, 32)
 compactRow.Position = UDim2.new(0, 10, 0, 75)
@@ -238,7 +238,7 @@ charCounter.TextSize = 9
 charCounter.TextXAlignment = Enum.TextXAlignment.Right
 charCounter.Parent = compactContent
 
--- ========== ADVANCED CONTENT (Hidden by default) ==========
+-- ========== ADVANCED CONTENT ==========
 local advancedContent = Instance.new("Frame")
 advancedContent.Size = UDim2.new(1, 0, 1, -56)
 advancedContent.Position = UDim2.new(0, 0, 0, 56)
@@ -310,7 +310,7 @@ caseRow.Parent = chatSettingsContent
 
 local upperBtn = Instance.new("TextButton")
 upperBtn.Size = UDim2.new(0.33, -2, 1, 0)
-upperBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215) -- Default selected
+upperBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 upperBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 upperBtn.Text = "UPPER"
 upperBtn.Font = Enum.Font.GothamBold
@@ -365,7 +365,6 @@ speedContent.BackgroundTransparency = 1
 speedContent.Visible = false
 speedContent.Parent = mainFrame
 
--- Mode Title
 local modeTitle = Instance.new("TextLabel")
 modeTitle.Size = UDim2.new(1, 0, 0, 20)
 modeTitle.Position = UDim2.new(0, 0, 0, 5)
@@ -376,7 +375,6 @@ modeTitle.Font = Enum.Font.GothamBold
 modeTitle.TextSize = 11
 modeTitle.Parent = speedContent
 
--- Mode Buttons Row
 local modeRow = Instance.new("Frame")
 modeRow.Size = UDim2.new(1, -20, 0, 24)
 modeRow.Position = UDim2.new(0, 10, 0, 25)
@@ -421,7 +419,6 @@ local constCorner = Instance.new("UICorner")
 constCorner.CornerRadius = UDim.new(0, 6)
 constCorner.Parent = constBtn
 
--- Delay List Title
 local delayListTitle = Instance.new("TextLabel")
 delayListTitle.Size = UDim2.new(1, 0, 0, 16)
 delayListTitle.Position = UDim2.new(0, 0, 0, 52)
@@ -432,7 +429,6 @@ delayListTitle.Font = Enum.Font.Gotham
 delayListTitle.TextSize = 9
 delayListTitle.Parent = speedContent
 
--- Delay List Frame
 local delayListFrame = Instance.new("Frame")
 delayListFrame.Size = UDim2.new(1, -20, 0, 60)
 delayListFrame.Position = UDim2.new(0, 10, 0, 70)
@@ -453,7 +449,6 @@ local delayListLayout = Instance.new("UIListLayout")
 delayListLayout.Padding = UDim.new(0, 2)
 delayListLayout.Parent = delayScroll
 
--- Constant Delay Input
 local constDelayLabel = Instance.new("TextLabel")
 constDelayLabel.Size = UDim2.new(1, 0, 0, 16)
 constDelayLabel.Position = UDim2.new(0, 0, 0, 52)
@@ -481,7 +476,6 @@ local constDelayCorner = Instance.new("UICorner")
 constDelayCorner.CornerRadius = UDim.new(0, 6)
 constDelayCorner.Parent = constDelayInput
 
--- Add Delay Row
 local addDelayRow = Instance.new("Frame")
 addDelayRow.Size = UDim2.new(1, -20, 0, 26)
 addDelayRow.Position = UDim2.new(0, 10, 0, 135)
@@ -515,7 +509,6 @@ local addDelayBtnCorner = Instance.new("UICorner")
 addDelayBtnCorner.CornerRadius = UDim.new(0, 6)
 addDelayBtnCorner.Parent = addDelayBtn
 
--- Clear All Button
 local clearDelayBtn = Instance.new("TextButton")
 clearDelayBtn.Size = UDim2.new(1, -20, 0, 22)
 clearDelayBtn.Position = UDim2.new(0, 10, 0, 165)
@@ -719,7 +712,7 @@ end)
 hubButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         wait(0.1)
-            if not dragging then
+        if not dragging then
             hubButton.Visible = false
             mainFrame.Visible = true
         end
@@ -735,16 +728,13 @@ killBtn.MouseButton1Click:Connect(function()
     screenGui:Destroy()
 end)
 
--- ========== TOGGLE ADVANCED MODE ==========
+-- ========== TOGGLE ADVANCED MODE (FIXED POSITION) ==========
 local function toggleAdvancedMode()
     advancedMode = not advancedMode
     
-    -- Get current position
     local currentPos = mainFrame.Position
     
     if advancedMode then
-        -- Expand from current position (center expands, so shift up by half the height difference)
-        -- Height difference: 250 - 145 = 105, half = 52.5
         mainFrame.Size = UDim2.new(0, 220, 0, 250)
         mainFrame.Position = UDim2.new(currentPos.X.Scale, currentPos.X.Offset, currentPos.Y.Scale, currentPos.Y.Offset - 52)
         
@@ -759,7 +749,6 @@ local function toggleAdvancedMode()
         titleLabel.Text = "⚙ Settings"
         settingsBtn.Text = "◀"
     else
-        -- Shrink back (center stays same, so shift down by half the height difference)
         mainFrame.Size = UDim2.new(0, 220, 0, 145)
         mainFrame.Position = UDim2.new(currentPos.X.Scale, currentPos.X.Offset, currentPos.Y.Scale, currentPos.Y.Offset + 52)
         
@@ -775,6 +764,10 @@ local function toggleAdvancedMode()
         settingsBtn.Text = "⚙"
     end
 end
+
+settingsBtn.MouseButton1Click:Connect(function()
+    toggleAdvancedMode()
+end)
 
 -- ========== TAB SWITCHING ==========
 local function switchTab(tab)
@@ -884,7 +877,7 @@ local function getNextDelay()
         delayIndex = delayIndex + 1
         if delayIndex > #delayList then delayIndex = 1 end
         return d
-    else -- random
+    else
         if #delayList == 0 then return 0.5 end
         return delayList[math.random(1, #delayList)]
     end
@@ -1266,6 +1259,5 @@ updateSuffixList()
 updateCaseButtons()
 
 print("✅ Compact Multi-Chat Hub Loaded")
-print("📌 Default: UPPER case, Random delays (0.7, 0.9, 1, 2, 0.8)")
+print("📌 Default: UPPER case, Random delays")
 print("📌 Mimic suffixes pre-loaded: 🤓🤓🤓, NB READ WHAT IT SAID LOL")
-       
