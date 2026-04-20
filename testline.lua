@@ -1,4 +1,4 @@
--- Compact Chat Hub (Fixed Layout + Delay System)
+-- Compact Chat Hub (Fixed Layout + Speed Tab)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -10,10 +10,10 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 -- Settings
 local MAX_CHARS = 200
-local caseMode = "normal"
+local caseMode = "upper" -- Changed default to upper
 local mimicEnabled = false
 local targetPlayer = nil
-local suffixes = {}
+local suffixes = {"🤓🤓🤓", "NB READ WHAT IT SAID LOL"} -- Default suffixes
 local suffixIndex = 1
 local currentTab = "chat"
 local advancedMode = false
@@ -21,7 +21,7 @@ local advancedMode = false
 -- Delay Settings
 local delayMode = "random" -- "random", "sequential", "constant"
 local delayList = {0.7, 0.9, 1, 2, 0.8}
-local delayIndex = 1 -- for sequential mode
+local delayIndex = 1
 local constantDelay = 0.5
 
 -- Create ScreenGui
@@ -180,24 +180,28 @@ compactRow.Position = UDim2.new(0, 10, 0, 75)
 compactRow.BackgroundTransparency = 1
 compactRow.Parent = compactContent
 
--- Delay Mode Button (shows R/S/C)
-local delayModeBtn = Instance.new("TextButton")
-delayModeBtn.Size = UDim2.new(0, 32, 1, 0)
-delayModeBtn.Position = UDim2.new(0, 0, 0, 0)
-delayModeBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-delayModeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-delayModeBtn.Text = "R"
-delayModeBtn.Font = Enum.Font.GothamBold
-delayModeBtn.TextSize = 12
-delayModeBtn.Parent = compactRow
-local delayModeCorner = Instance.new("UICorner")
-delayModeCorner.CornerRadius = UDim.new(0, 6)
-delayModeCorner.Parent = delayModeBtn
+-- Delay
+local delayTextbox = Instance.new("TextBox")
+delayTextbox.Size = UDim2.new(0, 40, 1, 0)
+delayTextbox.Position = UDim2.new(0, 0, 0, 0)
+delayTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+delayTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
+delayTextbox.Text = "0.5"
+delayTextbox.PlaceholderText = "0.5"
+delayTextbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+delayTextbox.Font = Enum.Font.Gotham
+delayTextbox.TextSize = 11
+delayTextbox.ClearTextOnFocus = false
+delayTextbox.Parent = compactRow
+
+local delayCorner = Instance.new("UICorner")
+delayCorner.CornerRadius = UDim.new(0, 6)
+delayCorner.Parent = delayTextbox
 
 -- Clear Button
 local clearBtn = Instance.new("TextButton")
-clearBtn.Size = UDim2.new(0, 28, 1, 0)
-clearBtn.Position = UDim2.new(0, 36, 0, 0)
+clearBtn.Size = UDim2.new(0, 35, 1, 0)
+clearBtn.Position = UDim2.new(0, 45, 0, 0)
 clearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 clearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 clearBtn.Text = "C"
@@ -208,24 +212,10 @@ local clearCorner = Instance.new("UICorner")
 clearCorner.CornerRadius = UDim.new(0, 6)
 clearCorner.Parent = clearBtn
 
--- Delay Settings Button (gear small)
-local delaySettingsBtn = Instance.new("TextButton")
-delaySettingsBtn.Size = UDim2.new(0, 28, 1, 0)
-delaySettingsBtn.Position = UDim2.new(0, 68, 0, 0)
-delaySettingsBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-delaySettingsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-delaySettingsBtn.Text = "D"
-delaySettingsBtn.Font = Enum.Font.GothamBold
-delaySettingsBtn.TextSize = 11
-delaySettingsBtn.Parent = compactRow
-local delaySettingsCorner = Instance.new("UICorner")
-delaySettingsCorner.CornerRadius = UDim.new(0, 6)
-delaySettingsCorner.Parent = delaySettingsBtn
-
 -- Send Button
 local sendAllBtn = Instance.new("TextButton")
-sendAllBtn.Size = UDim2.new(1, -100, 1, 0)
-sendAllBtn.Position = UDim2.new(0, 100, 0, 0)
+sendAllBtn.Size = UDim2.new(1, -85, 1, 0)
+sendAllBtn.Position = UDim2.new(0, 85, 0, 0)
 sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 sendAllBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 sendAllBtn.Text = "S"
@@ -235,188 +225,6 @@ sendAllBtn.Parent = compactRow
 local sendAllCorner = Instance.new("UICorner")
 sendAllCorner.CornerRadius = UDim.new(0, 6)
 sendAllCorner.Parent = sendAllBtn
-
--- ========== DELAY DROPDOWN ==========
-local delayDropdown = Instance.new("Frame")
-delayDropdown.Size = UDim2.new(0, 200, 0, 200)
-delayDropdown.Position = UDim2.new(0, 10, 0, 110)
-delayDropdown.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-delayDropdown.BorderSizePixel = 2
-delayDropdown.BorderColor3 = Color3.fromRGB(60, 60, 60)
-delayDropdown.Visible = false
-delayDropdown.ZIndex = 20
-delayDropdown.Parent = compactContent
-local delayDropdownCorner = Instance.new("UICorner")
-delayDropdownCorner.CornerRadius = UDim.new(0, 8)
-delayDropdownCorner.Parent = delayDropdown
-
--- Mode Title
-local modeTitle = Instance.new("TextLabel")
-modeTitle.Size = UDim2.new(1, 0, 0, 24)
-modeTitle.Position = UDim2.new(0, 0, 0, 5)
-modeTitle.BackgroundTransparency = 1
-modeTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
-modeTitle.Text = "Delay Mode"
-modeTitle.Font = Enum.Font.GothamBold
-modeTitle.TextSize = 12
-modeTitle.Parent = delayDropdown
-
--- Mode Buttons Row
-local modeRow = Instance.new("Frame")
-modeRow.Size = UDim2.new(1, -20, 0, 24)
-modeRow.Position = UDim2.new(0, 10, 0, 30)
-modeRow.BackgroundTransparency = 1
-modeRow.Parent = delayDropdown
-
-local randomBtn = Instance.new("TextButton")
-randomBtn.Size = UDim2.new(0.33, -2, 1, 0)
-randomBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-randomBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-randomBtn.Text = "Rnd"
-randomBtn.Font = Enum.Font.GothamBold
-randomBtn.TextSize = 10
-randomBtn.ZIndex = 21
-randomBtn.Parent = modeRow
-local randomCorner = Instance.new("UICorner")
-randomCorner.CornerRadius = UDim.new(0, 6)
-randomCorner.Parent = randomBtn
-
-local seqBtn = Instance.new("TextButton")
-seqBtn.Size = UDim2.new(0.33, -2, 1, 0)
-seqBtn.Position = UDim2.new(0.33, 2, 0, 0)
-seqBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-seqBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-seqBtn.Text = "Seq"
-seqBtn.Font = Enum.Font.GothamBold
-seqBtn.TextSize = 10
-seqBtn.ZIndex = 21
-seqBtn.Parent = modeRow
-local seqCorner = Instance.new("UICorner")
-seqCorner.CornerRadius = UDim.new(0, 6)
-seqCorner.Parent = seqBtn
-
-local constBtn = Instance.new("TextButton")
-constBtn.Size = UDim2.new(0.34, -2, 1, 0)
-constBtn.Position = UDim2.new(0.66, 2, 0, 0)
-constBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-constBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-constBtn.Text = "Con"
-constBtn.Font = Enum.Font.GothamBold
-constBtn.TextSize = 10
-constBtn.ZIndex = 21
-constBtn.Parent = modeRow
-local constCorner = Instance.new("UICorner")
-constCorner.CornerRadius = UDim.new(0, 6)
-constCorner.Parent = constBtn
-
--- Delay List Title
-local delayListTitle = Instance.new("TextLabel")
-delayListTitle.Size = UDim2.new(1, 0, 0, 20)
-delayListTitle.Position = UDim2.new(0, 0, 0, 58)
-delayListTitle.BackgroundTransparency = 1
-delayListTitle.TextColor3 = Color3.fromRGB(150, 150, 150)
-delayListTitle.Text = "Delays (tap X to remove)"
-delayListTitle.Font = Enum.Font.Gotham
-delayListTitle.TextSize = 9
-delayListTitle.Parent = delayDropdown
-
--- Delay List Frame
-local delayListFrame = Instance.new("Frame")
-delayListFrame.Size = UDim2.new(1, -20, 0, 60)
-delayListFrame.Position = UDim2.new(0, 10, 0, 78)
-delayListFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-delayListFrame.Parent = delayDropdown
-local delayListCorner = Instance.new("UICorner")
-delayListCorner.CornerRadius = UDim.new(0, 6)
-delayListCorner.Parent = delayListFrame
-
--- Constant Delay Input (shown only in constant mode)
-local constDelayLabel = Instance.new("TextLabel")
-constDelayLabel.Size = UDim2.new(1, 0, 0, 20)
-constDelayLabel.Position = UDim2.new(0, 0, 0, 58)
-constDelayLabel.BackgroundTransparency = 1
-constDelayLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-constDelayLabel.Text = "Constant Delay"
-constDelayLabel.Font = Enum.Font.Gotham
-constDelayLabel.TextSize = 9
-constDelayLabel.Visible = false
-constDelayLabel.Parent = delayDropdown
-
-local constDelayInput = Instance.new("TextBox")
-constDelayInput.Size = UDim2.new(1, -20, 0, 28)
-constDelayInput.Position = UDim2.new(0, 10, 0, 78)
-constDelayInput.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-constDelayInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-constDelayInput.Text = "0.5"
-constDelayInput.PlaceholderText = "0.5"
-constDelayInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
-constDelayInput.Font = Enum.Font.Gotham
-constDelayInput.TextSize = 12
-constDelayInput.Visible = false
-constDelayInput.Parent = delayDropdown
-local constDelayCorner = Instance.new("UICorner")
-constDelayCorner.CornerRadius = UDim.new(0, 6)
-constDelayCorner.Parent = constDelayInput
-
--- Add Delay Row
-local addDelayRow = Instance.new("Frame")
-addDelayRow.Size = UDim2.new(1, -20, 0, 28)
-addDelayRow.Position = UDim2.new(0, 10, 0, 142)
-addDelayRow.BackgroundTransparency = 1
-addDelayRow.Parent = delayDropdown
-
-local addDelayInput = Instance.new("TextBox")
-addDelayInput.Size = UDim2.new(1, -40, 1, 0)
-addDelayInput.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-addDelayInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-addDelayInput.Text = ""
-addDelayInput.PlaceholderText = "Add delay..."
-addDelayInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
-addDelayInput.Font = Enum.Font.Gotham
-addDelayInput.TextSize = 11
-addDelayInput.Parent = addDelayRow
-local addDelayCorner = Instance.new("UICorner")
-addDelayCorner.CornerRadius = UDim.new(0, 6)
-addDelayCorner.Parent = addDelayInput
-
-local addDelayBtn = Instance.new("TextButton")
-addDelayBtn.Size = UDim2.new(0, 28, 1, 0)
-addDelayBtn.Position = UDim2.new(1, -30, 0, 0)
-addDelayBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-addDelayBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-addDelayBtn.Text = "+"
-addDelayBtn.Font = Enum.Font.GothamBold
-addDelayBtn.TextSize = 14
-addDelayBtn.Parent = addDelayRow
-local addDelayBtnCorner = Instance.new("UICorner")
-addDelayBtnCorner.CornerRadius = UDim.new(0, 6)
-addDelayBtnCorner.Parent = addDelayBtn
-
--- Clear All Button
-local clearDelayBtn = Instance.new("TextButton")
-clearDelayBtn.Size = UDim2.new(1, -20, 0, 24)
-clearDelayBtn.Position = UDim2.new(0, 10, 0, 175)
-clearDelayBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-clearDelayBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-clearDelayBtn.Text = "Clear All Delays"
-clearDelayBtn.Font = Enum.Font.GothamBold
-clearDelayBtn.TextSize = 11
-clearDelayBtn.Parent = delayDropdown
-local clearDelayCorner = Instance.new("UICorner")
-clearDelayCorner.CornerRadius = UDim.new(0, 6)
-clearDelayCorner.Parent = clearDelayBtn
-
--- Delay List Container (for dynamic items)
-local delayScroll = Instance.new("ScrollingFrame")
-delayScroll.Size = UDim2.new(1, -6, 1, -6)
-delayScroll.Position = UDim2.new(0, 3, 0, 3)
-delayScroll.BackgroundTransparency = 1
-delayScroll.ScrollBarThickness = 3
-delayScroll.Parent = delayListFrame
-
-local delayListLayout = Instance.new("UIListLayout")
-delayListLayout.Padding = UDim.new(0, 2)
-delayListLayout.Parent = delayScroll
 
 -- Char Counter
 local charCounter = Instance.new("TextLabel")
@@ -447,30 +255,43 @@ tabBar.Visible = false
 tabBar.Parent = mainFrame
 
 local chatTabBtn = Instance.new("TextButton")
-chatTabBtn.Size = UDim2.new(0.5, -5, 1, -4)
+chatTabBtn.Size = UDim2.new(0.33, -3, 1, -4)
 chatTabBtn.Position = UDim2.new(0, 2, 0, 2)
 chatTabBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 chatTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 chatTabBtn.Text = "Chat"
 chatTabBtn.Font = Enum.Font.GothamBold
-chatTabBtn.TextSize = 12
+chatTabBtn.TextSize = 11
 chatTabBtn.Parent = tabBar
 local chatTabCorner = Instance.new("UICorner")
 chatTabCorner.CornerRadius = UDim.new(0, 6)
 chatTabCorner.Parent = chatTabBtn
 
 local mimicTabBtn = Instance.new("TextButton")
-mimicTabBtn.Size = UDim2.new(0.5, -5, 1, -4)
-mimicTabBtn.Position = UDim2.new(0.5, 3, 0, 2)
+mimicTabBtn.Size = UDim2.new(0.33, -3, 1, -4)
+mimicTabBtn.Position = UDim2.new(0.33, 1, 0, 2)
 mimicTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 mimicTabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 mimicTabBtn.Text = "Mimic"
 mimicTabBtn.Font = Enum.Font.GothamBold
-mimicTabBtn.TextSize = 12
+mimicTabBtn.TextSize = 11
 mimicTabBtn.Parent = tabBar
 local mimicTabCorner = Instance.new("UICorner")
 mimicTabCorner.CornerRadius = UDim.new(0, 6)
 mimicTabCorner.Parent = mimicTabBtn
+
+local speedTabBtn = Instance.new("TextButton")
+speedTabBtn.Size = UDim2.new(0.34, -3, 1, -4)
+speedTabBtn.Position = UDim2.new(0.66, 0, 0, 2)
+speedTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+speedTabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+speedTabBtn.Text = "Speed"
+speedTabBtn.Font = Enum.Font.GothamBold
+speedTabBtn.TextSize = 11
+speedTabBtn.Parent = tabBar
+local speedTabCorner = Instance.new("UICorner")
+speedTabCorner.CornerRadius = UDim.new(0, 6)
+speedTabCorner.Parent = speedTabBtn
 
 -- Chat Settings Content
 local chatSettingsContent = Instance.new("Frame")
@@ -489,8 +310,8 @@ caseRow.Parent = chatSettingsContent
 
 local upperBtn = Instance.new("TextButton")
 upperBtn.Size = UDim2.new(0.33, -2, 1, 0)
-upperBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-upperBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+upperBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215) -- Default selected
+upperBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 upperBtn.Text = "UPPER"
 upperBtn.Font = Enum.Font.GothamBold
 upperBtn.TextSize = 10
@@ -515,8 +336,8 @@ lowerCorner.Parent = lowerBtn
 local normalBtn = Instance.new("TextButton")
 normalBtn.Size = UDim2.new(0.34, -2, 1, 0)
 normalBtn.Position = UDim2.new(0.66, 2, 0, 0)
-normalBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-normalBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+normalBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+normalBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 normalBtn.Text = "Normal"
 normalBtn.Font = Enum.Font.Gotham
 normalBtn.TextSize = 10
@@ -530,13 +351,185 @@ statusLabel.Size = UDim2.new(1, -20, 0, 16)
 statusLabel.Position = UDim2.new(0, 10, 0, 40)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-statusLabel.Text = "Mode: Normal"
+statusLabel.Text = "Mode: Upper"
 statusLabel.Font = Enum.Font.Gotham
 statusLabel.TextSize = 10
 statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 statusLabel.Parent = chatSettingsContent
 
--- Mimic Content
+-- ========== SPEED CONTENT ==========
+local speedContent = Instance.new("Frame")
+speedContent.Size = UDim2.new(1, 0, 1, -56)
+speedContent.Position = UDim2.new(0, 0, 0, 56)
+speedContent.BackgroundTransparency = 1
+speedContent.Visible = false
+speedContent.Parent = mainFrame
+
+-- Mode Title
+local modeTitle = Instance.new("TextLabel")
+modeTitle.Size = UDim2.new(1, 0, 0, 20)
+modeTitle.Position = UDim2.new(0, 0, 0, 5)
+modeTitle.BackgroundTransparency = 1
+modeTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+modeTitle.Text = "Delay Mode"
+modeTitle.Font = Enum.Font.GothamBold
+modeTitle.TextSize = 11
+modeTitle.Parent = speedContent
+
+-- Mode Buttons Row
+local modeRow = Instance.new("Frame")
+modeRow.Size = UDim2.new(1, -20, 0, 24)
+modeRow.Position = UDim2.new(0, 10, 0, 25)
+modeRow.BackgroundTransparency = 1
+modeRow.Parent = speedContent
+
+local randomBtn = Instance.new("TextButton")
+randomBtn.Size = UDim2.new(0.33, -2, 1, 0)
+randomBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+randomBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+randomBtn.Text = "Random"
+randomBtn.Font = Enum.Font.GothamBold
+randomBtn.TextSize = 9
+randomBtn.Parent = modeRow
+local randomCorner = Instance.new("UICorner")
+randomCorner.CornerRadius = UDim.new(0, 6)
+randomCorner.Parent = randomBtn
+
+local seqBtn = Instance.new("TextButton")
+seqBtn.Size = UDim2.new(0.33, -2, 1, 0)
+seqBtn.Position = UDim2.new(0.33, 2, 0, 0)
+seqBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+seqBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+seqBtn.Text = "Seq"
+seqBtn.Font = Enum.Font.GothamBold
+seqBtn.TextSize = 9
+seqBtn.Parent = modeRow
+local seqCorner = Instance.new("UICorner")
+seqCorner.CornerRadius = UDim.new(0, 6)
+seqCorner.Parent = seqBtn
+
+local constBtn = Instance.new("TextButton")
+constBtn.Size = UDim2.new(0.34, -2, 1, 0)
+constBtn.Position = UDim2.new(0.66, 2, 0, 0)
+constBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+constBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+constBtn.Text = "Const"
+constBtn.Font = Enum.Font.GothamBold
+constBtn.TextSize = 9
+constBtn.Parent = modeRow
+local constCorner = Instance.new("UICorner")
+constCorner.CornerRadius = UDim.new(0, 6)
+constCorner.Parent = constBtn
+
+-- Delay List Title
+local delayListTitle = Instance.new("TextLabel")
+delayListTitle.Size = UDim2.new(1, 0, 0, 16)
+delayListTitle.Position = UDim2.new(0, 0, 0, 52)
+delayListTitle.BackgroundTransparency = 1
+delayListTitle.TextColor3 = Color3.fromRGB(150, 150, 150)
+delayListTitle.Text = "Delays (tap X to remove)"
+delayListTitle.Font = Enum.Font.Gotham
+delayListTitle.TextSize = 9
+delayListTitle.Parent = speedContent
+
+-- Delay List Frame
+local delayListFrame = Instance.new("Frame")
+delayListFrame.Size = UDim2.new(1, -20, 0, 60)
+delayListFrame.Position = UDim2.new(0, 10, 0, 70)
+delayListFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+delayListFrame.Parent = speedContent
+local delayListCorner = Instance.new("UICorner")
+delayListCorner.CornerRadius = UDim.new(0, 6)
+delayListCorner.Parent = delayListFrame
+
+local delayScroll = Instance.new("ScrollingFrame")
+delayScroll.Size = UDim2.new(1, -6, 1, -6)
+delayScroll.Position = UDim2.new(0, 3, 0, 3)
+delayScroll.BackgroundTransparency = 1
+delayScroll.ScrollBarThickness = 3
+delayScroll.Parent = delayListFrame
+
+local delayListLayout = Instance.new("UIListLayout")
+delayListLayout.Padding = UDim.new(0, 2)
+delayListLayout.Parent = delayScroll
+
+-- Constant Delay Input
+local constDelayLabel = Instance.new("TextLabel")
+constDelayLabel.Size = UDim2.new(1, 0, 0, 16)
+constDelayLabel.Position = UDim2.new(0, 0, 0, 52)
+constDelayLabel.BackgroundTransparency = 1
+constDelayLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+constDelayLabel.Text = "Constant Delay (seconds)"
+constDelayLabel.Font = Enum.Font.Gotham
+constDelayLabel.TextSize = 9
+constDelayLabel.Visible = false
+constDelayLabel.Parent = speedContent
+
+local constDelayInput = Instance.new("TextBox")
+constDelayInput.Size = UDim2.new(1, -20, 0, 26)
+constDelayInput.Position = UDim2.new(0, 10, 0, 70)
+constDelayInput.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+constDelayInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+constDelayInput.Text = "0.5"
+constDelayInput.PlaceholderText = "0.5"
+constDelayInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+constDelayInput.Font = Enum.Font.Gotham
+constDelayInput.TextSize = 12
+constDelayInput.Visible = false
+constDelayInput.Parent = speedContent
+local constDelayCorner = Instance.new("UICorner")
+constDelayCorner.CornerRadius = UDim.new(0, 6)
+constDelayCorner.Parent = constDelayInput
+
+-- Add Delay Row
+local addDelayRow = Instance.new("Frame")
+addDelayRow.Size = UDim2.new(1, -20, 0, 26)
+addDelayRow.Position = UDim2.new(0, 10, 0, 135)
+addDelayRow.BackgroundTransparency = 1
+addDelayRow.Parent = speedContent
+
+local addDelayInput = Instance.new("TextBox")
+addDelayInput.Size = UDim2.new(1, -40, 1, 0)
+addDelayInput.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+addDelayInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+addDelayInput.Text = ""
+addDelayInput.PlaceholderText = "Add delay..."
+addDelayInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+addDelayInput.Font = Enum.Font.Gotham
+addDelayInput.TextSize = 11
+addDelayInput.Parent = addDelayRow
+local addDelayCorner = Instance.new("UICorner")
+addDelayCorner.CornerRadius = UDim.new(0, 6)
+addDelayCorner.Parent = addDelayInput
+
+local addDelayBtn = Instance.new("TextButton")
+addDelayBtn.Size = UDim2.new(0, 28, 1, 0)
+addDelayBtn.Position = UDim2.new(1, -30, 0, 0)
+addDelayBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+addDelayBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+addDelayBtn.Text = "+"
+addDelayBtn.Font = Enum.Font.GothamBold
+addDelayBtn.TextSize = 14
+addDelayBtn.Parent = addDelayRow
+local addDelayBtnCorner = Instance.new("UICorner")
+addDelayBtnCorner.CornerRadius = UDim.new(0, 6)
+addDelayBtnCorner.Parent = addDelayBtn
+
+-- Clear All Button
+local clearDelayBtn = Instance.new("TextButton")
+clearDelayBtn.Size = UDim2.new(1, -20, 0, 22)
+clearDelayBtn.Position = UDim2.new(0, 10, 0, 165)
+clearDelayBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+clearDelayBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+clearDelayBtn.Text = "Clear All Delays"
+clearDelayBtn.Font = Enum.Font.GothamBold
+clearDelayBtn.TextSize = 10
+clearDelayBtn.Parent = speedContent
+local clearDelayCorner = Instance.new("UICorner")
+clearDelayCorner.CornerRadius = UDim.new(0, 6)
+clearDelayCorner.Parent = clearDelayBtn
+
+-- ========== MIMIC CONTENT ==========
 local mimicContent = Instance.new("Frame")
 mimicContent.Size = UDim2.new(1, 0, 1, -56)
 mimicContent.Position = UDim2.new(0, 0, 0, 56)
@@ -558,8 +551,8 @@ targetCorner.CornerRadius = UDim.new(0, 6)
 targetCorner.Parent = targetLabel
 
 local selectTargetBtn = Instance.new("TextButton")
-selectTargetBtn.Size = UDim2.new(1, -20, 0, 28)
-selectTargetBtn.Position = UDim2.new(0, 10, 0, 38)
+selectTargetBtn.Size = UDim2.new(1, -20, 0, 26)
+selectTargetBtn.Position = UDim2.new(0, 10, 0, 36)
 selectTargetBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 selectTargetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 selectTargetBtn.Text = "Select Target"
@@ -571,21 +564,21 @@ selectTargetCorner.CornerRadius = UDim.new(0, 6)
 selectTargetCorner.Parent = selectTargetBtn
 
 local mimicToggle = Instance.new("TextButton")
-mimicToggle.Size = UDim2.new(1, -20, 0, 32)
-mimicToggle.Position = UDim2.new(0, 10, 0, 72)
+mimicToggle.Size = UDim2.new(1, -20, 0, 26)
+mimicToggle.Position = UDim2.new(0, 10, 0, 68)
 mimicToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 mimicToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 mimicToggle.Text = "MIMIC: OFF"
 mimicToggle.Font = Enum.Font.GothamBold
-mimicToggle.TextSize = 14
+mimicToggle.TextSize = 12
 mimicToggle.Parent = mimicContent
 local mimicToggleCorner = Instance.new("UICorner")
 mimicToggleCorner.CornerRadius = UDim.new(0, 6)
 mimicToggleCorner.Parent = mimicToggle
 
 local suffixInput = Instance.new("TextBox")
-suffixInput.Size = UDim2.new(1, -70, 0, 28)
-suffixInput.Position = UDim2.new(0, 10, 0, 110)
+suffixInput.Size = UDim2.new(1, -70, 0, 24)
+suffixInput.Position = UDim2.new(0, 10, 0, 100)
 suffixInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 suffixInput.TextColor3 = Color3.fromRGB(255, 255, 255)
 suffixInput.Text = ""
@@ -600,8 +593,8 @@ suffixInputCorner.CornerRadius = UDim.new(0, 6)
 suffixInputCorner.Parent = suffixInput
 
 local addSuffixBtn = Instance.new("TextButton")
-addSuffixBtn.Size = UDim2.new(0, 50, 0, 28)
-addSuffixBtn.Position = UDim2.new(1, -60, 0, 110)
+addSuffixBtn.Size = UDim2.new(0, 50, 0, 24)
+addSuffixBtn.Position = UDim2.new(1, -60, 0, 100)
 addSuffixBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 addSuffixBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 addSuffixBtn.Text = "Add"
@@ -613,8 +606,8 @@ addSuffixCorner.CornerRadius = UDim.new(0, 6)
 addSuffixCorner.Parent = addSuffixBtn
 
 local suffixListFrame = Instance.new("Frame")
-suffixListFrame.Size = UDim2.new(1, -20, 0, 160)
-suffixListFrame.Position = UDim2.new(0, 10, 0, 145)
+suffixListFrame.Size = UDim2.new(1, -20, 0, 70)
+suffixListFrame.Position = UDim2.new(0, 10, 0, 130)
 suffixListFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 suffixListFrame.Parent = mimicContent
 local suffixListCorner = Instance.new("UICorner")
@@ -636,8 +629,8 @@ suffixLayout.Padding = UDim.new(0, 2)
 suffixLayout.Parent = suffixScroll
 
 local dropdownFrame = Instance.new("Frame")
-dropdownFrame.Size = UDim2.new(1, -20, 0, 120)
-dropdownFrame.Position = UDim2.new(0, 10, 0, 68)
+dropdownFrame.Size = UDim2.new(1, -20, 0, 100)
+dropdownFrame.Position = UDim2.new(0, 10, 0, 66)
 dropdownFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 dropdownFrame.Visible = false
 dropdownFrame.ZIndex = 10
@@ -726,7 +719,7 @@ end)
 hubButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         wait(0.1)
-        if not dragging then
+            if not dragging then
             hubButton.Visible = false
             mainFrame.Visible = true
         end
@@ -747,8 +740,8 @@ local function toggleAdvancedMode()
     advancedMode = not advancedMode
     
     if advancedMode then
-        mainFrame.Size = UDim2.new(0, 220, 0, 380)
-        mainFrame.Position = UDim2.new(0, 20, 0.5, -190)
+        mainFrame.Size = UDim2.new(0, 220, 0, 250)
+        mainFrame.Position = UDim2.new(0, 20, 0.5, -125)
         
         compactContent.Visible = false
         
@@ -756,6 +749,7 @@ local function toggleAdvancedMode()
         advancedContent.Visible = true
         chatSettingsContent.Visible = true
         mimicContent.Visible = false
+        speedContent.Visible = false
         
         titleLabel.Text = "⚙ Settings"
         settingsBtn.Text = "◀"
@@ -769,6 +763,7 @@ local function toggleAdvancedMode()
         advancedContent.Visible = false
         chatSettingsContent.Visible = false
         mimicContent.Visible = false
+        speedContent.Visible = false
         
         titleLabel.Text = "💬 Quick Chat"
         settingsBtn.Text = "⚙"
@@ -781,23 +776,19 @@ end)
 
 -- ========== TAB SWITCHING ==========
 local function switchTab(tab)
-    if tab == "chat" then
-        currentTab = "chat"
-        chatSettingsContent.Visible = true
-        mimicContent.Visible = false
-        chatTabBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-        chatTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        mimicTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        mimicTabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-    else
-        currentTab = "mimic"
-        chatSettingsContent.Visible = false
-        mimicContent.Visible = true
-        chatTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        chatTabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-        mimicTabBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-        mimicTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    end
+    currentTab = tab
+    chatSettingsContent.Visible = (tab == "chat")
+    mimicContent.Visible = (tab == "mimic")
+    speedContent.Visible = (tab == "speed")
+    
+    chatTabBtn.BackgroundColor3 = tab == "chat" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
+    chatTabBtn.TextColor3 = tab == "chat" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
+    
+    mimicTabBtn.BackgroundColor3 = tab == "mimic" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
+    mimicTabBtn.TextColor3 = tab == "mimic" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
+    
+    speedTabBtn.BackgroundColor3 = tab == "speed" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
+    speedTabBtn.TextColor3 = tab == "speed" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
 end
 
 chatTabBtn.MouseButton1Click:Connect(function()
@@ -806,6 +797,10 @@ end)
 
 mimicTabBtn.MouseButton1Click:Connect(function()
     switchTab("mimic")
+end)
+
+speedTabBtn.MouseButton1Click:Connect(function()
+    switchTab("speed")
 end)
 
 -- ========== CHARACTER LIMIT ==========
@@ -903,7 +898,7 @@ local function updateDelayListUI()
     
     for i, d in ipairs(delayList) do
         local item = Instance.new("Frame")
-        item.Size = UDim2.new(1, 0, 0, 20)
+        item.Size = UDim2.new(1, 0, 0, 18)
         item.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
         item.Parent = delayScroll
         
@@ -912,7 +907,7 @@ local function updateDelayListUI()
         itemCorner.Parent = item
         
         local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(1, -24, 1, 0)
+        label.Size = UDim2.new(1, -22, 1, 0)
         label.Position = UDim2.new(0, 5, 0, 0)
         label.BackgroundTransparency = 1
         label.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -923,13 +918,13 @@ local function updateDelayListUI()
         label.Parent = item
         
         local delBtn = Instance.new("TextButton")
-        delBtn.Size = UDim2.new(0, 18, 0, 18)
-        delBtn.Position = UDim2.new(1, -20, 0.5, -9)
+        delBtn.Size = UDim2.new(0, 16, 0, 16)
+        delBtn.Position = UDim2.new(1, -18, 0.5, -8)
         delBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
         delBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         delBtn.Text = "X"
         delBtn.Font = Enum.Font.GothamBold
-        delBtn.TextSize = 9
+        delBtn.TextSize = 8
         delBtn.Parent = item
         
         local delCorner = Instance.new("UICorner")
@@ -957,16 +952,6 @@ local function updateModeButtons()
     constBtn.BackgroundColor3 = delayMode == "constant" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     constBtn.TextColor3 = delayMode == "constant" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
     
-    -- Update mode button text
-    if delayMode == "random" then
-        delayModeBtn.Text = "R"
-    elseif delayMode == "sequential" then
-        delayModeBtn.Text = "S"
-    else
-        delayModeBtn.Text = "C"
-    end
-    
-    -- Toggle visibility
     delayListFrame.Visible = delayMode ~= "constant"
     delayListTitle.Visible = delayMode ~= "constant"
     constDelayLabel.Visible = delayMode == "constant"
@@ -988,22 +973,6 @@ end)
 constBtn.MouseButton1Click:Connect(function()
     delayMode = "constant"
     updateModeButtons()
-end)
-
-delayModeBtn.MouseButton1Click:Connect(function()
-    if delayMode == "random" then
-        delayMode = "sequential"
-    elseif delayMode == "sequential" then
-        delayMode = "constant"
-    else
-        delayMode = "random"
-    end
-    updateModeButtons()
-end)
-
--- ========== DELAY SETTINGS TOGGLE ==========
-delaySettingsBtn.MouseButton1Click:Connect(function()
-    delayDropdown.Visible = not delayDropdown.Visible
 end)
 
 -- ========== ADD DELAY ==========
@@ -1110,7 +1079,7 @@ local function updateSuffixList()
     
     for i, suffix in ipairs(suffixes) do
         local item = Instance.new("Frame")
-        item.Size = UDim2.new(1, 0, 0, 24)
+        item.Size = UDim2.new(1, 0, 0, 20)
         item.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
         item.Parent = suffixScroll
         
@@ -1119,25 +1088,25 @@ local function updateSuffixList()
         itemCorner.Parent = item
         
         local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(1, -30, 1, 0)
+        label.Size = UDim2.new(1, -26, 1, 0)
         label.Position = UDim2.new(0, 5, 0, 0)
         label.BackgroundTransparency = 1
         label.TextColor3 = Color3.fromRGB(255, 255, 255)
         label.Text = i..". "..suffix
         label.Font = Enum.Font.Gotham
-        label.TextSize = 11
+        label.TextSize = 10
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.TextTruncate = Enum.TextTruncate.AtEnd
         label.Parent = item
         
         local deleteBtn = Instance.new("TextButton")
-        deleteBtn.Size = UDim2.new(0, 24, 0, 24)
-        deleteBtn.Position = UDim2.new(1, -26, 0, 0)
+        deleteBtn.Size = UDim2.new(0, 20, 0, 20)
+        deleteBtn.Position = UDim2.new(1, -22, 0, 0)
         deleteBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
         deleteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         deleteBtn.Text = "X"
         deleteBtn.Font = Enum.Font.GothamBold
-        deleteBtn.TextSize = 10
+        deleteBtn.TextSize = 9
         deleteBtn.Parent = item
         
         local deleteCorner = Instance.new("UICorner")
@@ -1208,7 +1177,7 @@ local function updateDropdown()
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= player then
             local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, 0, 0, 24)
+            btn.Size = UDim2.new(1, 0, 0, 22)
             btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
             btn.TextColor3 = Color3.fromRGB(255, 255, 255)
             btn.Text = plr.Name
@@ -1271,9 +1240,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if dropdownFrame.Visible then
             dropdownFrame.Visible = false
         end
-        if delayDropdown.Visible then
-            delayDropdown.Visible = false
-        end
     end
 end)
 
@@ -1291,9 +1257,13 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Initialize delay list UI
+-- Initialize
 updateDelayListUI()
 updateModeButtons()
+updateSuffixList()
+updateCaseButtons()
 
 print("✅ Compact Multi-Chat Hub Loaded")
-print("📌 Delay Mode: Random (R) - Click 'D' to customize delays")
+print("📌 Default: UPPER case, Random delays (0.7, 0.9, 1, 2, 0.8)")
+print("📌 Mimic suffixes pre-loaded: 🤓🤓🤓, NB READ WHAT IT SAID LOL")
+       
