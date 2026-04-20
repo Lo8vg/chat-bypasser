@@ -30,8 +30,6 @@ local kblPaused = false
 local kblDelayMode = "random"
 local kblDelayList = {0.7, 0.9, 1, 2, 0.8}
 local kblDelayIndex = 1
-local kblConstDelay = 0.5
-local kblCurrentMsg = ""
 
 -- Delay Settings
 local delayMode = "random"
@@ -331,7 +329,7 @@ kblContent.Parent = mainFrame
 
 -- Preview Box
 local previewBox = Instance.new("Frame")
-previewBox.Size = UDim2.new(1, -20, 0, 50)
+previewBox.Size = UDim2.new(1, -20, 0, 55)
 previewBox.Position = UDim2.new(0, 10, 0, 5)
 previewBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 previewBox.Parent = kblContent
@@ -351,66 +349,33 @@ previewTitle.TextXAlignment = Enum.TextXAlignment.Left
 previewTitle.Parent = previewBox
 
 local previewText = Instance.new("TextLabel")
-previewText.Size = UDim2.new(1, -16, 0, 24)
+previewText.Size = UDim2.new(1, -16, 0, 30)
 previewText.Position = UDim2.new(0, 8, 0, 20)
 previewText.BackgroundTransparency = 1
 previewText.TextColor3 = Color3.fromRGB(255, 255, 255)
 previewText.Text = "Waiting..."
 previewText.Font = Enum.Font.GothamBold
-previewText.TextSize = 11
+previewText.TextSize = 12
 previewText.TextXAlignment = Enum.TextXAlignment.Left
-previewText.TextTruncate = Enum.TextTruncate.AtEnd
+previewText.TextWrapped = true
 previewText.Parent = previewBox
 
 -- Status Label
 local kblStatus = Instance.new("TextLabel")
 kblStatus.Size = UDim2.new(1, -20, 0, 14)
-kblStatus.Position = UDim2.new(0, 10, 0, 58)
+kblStatus.Position = UDim2.new(0, 10, 0, 62)
 kblStatus.BackgroundTransparency = 1
 kblStatus.TextColor3 = Color3.fromRGB(100, 200, 100)
-kblStatus.Text = "Status: Ready"
+kblStatus.Text = "Messages: "..#kblMessages.." | Ready"
 kblStatus.Font = Enum.Font.Gotham
 kblStatus.TextSize = 9
 kblStatus.TextXAlignment = Enum.TextXAlignment.Left
 kblStatus.Parent = kblContent
 
--- Messages List Title
-local msgListTitle = Instance.new("TextLabel")
-msgListTitle.Size = UDim2.new(1, -20, 0, 16)
-msgListTitle.Position = UDim2.new(0, 10, 0, 75)
-msgListTitle.BackgroundTransparency = 1
-msgListTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
-msgListTitle.Text = "Messages ("..#kblMessages.." total)"
-msgListTitle.Font = Enum.Font.GothamBold
-msgListTitle.TextSize = 10
-msgListTitle.TextXAlignment = Enum.TextXAlignment.Left
-msgListTitle.Parent = kblContent
-
--- Messages List
-local msgListFrame = Instance.new("Frame")
-msgListFrame.Size = UDim2.new(1, -20, 0, 55)
-msgListFrame.Position = UDim2.new(0, 10, 0, 92)
-msgListFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-msgListFrame.Parent = kblContent
-local msgListCorner = Instance.new("UICorner")
-msgListCorner.CornerRadius = UDim.new(0, 6)
-msgListCorner.Parent = msgListFrame
-
-local msgScroll = Instance.new("ScrollingFrame")
-msgScroll.Size = UDim2.new(1, -6, 1, -6)
-msgScroll.Position = UDim2.new(0, 3, 0, 3)
-msgScroll.BackgroundTransparency = 1
-msgScroll.ScrollBarThickness = 3
-msgScroll.Parent = msgListFrame
-
-local msgListLayout = Instance.new("UIListLayout")
-msgListLayout.Padding = UDim.new(0, 2)
-msgListLayout.Parent = msgScroll
-
 -- Button Row
 local kblBtnRow = Instance.new("Frame")
-kblBtnRow.Size = UDim2.new(1, -20, 0, 26)
-kblBtnRow.Position = UDim2.new(0, 10, 0, 150)
+kblBtnRow.Size = UDim2.new(1, -20, 0, 28)
+kblBtnRow.Position = UDim2.new(0, 10, 0, 80)
 kblBtnRow.BackgroundTransparency = 1
 kblBtnRow.Parent = kblContent
 
@@ -421,7 +386,7 @@ kblSendBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
 kblSendBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 kblSendBtn.Text = "SEND"
 kblSendBtn.Font = Enum.Font.GothamBold
-kblSendBtn.TextSize = 12
+kblSendBtn.TextSize = 13
 kblSendBtn.Parent = kblBtnRow
 local kblSendCorner = Instance.new("UICorner")
 kblSendCorner.CornerRadius = UDim.new(0, 6)
@@ -435,7 +400,7 @@ kblPauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
 kblPauseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 kblPauseBtn.Text = "PAUSE"
 kblPauseBtn.Font = Enum.Font.GothamBold
-kblPauseBtn.TextSize = 12
+kblPauseBtn.TextSize = 13
 kblPauseBtn.Parent = kblBtnRow
 local kblPauseCorner = Instance.new("UICorner")
 kblPauseCorner.CornerRadius = UDim.new(0, 6)
@@ -444,7 +409,7 @@ kblPauseCorner.Parent = kblPauseBtn
 -- Speed Mode Title
 local kblSpeedTitle = Instance.new("TextLabel")
 kblSpeedTitle.Size = UDim2.new(1, -20, 0, 14)
-kblSpeedTitle.Position = UDim2.new(0, 10, 0, 180)
+kblSpeedTitle.Position = UDim2.new(0, 10, 0, 112)
 kblSpeedTitle.BackgroundTransparency = 1
 kblSpeedTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
 kblSpeedTitle.Text = "Delay Mode"
@@ -455,7 +420,7 @@ kblSpeedTitle.Parent = kblContent
 -- Speed Mode Buttons
 local kblModeRow = Instance.new("Frame")
 kblModeRow.Size = UDim2.new(1, -20, 0, 22)
-kblModeRow.Position = UDim2.new(0, 10, 0, 196)
+kblModeRow.Position = UDim2.new(0, 10, 0, 128)
 kblModeRow.BackgroundTransparency = 1
 kblModeRow.Parent = kblContent
 
@@ -500,7 +465,7 @@ kblConstCorner.Parent = kblConstBtn
 -- KBL Delay Input Row
 local kblDelayRow = Instance.new("Frame")
 kblDelayRow.Size = UDim2.new(1, -20, 0, 24)
-kblDelayRow.Position = UDim2.new(0, 10, 0, 222)
+kblDelayRow.Position = UDim2.new(0, 10, 0, 154)
 kblDelayRow.BackgroundTransparency = 1
 kblDelayRow.Parent = kblContent
 
@@ -534,7 +499,7 @@ kblAddCorner.Parent = kblAddDelayBtn
 -- KBL Constant Delay Input (hidden by default)
 local kblConstInput = Instance.new("TextBox")
 kblConstInput.Size = UDim2.new(1, -20, 0, 24)
-kblConstInput.Position = UDim2.new(0, 10, 0, 222)
+kblConstInput.Position = UDim2.new(0, 10, 0, 154)
 kblConstInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 kblConstInput.TextColor3 = Color3.fromRGB(255, 255, 255)
 kblConstInput.Text = "0.5"
@@ -1064,40 +1029,6 @@ speedTabBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ========== KBL FUNCTIONS ==========
-local function updateKblMsgList()
-    for _, child in pairs(msgScroll:GetChildren()) do
-        if child:IsA("Frame") then
-            child:Destroy()
-        end
-    end
-    
-    for i, msg in ipairs(kblMessages) do
-        local item = Instance.new("Frame")
-        item.Size = UDim2.new(1, 0, 0, 16)
-        item.BackgroundColor3 = i == kblIndex and Color3.fromRGB(0, 100, 180) or Color3.fromRGB(60, 60, 60)
-        item.Parent = msgScroll
-        
-        local itemCorner = Instance.new("UICorner")
-        itemCorner.CornerRadius = UDim.new(0, 4)
-        itemCorner.Parent = item
-        
-        local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(1, -4, 1, 0)
-        label.Position = UDim2.new(0, 4, 0, 0)
-        label.BackgroundTransparency = 1
-        label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        label.Text = i..". "..msg
-        label.Font = Enum.Font.Gotham
-        label.TextSize = 9
-        label.TextXAlignment = Enum.TextXAlignment.Left
-        label.TextTruncate = Enum.TextTruncate.AtEnd
-        label.Parent = item
-    end
-    
-    msgListTitle.Text = "Messages ("..#kblMessages.." total)"
-    msgScroll.CanvasSize = UDim2.new(0, 0, 0, msgListLayout.AbsoluteContentSize.Y)
-end
-
 local function getKblDelay()
     if kblDelayMode == "constant" then
         local d = tonumber(kblConstInput.Text) or 0.5
@@ -1164,13 +1095,10 @@ local function runKbl()
             wait(0.1)
         else
             local msg = kblMessages[kblIndex]
-            kblCurrentMsg = msg
             previewText.Text = msg
             kblStatus.Text = "Sending: "..kblIndex.."/"..#kblMessages
-            kblStatus.TextColor3 = Color3.fromRGB(100, 200, 255)
             
             sendMessage(msg)
-            updateKblMsgList()
             
             kblIndex = kblIndex + 1
             
@@ -1179,13 +1107,12 @@ local function runKbl()
                 kblPaused = false
                 kblIndex = 1
                 previewText.Text = "Done!"
-                kblStatus.Text = "Status: Completed"
+                kblStatus.Text = "Messages: "..#kblMessages.." | Completed"
                 kblStatus.TextColor3 = Color3.fromRGB(100, 200, 100)
                 kblSendBtn.Text = "SEND"
                 kblSendBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
                 kblPauseBtn.Text = "PAUSE"
                 kblPauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
-                updateKblMsgList()
                 return
             end
             
@@ -1199,19 +1126,23 @@ kblSendBtn.MouseButton1Click:Connect(function()
     if not kblRunning then
         kblRunning = true
         kblPaused = false
-        kblSendBtn.Text = "RUNNING"
-        kblSendBtn.BackgroundColor3 = Color3.fromRGB(255, 193, 7)
+        kblIndex = 1
+        kblSendBtn.Text = "STOP"
+        kblSendBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+        kblStatus.Text = "Messages: "..#kblMessages.." | Running..."
+        kblStatus.TextColor3 = Color3.fromRGB(100, 200, 255)
         spawn(runKbl)
     else
         kblRunning = false
         kblPaused = false
         kblIndex = 1
         previewText.Text = "Waiting..."
-        kblStatus.Text = "Status: Ready"
+        kblStatus.Text = "Messages: "..#kblMessages.." | Ready"
         kblStatus.TextColor3 = Color3.fromRGB(100, 200, 100)
         kblSendBtn.Text = "SEND"
         kblSendBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
-        updateKblMsgList()
+        kblPauseBtn.Text = "PAUSE"
+        kblPauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
     end
 end)
 
@@ -1221,11 +1152,13 @@ kblPauseBtn.MouseButton1Click:Connect(function()
         if kblPaused then
             kblPauseBtn.Text = "RESUME"
             kblPauseBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 80)
-            kblStatus.Text = "Status: Paused"
+            kblStatus.Text = "Messages: "..#kblMessages.." | Paused"
             kblStatus.TextColor3 = Color3.fromRGB(255, 200, 100)
         else
             kblPauseBtn.Text = "PAUSE"
             kblPauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
+            kblStatus.Text = "Messages: "..#kblMessages.." | Running..."
+            kblStatus.TextColor3 = Color3.fromRGB(100, 200, 255)
         end
     end
 end)
@@ -1297,52 +1230,6 @@ textbox:GetPropertyChangedSignal("Text"):Connect(function()
         charCounter.TextColor3 = Color3.fromRGB(100, 100, 100)
     end
 end)
-
--- ========== SEND MESSAGE FUNCTION ==========
-local function sendMessageOld(msg, preserveCase)
-    local message = msg
-    
-    if not preserveCase then
-        if caseMode == "upper" then
-            message = string.upper(message)
-        elseif caseMode == "lower" then
-            message = string.lower(message)
-        end
-    end
-    
-    message = message:gsub("^%s+", ""):gsub("%s+\$", "")
-    
-    if message == "" then
-        return false
-    end
-    
-    if #message > MAX_CHARS then
-        message = message:sub(1, MAX_CHARS)
-    end
-    
-    local chatRemote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
-    
-    if chatRemote then
-        local sayMessage = chatRemote:FindFirstChild("SayMessageRequest")
-        if sayMessage then
-            sayMessage:FireServer(message, "All")
-            return true
-        end
-    end
-    
-    if TextChatService then
-        local channel = TextChatService:FindFirstChild("TextChannels")
-        if channel then
-            local rbxGeneral = channel:FindFirstChild("RBXGeneral")
-            if rbxGeneral then
-                rbxGeneral:SendAsync(message)
-                return true
-            end
-        end
-    end
-    
-    return false
-end
 
 -- ========== GET NEXT DELAY ==========
 local function getNextDelay()
@@ -1532,7 +1419,7 @@ sendAllBtn.MouseButton1Click:Connect(function()
     
     spawn(function()
         for i, line in ipairs(lines) do
-            sendMessageOld(line)
+            sendMessage(line)
             if i < #lines then
                 local d = getNextDelay()
                 wait(d)
@@ -1605,7 +1492,7 @@ local function onPlayerChatted(plr, msg)
     
     local suffix = suffixes[suffixIndex]
     local mimicMsg = '"' .. msg .. '" ' .. suffix
-    sendMessageOld(mimicMsg, true)
+    sendMessage(mimicMsg)
     
     suffixIndex = suffixIndex + 1
     if suffixIndex > #suffixes then
@@ -1732,7 +1619,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 -- Initialize
-updateKblMsgList()
 updateKblModeButtons()
 updateDelayListUI()
 updateModeButtons()
@@ -1740,6 +1626,5 @@ updateSuffixList()
 updateCaseButtons()
 
 print("✅ Compact Multi-Chat Hub Loaded")
-print("📌 Default: UPPER case, Random delays")
 print("📌 KBL tab with premade messages ready")
-   
+print("📌 Press RightCtrl to toggle visibility")
