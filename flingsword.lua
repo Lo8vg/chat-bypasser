@@ -788,14 +788,12 @@ local function equipSword()
     local backpack = player:FindFirstChild("Backpack")
     if not character or not backpack then return nil end
     local currentTool = getSword()
-    if currentTool then return currentTool
-        end
+    if currentTool then return currentTool end
     local humanoid = character:FindFirstChild("Humanoid")
     if not humanoid then return nil end
     for _, item in pairs(backpack:GetChildren()) do
         if item:IsA("Tool") then
             humanoid:EquipTool(item)
-            wait(0.05)
             return item
         end
     end
@@ -1028,7 +1026,6 @@ end)
 -- ========== RESPAWN HANDLER ==========
 
 player.CharacterAdded:Connect(function(char)
-    wait(0.3)
     if destroyEnabled then
         flingCount = flingCount + 1
         equipSword()
