@@ -15,8 +15,27 @@ local mimicEnabled = false
 local targetPlayer = nil
 local suffixes = {"🤓🤓🤓", "NB READ WHAT IT SAID LOL"}
 local suffixIndex = 1
-local currentTab = "chat"
+local currentTab = "kbl"
 local advancedMode = false
+
+-- KBL Settings
+local kblMessages = {
+    "BAHAHAHAHAHAHAHAHA",
+    "WHY DO I OWN EVERYONE",
+    "LOLOOOOL PEDRO IS THE BEST AND GREATEST EVER"
+}
+local kblIndex = 1
+local kblRunning = false
+local kblPaused = false
+local kblDelayMode = "random"
+local kblDelayList = {0.7, 0.9, 1, 2, 0.8}
+local kblDelayIndex = 1
+
+-- Main Chat Send Settings
+local chatSending = false
+local chatPaused = false
+local chatLines = {}
+local chatIndex = 1
 
 -- Delay Settings
 local delayMode = "random"
@@ -180,28 +199,10 @@ compactRow.Position = UDim2.new(0, 10, 0, 75)
 compactRow.BackgroundTransparency = 1
 compactRow.Parent = compactContent
 
--- Delay
-local delayTextbox = Instance.new("TextBox")
-delayTextbox.Size = UDim2.new(0, 40, 1, 0)
-delayTextbox.Position = UDim2.new(0, 0, 0, 0)
-delayTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-delayTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
-delayTextbox.Text = "0.5"
-delayTextbox.PlaceholderText = "0.5"
-delayTextbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
-delayTextbox.Font = Enum.Font.Gotham
-delayTextbox.TextSize = 11
-delayTextbox.ClearTextOnFocus = false
-delayTextbox.Parent = compactRow
-
-local delayCorner = Instance.new("UICorner")
-delayCorner.CornerRadius = UDim.new(0, 6)
-delayCorner.Parent = delayTextbox
-
 -- Clear Button
 local clearBtn = Instance.new("TextButton")
 clearBtn.Size = UDim2.new(0, 35, 1, 0)
-clearBtn.Position = UDim2.new(0, 45, 0, 0)
+clearBtn.Position = UDim2.new(0, 0, 0, 0)
 clearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 clearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 clearBtn.Text = "C"
@@ -212,10 +213,24 @@ local clearCorner = Instance.new("UICorner")
 clearCorner.CornerRadius = UDim.new(0, 6)
 clearCorner.Parent = clearBtn
 
+-- Pause Button
+local pauseBtn = Instance.new("TextButton")
+pauseBtn.Size = UDim2.new(0, 35, 1, 0)
+pauseBtn.Position = UDim2.new(0, 40, 0, 0)
+pauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
+pauseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+pauseBtn.Text = "P"
+pauseBtn.Font = Enum.Font.GothamBold
+pauseBtn.TextSize = 13
+pauseBtn.Parent = compactRow
+local pauseCorner = Instance.new("UICorner")
+pauseCorner.CornerRadius = UDim.new(0, 6)
+pauseCorner.Parent = pauseBtn
+
 -- Send Button
 local sendAllBtn = Instance.new("TextButton")
-sendAllBtn.Size = UDim2.new(1, -85, 1, 0)
-sendAllBtn.Position = UDim2.new(0, 85, 0, 0)
+sendAllBtn.Size = UDim2.new(1, -80, 1, 0)
+sendAllBtn.Position = UDim2.new(0, 80, 0, 0)
 sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 sendAllBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 sendAllBtn.Text = "S"
@@ -232,7 +247,7 @@ charCounter.Size = UDim2.new(1, -20, 0, 14)
 charCounter.Position = UDim2.new(0, 10, 1, -16)
 charCounter.BackgroundTransparency = 1
 charCounter.TextColor3 = Color3.fromRGB(100, 100, 100)
-charCounter.Text = "Lines: 0 | Chars: 0/200"
+charCounter.Text = "Lines: 0 | Max: 0/200"
 charCounter.Font = Enum.Font.Gotham
 charCounter.TextSize = 9
 charCounter.TextXAlignment = Enum.TextXAlignment.Right
@@ -254,11 +269,24 @@ tabBar.BackgroundTransparency = 1
 tabBar.Visible = false
 tabBar.Parent = mainFrame
 
+local kblTabBtn = Instance.new("TextButton")
+kblTabBtn.Size = UDim2.new(0.25, -2, 1, -4)
+kblTabBtn.Position = UDim2.new(0, 2, 0, 2)
+kblTabBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+kblTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+kblTabBtn.Text = "KBL"
+kblTabBtn.Font = Enum.Font.GothamBold
+kblTabBtn.TextSize = 11
+kblTabBtn.Parent = tabBar
+local kblTabCorner = Instance.new("UICorner")
+kblTabCorner.CornerRadius = UDim.new(0, 6)
+kblTabCorner.Parent = kblTabBtn
+
 local chatTabBtn = Instance.new("TextButton")
-chatTabBtn.Size = UDim2.new(0.33, -3, 1, -4)
-chatTabBtn.Position = UDim2.new(0, 2, 0, 2)
-chatTabBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-chatTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+chatTabBtn.Size = UDim2.new(0.25, -2, 1, -4)
+chatTabBtn.Position = UDim2.new(0.25, 1, 0, 2)
+chatTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+chatTabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 chatTabBtn.Text = "Chat"
 chatTabBtn.Font = Enum.Font.GothamBold
 chatTabBtn.TextSize = 11
@@ -268,8 +296,8 @@ chatTabCorner.CornerRadius = UDim.new(0, 6)
 chatTabCorner.Parent = chatTabBtn
 
 local mimicTabBtn = Instance.new("TextButton")
-mimicTabBtn.Size = UDim2.new(0.33, -3, 1, -4)
-mimicTabBtn.Position = UDim2.new(0.33, 1, 0, 2)
+mimicTabBtn.Size = UDim2.new(0.25, -2, 1, -4)
+mimicTabBtn.Position = UDim2.new(0.5, 1, 0, 2)
 mimicTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 mimicTabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 mimicTabBtn.Text = "Mimic"
@@ -281,8 +309,8 @@ mimicTabCorner.CornerRadius = UDim.new(0, 6)
 mimicTabCorner.Parent = mimicTabBtn
 
 local speedTabBtn = Instance.new("TextButton")
-speedTabBtn.Size = UDim2.new(0.34, -3, 1, -4)
-speedTabBtn.Position = UDim2.new(0.66, 0, 0, 2)
+speedTabBtn.Size = UDim2.new(0.25, -2, 1, -4)
+speedTabBtn.Position = UDim2.new(0.75, 0, 0, 2)
 speedTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 speedTabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 speedTabBtn.Text = "Speed"
@@ -292,6 +320,200 @@ speedTabBtn.Parent = tabBar
 local speedTabCorner = Instance.new("UICorner")
 speedTabCorner.CornerRadius = UDim.new(0, 6)
 speedTabCorner.Parent = speedTabBtn
+
+-- ========== KBL CONTENT ==========
+local kblContent = Instance.new("Frame")
+kblContent.Size = UDim2.new(1, 0, 1, -56)
+kblContent.Position = UDim2.new(0, 0, 0, 56)
+kblContent.BackgroundTransparency = 1
+kblContent.Visible = false
+kblContent.Parent = mainFrame
+
+-- Preview Box
+local previewBox = Instance.new("Frame")
+previewBox.Size = UDim2.new(1, -20, 0, 55)
+previewBox.Position = UDim2.new(0, 10, 0, 5)
+previewBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+previewBox.Parent = kblContent
+local previewCorner = Instance.new("UICorner")
+previewCorner.CornerRadius = UDim.new(0, 6)
+previewCorner.Parent = previewBox
+
+local previewTitle = Instance.new("TextLabel")
+previewTitle.Size = UDim2.new(1, 0, 0, 14)
+previewTitle.Position = UDim2.new(0, 8, 0, 4)
+previewTitle.BackgroundTransparency = 1
+previewTitle.TextColor3 = Color3.fromRGB(150, 150, 150)
+previewTitle.Text = "Current Message:"
+previewTitle.Font = Enum.Font.Gotham
+previewTitle.TextSize = 9
+previewTitle.TextXAlignment = Enum.TextXAlignment.Left
+previewTitle.Parent = previewBox
+
+local previewText = Instance.new("TextLabel")
+previewText.Size = UDim2.new(1, -16, 0, 30)
+previewText.Position = UDim2.new(0, 8, 0, 20)
+previewText.BackgroundTransparency = 1
+previewText.TextColor3 = Color3.fromRGB(255, 255, 255)
+previewText.Text = "Waiting..."
+previewText.Font = Enum.Font.GothamBold
+previewText.TextSize = 12
+previewText.TextXAlignment = Enum.TextXAlignment.Left
+previewText.TextWrapped = true
+previewText.Parent = previewBox
+
+-- Status Label
+local kblStatus = Instance.new("TextLabel")
+kblStatus.Size = UDim2.new(1, -20, 0, 14)
+kblStatus.Position = UDim2.new(0, 10, 0, 62)
+kblStatus.BackgroundTransparency = 1
+kblStatus.TextColor3 = Color3.fromRGB(100, 200, 100)
+kblStatus.Text = "Messages: "..#kblMessages.." | Ready"
+kblStatus.Font = Enum.Font.Gotham
+kblStatus.TextSize = 9
+kblStatus.TextXAlignment = Enum.TextXAlignment.Left
+kblStatus.Parent = kblContent
+
+-- Button Row
+local kblBtnRow = Instance.new("Frame")
+kblBtnRow.Size = UDim2.new(1, -20, 0, 28)
+kblBtnRow.Position = UDim2.new(0, 10, 0, 80)
+kblBtnRow.BackgroundTransparency = 1
+kblBtnRow.Parent = kblContent
+
+-- Send Button
+local kblSendBtn = Instance.new("TextButton")
+kblSendBtn.Size = UDim2.new(0.5, -2, 1, 0)
+kblSendBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+kblSendBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+kblSendBtn.Text = "SEND"
+kblSendBtn.Font = Enum.Font.GothamBold
+kblSendBtn.TextSize = 13
+kblSendBtn.Parent = kblBtnRow
+local kblSendCorner = Instance.new("UICorner")
+kblSendCorner.CornerRadius = UDim.new(0, 6)
+kblSendCorner.Parent = kblSendBtn
+
+-- Pause Button
+local kblPauseBtn = Instance.new("TextButton")
+kblPauseBtn.Size = UDim2.new(0.5, -2, 1, 0)
+kblPauseBtn.Position = UDim2.new(0.5, 2, 0, 0)
+kblPauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
+kblPauseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+kblPauseBtn.Text = "PAUSE"
+kblPauseBtn.Font = Enum.Font.GothamBold
+kblPauseBtn.TextSize = 13
+kblPauseBtn.Parent = kblBtnRow
+local kblPauseCorner = Instance.new("UICorner")
+kblPauseCorner.CornerRadius = UDim.new(0, 6)
+kblPauseCorner.Parent = kblPauseBtn
+
+-- Speed Mode Title
+local kblSpeedTitle = Instance.new("TextLabel")
+kblSpeedTitle.Size = UDim2.new(1, -20, 0, 14)
+kblSpeedTitle.Position = UDim2.new(0, 10, 0, 112)
+kblSpeedTitle.BackgroundTransparency = 1
+kblSpeedTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+kblSpeedTitle.Text = "Delay Mode"
+kblSpeedTitle.Font = Enum.Font.GothamBold
+kblSpeedTitle.TextSize = 10
+kblSpeedTitle.Parent = kblContent
+
+-- Speed Mode Buttons
+local kblModeRow = Instance.new("Frame")
+kblModeRow.Size = UDim2.new(1, -20, 0, 22)
+kblModeRow.Position = UDim2.new(0, 10, 0, 128)
+kblModeRow.BackgroundTransparency = 1
+kblModeRow.Parent = kblContent
+
+local kblRandomBtn = Instance.new("TextButton")
+kblRandomBtn.Size = UDim2.new(0.33, -2, 1, 0)
+kblRandomBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+kblRandomBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+kblRandomBtn.Text = "Random"
+kblRandomBtn.Font = Enum.Font.GothamBold
+kblRandomBtn.TextSize = 9
+kblRandomBtn.Parent = kblModeRow
+local kblRandomCorner = Instance.new("UICorner")
+kblRandomCorner.CornerRadius = UDim.new(0, 4)
+kblRandomCorner.Parent = kblRandomBtn
+
+local kblSeqBtn = Instance.new("TextButton")
+kblSeqBtn.Size = UDim2.new(0.33, -2, 1, 0)
+kblSeqBtn.Position = UDim2.new(0.33, 2, 0, 0)
+kblSeqBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+kblSeqBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+kblSeqBtn.Text = "Seq"
+kblSeqBtn.Font = Enum.Font.GothamBold
+kblSeqBtn.TextSize = 9
+kblSeqBtn.Parent = kblModeRow
+local kblSeqCorner = Instance.new("UICorner")
+kblSeqCorner.CornerRadius = UDim.new(0, 4)
+kblSeqCorner.Parent = kblSeqBtn
+
+local kblConstBtn = Instance.new("TextButton")
+kblConstBtn.Size = UDim2.new(0.34, -2, 1, 0)
+kblConstBtn.Position = UDim2.new(0.66, 2, 0, 0)
+kblConstBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+kblConstBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+kblConstBtn.Text = "Const"
+kblConstBtn.Font = Enum.Font.GothamBold
+kblConstBtn.TextSize = 9
+kblConstBtn.Parent = kblModeRow
+local kblConstCorner = Instance.new("UICorner")
+kblConstCorner.CornerRadius = UDim.new(0, 4)
+kblConstCorner.Parent = kblConstBtn
+
+-- KBL Delay Input Row
+local kblDelayRow = Instance.new("Frame")
+kblDelayRow.Size = UDim2.new(1, -20, 0, 24)
+kblDelayRow.Position = UDim2.new(0, 10, 0, 154)
+kblDelayRow.BackgroundTransparency = 1
+kblDelayRow.Parent = kblContent
+
+local kblDelayInput = Instance.new("TextBox")
+kblDelayInput.Size = UDim2.new(1, -40, 1, 0)
+kblDelayInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+kblDelayInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+kblDelayInput.Text = ""
+kblDelayInput.PlaceholderText = "Add delay (e.g. 0.5)"
+kblDelayInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+kblDelayInput.Font = Enum.Font.Gotham
+kblDelayInput.TextSize = 10
+kblDelayInput.Parent = kblDelayRow
+local kblDelayCorner = Instance.new("UICorner")
+kblDelayCorner.CornerRadius = UDim.new(0, 6)
+kblDelayCorner.Parent = kblDelayInput
+
+local kblAddDelayBtn = Instance.new("TextButton")
+kblAddDelayBtn.Size = UDim2.new(0, 30, 1, 0)
+kblAddDelayBtn.Position = UDim2.new(1, -32, 0, 0)
+kblAddDelayBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+kblAddDelayBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+kblAddDelayBtn.Text = "+"
+kblAddDelayBtn.Font = Enum.Font.GothamBold
+kblAddDelayBtn.TextSize = 14
+kblAddDelayBtn.Parent = kblDelayRow
+local kblAddCorner = Instance.new("UICorner")
+kblAddCorner.CornerRadius = UDim.new(0, 6)
+kblAddCorner.Parent = kblAddDelayBtn
+
+-- KBL Constant Delay Input (hidden by default)
+local kblConstInput = Instance.new("TextBox")
+kblConstInput.Size = UDim2.new(1, -20, 0, 24)
+kblConstInput.Position = UDim2.new(0, 10, 0, 154)
+kblConstInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+kblConstInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+kblConstInput.Text = "0.5"
+kblConstInput.PlaceholderText = "0.5"
+kblConstInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+kblConstInput.Font = Enum.Font.Gotham
+kblConstInput.TextSize = 10
+kblConstInput.Visible = false
+kblConstInput.Parent = kblContent
+local kblConstCorner = Instance.new("UICorner")
+kblConstCorner.CornerRadius = UDim.new(0, 6)
+kblConstCorner.Parent = kblConstInput
 
 -- Chat Settings Content
 local chatSettingsContent = Instance.new("Frame")
@@ -742,7 +964,8 @@ local function toggleAdvancedMode()
         
         tabBar.Visible = true
         advancedContent.Visible = true
-        chatSettingsContent.Visible = true
+        kblContent.Visible = true
+        chatSettingsContent.Visible = false
         mimicContent.Visible = false
         speedContent.Visible = false
         
@@ -756,6 +979,7 @@ local function toggleAdvancedMode()
         
         tabBar.Visible = false
         advancedContent.Visible = false
+        kblContent.Visible = false
         chatSettingsContent.Visible = false
         mimicContent.Visible = false
         speedContent.Visible = false
@@ -772,9 +996,13 @@ end)
 -- ========== TAB SWITCHING ==========
 local function switchTab(tab)
     currentTab = tab
+    kblContent.Visible = (tab == "kbl")
     chatSettingsContent.Visible = (tab == "chat")
     mimicContent.Visible = (tab == "mimic")
     speedContent.Visible = (tab == "speed")
+    
+    kblTabBtn.BackgroundColor3 = tab == "kbl" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
+    kblTabBtn.TextColor3 = tab == "kbl" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
     
     chatTabBtn.BackgroundColor3 = tab == "chat" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     chatTabBtn.TextColor3 = tab == "chat" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
@@ -785,6 +1013,10 @@ local function switchTab(tab)
     speedTabBtn.BackgroundColor3 = tab == "speed" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     speedTabBtn.TextColor3 = tab == "speed" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
 end
+
+kblTabBtn.MouseButton1Click:Connect(function()
+    switchTab("kbl")
+end)
 
 chatTabBtn.MouseButton1Click:Connect(function()
     switchTab("chat")
@@ -798,49 +1030,34 @@ speedTabBtn.MouseButton1Click:Connect(function()
     switchTab("speed")
 end)
 
--- ========== CHARACTER LIMIT (PER-LINE) ==========
-textbox:GetPropertyChangedSignal("Text"):Connect(function()
-    local text = textbox.Text
-    local lines = {}
-    for line in text:gmatch("[^\n]*") do
-        table.insert(lines, line)
-    end
-    
-    local lineCount = #lines
-    local maxLineLen = 0
-    local overLimit = false
-    
-    for _, line in ipairs(lines) do
-        if #line > maxLineLen then
-            maxLineLen = #line
-        end
-        if #line > MAX_CHARS then
-            overLimit = true
-        end
-    end
-    
-    charCounter.Text = "Lines: "..lineCount.." | Max: "..maxLineLen.."/"..MAX_CHARS
-    
-    if overLimit then
-        charCounter.TextColor3 = Color3.fromRGB(255, 100, 100)
+-- ========== KBL FUNCTIONS ==========
+local function getKblDelay()
+    if kblDelayMode == "constant" then
+        local d = tonumber(kblConstInput.Text) or 0.5
+        if d < 0.1 then d = 0.1 end
+        return d
+    elseif kblDelayMode == "sequential" then
+        if #kblDelayList == 0 then return 0.5 end
+        local d = kblDelayList[kblDelayIndex]
+        kblDelayIndex = kblDelayIndex + 1
+        if kblDelayIndex > #kblDelayList then kblDelayIndex = 1 end
+        return d
     else
-        charCounter.TextColor3 = Color3.fromRGB(100, 100, 100)
+        if #kblDelayList == 0 then return 0.5 end
+        return kblDelayList[math.random(1, #kblDelayList)]
     end
-end)
+end
 
--- ========== SEND MESSAGE FUNCTION ==========
-local function sendMessage(msg, preserveCase)
+local function sendMessage(msg)
     local message = msg
     
-    if not preserveCase then
-        if caseMode == "upper" then
-            message = string.upper(message)
-        elseif caseMode == "lower" then
-            message = string.lower(message)
-        end
+    if caseMode == "upper" then
+        message = string.upper(message)
+    elseif caseMode == "lower" then
+        message = string.lower(message)
     end
     
-    message = message:gsub("^%s+", ""):gsub("%s+$", "")
+    message = message:gsub("^%s+", ""):gsub("%s+\$", "")
     
     if message == "" then
         return false
@@ -873,6 +1090,148 @@ local function sendMessage(msg, preserveCase)
     
     return false
 end
+
+local function runKbl()
+    while kblRunning and kblIndex <= #kblMessages do
+        if kblPaused then
+            wait(0.1)
+        else
+            local msg = kblMessages[kblIndex]
+            previewText.Text = msg
+            kblStatus.Text = "Sending: "..kblIndex.."/"..#kblMessages
+            
+            sendMessage(msg)
+            
+            kblIndex = kblIndex + 1
+            
+            if kblIndex > #kblMessages then
+                kblRunning = false
+                kblPaused = false
+                kblIndex = 1
+                previewText.Text = "Done!"
+                kblStatus.Text = "Messages: "..#kblMessages.." | Completed"
+                kblStatus.TextColor3 = Color3.fromRGB(100, 200, 100)
+                kblSendBtn.Text = "SEND"
+                kblSendBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+                kblPauseBtn.Text = "PAUSE"
+                kblPauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
+                return
+            end
+            
+            local delay = getKblDelay()
+            wait(delay)
+        end
+    end
+end
+
+kblSendBtn.MouseButton1Click:Connect(function()
+    if not kblRunning then
+        kblRunning = true
+        kblPaused = false
+        kblIndex = 1
+        kblSendBtn.Text = "STOP"
+        kblSendBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+        kblStatus.Text = "Messages: "..#kblMessages.." | Running..."
+        kblStatus.TextColor3 = Color3.fromRGB(100, 200, 255)
+        spawn(runKbl)
+    else
+        kblRunning = false
+        kblPaused = false
+        kblIndex = 1
+        previewText.Text = "Waiting..."
+        kblStatus.Text = "Messages: "..#kblMessages.." | Ready"
+        kblStatus.TextColor3 = Color3.fromRGB(100, 200, 100)
+        kblSendBtn.Text = "SEND"
+        kblSendBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+        kblPauseBtn.Text = "PAUSE"
+        kblPauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
+    end
+end)
+
+kblPauseBtn.MouseButton1Click:Connect(function()
+    if kblRunning then
+        kblPaused = not kblPaused
+        if kblPaused then
+            kblPauseBtn.Text = "RESUME"
+            kblPauseBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 80)
+            kblStatus.Text = "Messages: "..#kblMessages.." | Paused"
+            kblStatus.TextColor3 = Color3.fromRGB(255, 200, 100)
+        else
+            kblPauseBtn.Text = "PAUSE"
+            kblPauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
+            kblStatus.Text = "Messages: "..#kblMessages.." | Running..."
+            kblStatus.TextColor3 = Color3.fromRGB(100, 200, 255)
+        end
+    end
+end)
+
+local function updateKblModeButtons()
+    kblRandomBtn.BackgroundColor3 = kblDelayMode == "random" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
+    kblRandomBtn.TextColor3 = kblDelayMode == "random" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
+    
+    kblSeqBtn.BackgroundColor3 = kblDelayMode == "sequential" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
+    kblSeqBtn.TextColor3 = kblDelayMode == "sequential" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
+    
+    kblConstBtn.BackgroundColor3 = kblDelayMode == "constant" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
+    kblConstBtn.TextColor3 = kblDelayMode == "constant" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
+    
+    kblDelayRow.Visible = kblDelayMode ~= "constant"
+    kblConstInput.Visible = kblDelayMode == "constant"
+end
+
+kblRandomBtn.MouseButton1Click:Connect(function()
+    kblDelayMode = "random"
+    updateKblModeButtons()
+end)
+
+kblSeqBtn.MouseButton1Click:Connect(function()
+    kblDelayMode = "sequential"
+    updateKblModeButtons()
+end)
+
+kblConstBtn.MouseButton1Click:Connect(function()
+    kblDelayMode = "constant"
+    updateKblModeButtons()
+end)
+
+kblAddDelayBtn.MouseButton1Click:Connect(function()
+    local text = kblDelayInput.Text:gsub("^%s+", ""):gsub("%s+\$", "")
+    local num = tonumber(text)
+    if num and num >= 0.1 then
+        table.insert(kblDelayList, num)
+        kblDelayInput.Text = ""
+    end
+end)
+
+-- ========== CHARACTER LIMIT (PER-LINE) ==========
+textbox:GetPropertyChangedSignal("Text"):Connect(function()
+    local text = textbox.Text
+    local lines = {}
+    for line in text:gmatch("[^\n]*") do
+        table.insert(lines, line)
+    end
+    
+    local lineCount = #lines
+    local maxLineLen = 0
+    local overLimit = false
+    
+    for _, line in ipairs(lines) do
+        if #line > maxLineLen then
+            maxLineLen = #line
+        end
+        if #line > MAX_CHARS then
+            overLimit = true
+        end
+    end
+    
+    charCounter.Text = "Lines: "..lineCount.." | Max: "..maxLineLen.."/"..MAX_CHARS
+    
+    if overLimit then
+        charCounter.TextColor3 = Color3.fromRGB(255, 100, 100)
+    else
+        charCounter.TextColor3 = Color3.fromRGB(100, 100, 100)
+    end
+end)
 
 -- ========== GET NEXT DELAY ==========
 local function getNextDelay()
@@ -981,7 +1340,7 @@ end)
 
 -- ========== ADD DELAY ==========
 addDelayBtn.MouseButton1Click:Connect(function()
-    local text = addDelayInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
+    local text = addDelayInput.Text:gsub("^%s+", ""):gsub("%s+\$", "")
     local num = tonumber(text)
     if num and num >= 0.1 then
         table.insert(delayList, num)
@@ -1043,10 +1402,51 @@ normalBtn.MouseButton1Click:Connect(function()
     updateCaseButtons()
 end)
 
--- ========== SEND ALL BUTTON ==========
+-- ========== MAIN CHAT SEND WITH PAUSE ==========
+local function runChatSend()
+    while chatSending and chatIndex <= #chatLines do
+        if chatPaused then
+            wait(0.1)
+        else
+            local line = chatLines[chatIndex]
+            sendMessage(line)
+            
+            chatIndex = chatIndex + 1
+            
+            if chatIndex > #chatLines then
+                chatSending = false
+                chatPaused = false
+                chatIndex = 1
+                chatLines = {}
+                sendAllBtn.Text = "S"
+                sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+                pauseBtn.Text = "P"
+                pauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
+                return
+            end
+            
+            local delay = getNextDelay()
+            wait(delay)
+        end
+    end
+end
+
 sendAllBtn.MouseButton1Click:Connect(function()
     local text = textbox.Text
     if text == "" then return end
+    
+    if chatSending then
+        -- Stop sending
+        chatSending = false
+        chatPaused = false
+        chatIndex = 1
+        chatLines = {}
+        sendAllBtn.Text = "S"
+        sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+        pauseBtn.Text = "P"
+        pauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
+        return
+    end
     
     local lines = {}
     for line in text:gmatch("[^\n]+") do
@@ -1057,20 +1457,28 @@ sendAllBtn.MouseButton1Click:Connect(function()
     
     if #lines == 0 then return end
     
-    sendAllBtn.Text = "..."
-    sendAllBtn.BackgroundColor3 = Color3.fromRGB(255, 193, 7)
+    chatLines = lines
+    chatIndex = 1
+    chatSending = true
+    chatPaused = false
     
-    spawn(function()
-        for i, line in ipairs(lines) do
-            sendMessage(line)
-            if i < #lines then
-                local d = getNextDelay()
-                wait(d)
-            end
+    sendAllBtn.Text = "STOP"
+    sendAllBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+    
+    spawn(runChatSend)
+end)
+
+pauseBtn.MouseButton1Click:Connect(function()
+    if chatSending then
+        chatPaused = not chatPaused
+        if chatPaused then
+            pauseBtn.Text = "R"
+            pauseBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 80)
+        else
+            pauseBtn.Text = "P"
+            pauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
         end
-        sendAllBtn.Text = "S"
-        sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-    end)
+    end
 end)
 
 -- ========== MIMIC FUNCTIONS ==========
@@ -1135,14 +1543,13 @@ local function onPlayerChatted(plr, msg)
     
     local suffix = suffixes[suffixIndex]
     local mimicMsg = '"' .. msg .. '" ' .. suffix
-    sendMessage(mimicMsg, true)
+    sendMessage(mimicMsg)
     
     suffixIndex = suffixIndex + 1
     if suffixIndex > #suffixes then
         suffixIndex = 1
     end
 end
-
 local function setupPlayerListener(plr)
     plr.Chatted:Connect(function(msg)
         onPlayerChatted(plr, msg)
@@ -1262,11 +1669,13 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 -- Initialize
+updateKblModeButtons()
 updateDelayListUI()
 updateModeButtons()
 updateSuffixList()
 updateCaseButtons()
 
 print("✅ Compact Multi-Chat Hub Loaded")
-print("📌 Default: UPPER case, Random delays")
-print("📌 Mimic suffixes pre-loaded: 🤓🤓🤓, NB READ WHAT IT SAID LOL")
+print("📌 KBL tab with premade messages ready")
+print("📌 Press RightCtrl to toggle visibility")
+print("📌 Use P button to pause/resume during chat send")
