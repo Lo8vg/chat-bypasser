@@ -798,21 +798,30 @@ speedTabBtn.MouseButton1Click:Connect(function()
     switchTab("speed")
 end)
 
--- ========== CHARACTER LIMIT ==========
+-- ========== CHARACTER LIMIT (PER-LINE) ==========
 textbox:GetPropertyChangedSignal("Text"):Connect(function()
     local text = textbox.Text
-    if #text > MAX_CHARS then
-        textbox.Text = text:sub(1, MAX_CHARS)
+    local lines = {}
+    for line in text:gmatch("[^\n]*") do
+        table.insert(lines, line)
     end
     
-    local lineCount = 1
-    for _ in textbox.Text:gmatch("\n") do
-        lineCount = lineCount + 1
+    local lineCount = #lines
+    local maxLineLen = 0
+    local overLimit = false
+    
+    for _, line in ipairs(lines) do
+        if #line > maxLineLen then
+            maxLineLen = #line
+        end
+        if #line > MAX_CHARS then
+            overLimit = true
+        end
     end
     
-    charCounter.Text = "Lines: "..lineCount.." | Chars: "..#textbox.Text.."/"..MAX_CHARS
+    charCounter.Text = "Lines: "..lineCount.." | Max: "..maxLineLen.."/"..MAX_CHARS
     
-    if #textbox.Text >= MAX_CHARS then
+    if overLimit then
         charCounter.TextColor3 = Color3.fromRGB(255, 100, 100)
     else
         charCounter.TextColor3 = Color3.fromRGB(100, 100, 100)
