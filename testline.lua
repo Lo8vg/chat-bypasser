@@ -31,6 +31,12 @@ local kblDelayMode = "random"
 local kblDelayList = {0.7, 0.9, 1, 2, 0.8}
 local kblDelayIndex = 1
 
+-- Main Chat Send Settings
+local chatSending = false
+local chatPaused = false
+local chatLines = {}
+local chatIndex = 1
+
 -- Delay Settings
 local delayMode = "random"
 local delayList = {0.7, 0.9, 1, 2, 0.8}
@@ -193,28 +199,10 @@ compactRow.Position = UDim2.new(0, 10, 0, 75)
 compactRow.BackgroundTransparency = 1
 compactRow.Parent = compactContent
 
--- Delay
-local delayTextbox = Instance.new("TextBox")
-delayTextbox.Size = UDim2.new(0, 40, 1, 0)
-delayTextbox.Position = UDim2.new(0, 0, 0, 0)
-delayTextbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-delayTextbox.TextColor3 = Color3.fromRGB(255, 255, 255)
-delayTextbox.Text = "0.5"
-delayTextbox.PlaceholderText = "0.5"
-delayTextbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
-delayTextbox.Font = Enum.Font.Gotham
-delayTextbox.TextSize = 11
-delayTextbox.ClearTextOnFocus = false
-delayTextbox.Parent = compactRow
-
-local delayCorner = Instance.new("UICorner")
-delayCorner.CornerRadius = UDim.new(0, 6)
-delayCorner.Parent = delayTextbox
-
 -- Clear Button
 local clearBtn = Instance.new("TextButton")
 clearBtn.Size = UDim2.new(0, 35, 1, 0)
-clearBtn.Position = UDim2.new(0, 45, 0, 0)
+clearBtn.Position = UDim2.new(0, 0, 0, 0)
 clearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 clearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 clearBtn.Text = "C"
@@ -225,10 +213,24 @@ local clearCorner = Instance.new("UICorner")
 clearCorner.CornerRadius = UDim.new(0, 6)
 clearCorner.Parent = clearBtn
 
+-- Pause Button
+local pauseBtn = Instance.new("TextButton")
+pauseBtn.Size = UDim2.new(0, 35, 1, 0)
+pauseBtn.Position = UDim2.new(0, 40, 0, 0)
+pauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
+pauseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+pauseBtn.Text = "P"
+pauseBtn.Font = Enum.Font.GothamBold
+pauseBtn.TextSize = 13
+pauseBtn.Parent = compactRow
+local pauseCorner = Instance.new("UICorner")
+pauseCorner.CornerRadius = UDim.new(0, 6)
+pauseCorner.Parent = pauseBtn
+
 -- Send Button
 local sendAllBtn = Instance.new("TextButton")
-sendAllBtn.Size = UDim2.new(1, -85, 1, 0)
-sendAllBtn.Position = UDim2.new(0, 85, 0, 0)
+sendAllBtn.Size = UDim2.new(1, -80, 1, 0)
+sendAllBtn.Position = UDim2.new(0, 80, 0, 0)
 sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 sendAllBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 sendAllBtn.Text = "S"
@@ -1400,10 +1402,51 @@ normalBtn.MouseButton1Click:Connect(function()
     updateCaseButtons()
 end)
 
--- ========== SEND ALL BUTTON ==========
+-- ========== MAIN CHAT SEND WITH PAUSE ==========
+local function runChatSend()
+    while chatSending and chatIndex <= #chatLines do
+        if chatPaused then
+            wait(0.1)
+        else
+            local line = chatLines[chatIndex]
+            sendMessage(line)
+            
+            chatIndex = chatIndex + 1
+            
+            if chatIndex > #chatLines then
+                chatSending = false
+                chatPaused = false
+                chatIndex = 1
+                chatLines = {}
+                sendAllBtn.Text = "S"
+                sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+                pauseBtn.Text = "P"
+                pauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
+                return
+            end
+            
+            local delay = getNextDelay()
+            wait(delay)
+        end
+    end
+end
+
 sendAllBtn.MouseButton1Click:Connect(function()
     local text = textbox.Text
     if text == "" then return end
+    
+    if chatSending then
+        -- Stop sending
+        chatSending = false
+        chatPaused = false
+        chatIndex = 1
+        chatLines = {}
+        sendAllBtn.Text = "S"
+        sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+        pauseBtn.Text = "P"
+        pauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
+        return
+    end
     
     local lines = {}
     for line in text:gmatch("[^\n]+") do
@@ -1414,20 +1457,28 @@ sendAllBtn.MouseButton1Click:Connect(function()
     
     if #lines == 0 then return end
     
-    sendAllBtn.Text = "..."
-    sendAllBtn.BackgroundColor3 = Color3.fromRGB(255, 193, 7)
+    chatLines = lines
+    chatIndex = 1
+    chatSending = true
+    chatPaused = false
     
-    spawn(function()
-        for i, line in ipairs(lines) do
-            sendMessage(line)
-            if i < #lines then
-                local d = getNextDelay()
-                wait(d)
-            end
+    sendAllBtn.Text = "STOP"
+    sendAllBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+    
+    spawn(runChatSend)
+end)
+
+pauseBtn.MouseButton1Click:Connect(function()
+    if chatSending then
+        chatPaused = not chatPaused
+        if chatPaused then
+            pauseBtn.Text = "R"
+            pauseBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 80)
+        else
+            pauseBtn.Text = "P"
+            pauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
         end
-        sendAllBtn.Text = "S"
-        sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-    end)
+    end
 end)
 
 -- ========== MIMIC FUNCTIONS ==========
@@ -1499,7 +1550,6 @@ local function onPlayerChatted(plr, msg)
         suffixIndex = 1
     end
 end
-
 local function setupPlayerListener(plr)
     plr.Chatted:Connect(function(msg)
         onPlayerChatted(plr, msg)
@@ -1628,3 +1678,4 @@ updateCaseButtons()
 print("✅ Compact Multi-Chat Hub Loaded")
 print("📌 KBL tab with premade messages ready")
 print("📌 Press RightCtrl to toggle visibility")
+print("📌 Use P button to pause/resume during chat send")
