@@ -1,4 +1,4 @@
--- Compact Chat Hub (Fixed Position on Expand)
+-- Compact Chat Hub (Fixed KBL Delay Display)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -253,15 +253,7 @@ charCounter.TextSize = 9
 charCounter.TextXAlignment = Enum.TextXAlignment.Right
 charCounter.Parent = compactContent
 
--- ========== ADVANCED CONTENT ==========
-local advancedContent = Instance.new("Frame")
-advancedContent.Size = UDim2.new(1, 0, 1, -56)
-advancedContent.Position = UDim2.new(0, 0, 0, 56)
-advancedContent.BackgroundTransparency = 1
-advancedContent.Visible = false
-advancedContent.Parent = mainFrame
-
--- Tab Bar
+-- ========== TAB BAR ==========
 local tabBar = Instance.new("Frame")
 tabBar.Size = UDim2.new(1, 0, 0, 28)
 tabBar.Position = UDim2.new(0, 0, 0, 28)
@@ -321,7 +313,7 @@ local speedTabCorner = Instance.new("UICorner")
 speedTabCorner.CornerRadius = UDim.new(0, 6)
 speedTabCorner.Parent = speedTabBtn
 
--- ========== KBL CONTENT ==========
+-- ========== KBL CONTENT (FIXED LAYOUT) ==========
 local kblContent = Instance.new("Frame")
 kblContent.Size = UDim2.new(1, 0, 1, -56)
 kblContent.Position = UDim2.new(0, 0, 0, 56)
@@ -329,9 +321,9 @@ kblContent.BackgroundTransparency = 1
 kblContent.Visible = false
 kblContent.Parent = mainFrame
 
--- Preview Box
+-- Preview Box (smaller)
 local previewBox = Instance.new("Frame")
-previewBox.Size = UDim2.new(1, -20, 0, 55)
+previewBox.Size = UDim2.new(1, -20, 0, 40)
 previewBox.Position = UDim2.new(0, 10, 0, 5)
 previewBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 previewBox.Parent = kblContent
@@ -340,8 +332,8 @@ previewCorner.CornerRadius = UDim.new(0, 6)
 previewCorner.Parent = previewBox
 
 local previewTitle = Instance.new("TextLabel")
-previewTitle.Size = UDim2.new(1, 0, 0, 14)
-previewTitle.Position = UDim2.new(0, 8, 0, 4)
+previewTitle.Size = UDim2.new(1, 0, 0, 12)
+previewTitle.Position = UDim2.new(0, 8, 0, 3)
 previewTitle.BackgroundTransparency = 1
 previewTitle.TextColor3 = Color3.fromRGB(150, 150, 150)
 previewTitle.Text = "Current Message:"
@@ -351,21 +343,21 @@ previewTitle.TextXAlignment = Enum.TextXAlignment.Left
 previewTitle.Parent = previewBox
 
 local previewText = Instance.new("TextLabel")
-previewText.Size = UDim2.new(1, -16, 0, 30)
-previewText.Position = UDim2.new(0, 8, 0, 20)
+previewText.Size = UDim2.new(1, -16, 0, 22)
+previewText.Position = UDim2.new(0, 8, 0, 16)
 previewText.BackgroundTransparency = 1
 previewText.TextColor3 = Color3.fromRGB(255, 255, 255)
 previewText.Text = "Waiting..."
 previewText.Font = Enum.Font.GothamBold
-previewText.TextSize = 12
+previewText.TextSize = 11
 previewText.TextXAlignment = Enum.TextXAlignment.Left
 previewText.TextWrapped = true
 previewText.Parent = previewBox
 
 -- Status Label
 local kblStatus = Instance.new("TextLabel")
-kblStatus.Size = UDim2.new(1, -20, 0, 14)
-kblStatus.Position = UDim2.new(0, 10, 0, 62)
+kblStatus.Size = UDim2.new(1, -20, 0, 12)
+kblStatus.Position = UDim2.new(0, 10, 0, 48)
 kblStatus.BackgroundTransparency = 1
 kblStatus.TextColor3 = Color3.fromRGB(100, 200, 100)
 kblStatus.Text = "Messages: "..#kblMessages.." | Ready"
@@ -376,8 +368,8 @@ kblStatus.Parent = kblContent
 
 -- Button Row
 local kblBtnRow = Instance.new("Frame")
-kblBtnRow.Size = UDim2.new(1, -20, 0, 28)
-kblBtnRow.Position = UDim2.new(0, 10, 0, 80)
+kblBtnRow.Size = UDim2.new(1, -20, 0, 24)
+kblBtnRow.Position = UDim2.new(0, 10, 0, 62)
 kblBtnRow.BackgroundTransparency = 1
 kblBtnRow.Parent = kblContent
 
@@ -388,7 +380,7 @@ kblSendBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
 kblSendBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 kblSendBtn.Text = "SEND"
 kblSendBtn.Font = Enum.Font.GothamBold
-kblSendBtn.TextSize = 13
+kblSendBtn.TextSize = 12
 kblSendBtn.Parent = kblBtnRow
 local kblSendCorner = Instance.new("UICorner")
 kblSendCorner.CornerRadius = UDim.new(0, 6)
@@ -402,7 +394,7 @@ kblPauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
 kblPauseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 kblPauseBtn.Text = "PAUSE"
 kblPauseBtn.Font = Enum.Font.GothamBold
-kblPauseBtn.TextSize = 13
+kblPauseBtn.TextSize = 12
 kblPauseBtn.Parent = kblBtnRow
 local kblPauseCorner = Instance.new("UICorner")
 kblPauseCorner.CornerRadius = UDim.new(0, 6)
@@ -411,7 +403,7 @@ kblPauseCorner.Parent = kblPauseBtn
 -- Speed Mode Title
 local kblSpeedTitle = Instance.new("TextLabel")
 kblSpeedTitle.Size = UDim2.new(1, -20, 0, 14)
-kblSpeedTitle.Position = UDim2.new(0, 10, 0, 112)
+kblSpeedTitle.Position = UDim2.new(0, 10, 0, 90)
 kblSpeedTitle.BackgroundTransparency = 1
 kblSpeedTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
 kblSpeedTitle.Text = "Delay Mode"
@@ -421,8 +413,8 @@ kblSpeedTitle.Parent = kblContent
 
 -- Speed Mode Buttons
 local kblModeRow = Instance.new("Frame")
-kblModeRow.Size = UDim2.new(1, -20, 0, 22)
-kblModeRow.Position = UDim2.new(0, 10, 0, 128)
+kblModeRow.Size = UDim2.new(1, -20, 0, 20)
+kblModeRow.Position = UDim2.new(0, 10, 0, 106)
 kblModeRow.BackgroundTransparency = 1
 kblModeRow.Parent = kblContent
 
@@ -464,10 +456,27 @@ local kblConstCorner = Instance.new("UICorner")
 kblConstCorner.CornerRadius = UDim.new(0, 4)
 kblConstCorner.Parent = kblConstBtn
 
--- KBL Delay Input Row
+-- KBL Constant Delay Input (shown when mode is constant)
+local kblConstInput = Instance.new("TextBox")
+kblConstInput.Size = UDim2.new(1, -20, 0, 22)
+kblConstInput.Position = UDim2.new(0, 10, 0, 130)
+kblConstInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+kblConstInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+kblConstInput.Text = "0.5"
+kblConstInput.PlaceholderText = "0.5"
+kblConstInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+kblConstInput.Font = Enum.Font.Gotham
+kblConstInput.TextSize = 10
+kblConstInput.Visible = false
+kblConstInput.Parent = kblContent
+local kblConstCorner = Instance.new("UICorner")
+kblConstCorner.CornerRadius = UDim.new(0, 6)
+kblConstCorner.Parent = kblConstInput
+
+-- KBL Delay Input Row (shown when mode is NOT constant)
 local kblDelayRow = Instance.new("Frame")
-kblDelayRow.Size = UDim2.new(1, -20, 0, 24)
-kblDelayRow.Position = UDim2.new(0, 10, 0, 154)
+kblDelayRow.Size = UDim2.new(1, -20, 0, 22)
+kblDelayRow.Position = UDim2.new(0, 10, 0, 130)
 kblDelayRow.BackgroundTransparency = 1
 kblDelayRow.Parent = kblContent
 
@@ -488,7 +497,7 @@ kblDelayCorner.Parent = kblDelayInput
 local kblAddDelayBtn = Instance.new("TextButton")
 kblAddDelayBtn.Size = UDim2.new(0, 30, 1, 0)
 kblAddDelayBtn.Position = UDim2.new(1, -32, 0, 0)
-kblAddDelayBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+kblAddDelayBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
 kblAddDelayBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 kblAddDelayBtn.Text = "+"
 kblAddDelayBtn.Font = Enum.Font.GothamBold
@@ -498,27 +507,10 @@ local kblAddCorner = Instance.new("UICorner")
 kblAddCorner.CornerRadius = UDim.new(0, 6)
 kblAddCorner.Parent = kblAddDelayBtn
 
--- KBL Constant Delay Input (hidden by default)
-local kblConstInput = Instance.new("TextBox")
-kblConstInput.Size = UDim2.new(1, -20, 0, 24)
-kblConstInput.Position = UDim2.new(0, 10, 0, 154)
-kblConstInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-kblConstInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-kblConstInput.Text = "0.5"
-kblConstInput.PlaceholderText = "0.5"
-kblConstInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
-kblConstInput.Font = Enum.Font.Gotham
-kblConstInput.TextSize = 10
-kblConstInput.Visible = false
-kblConstInput.Parent = kblContent
-local kblConstCorner = Instance.new("UICorner")
-kblConstCorner.CornerRadius = UDim.new(0, 6)
-kblConstCorner.Parent = kblConstInput
-
 -- KBL Delay List Title
 local kblDelayListTitle = Instance.new("TextLabel")
-kblDelayListTitle.Size = UDim2.new(1, -20, 0, 14)
-kblDelayListTitle.Position = UDim2.new(0, 10, 0, 180)
+kblDelayListTitle.Size = UDim2.new(1, -20, 0, 12)
+kblDelayListTitle.Position = UDim2.new(0, 10, 0, 154)
 kblDelayListTitle.BackgroundTransparency = 1
 kblDelayListTitle.TextColor3 = Color3.fromRGB(150, 150, 150)
 kblDelayListTitle.Text = "KBL Delays (tap X to remove)"
@@ -528,8 +520,8 @@ kblDelayListTitle.Parent = kblContent
 
 -- KBL Delay List Frame
 local kblDelayListFrame = Instance.new("Frame")
-kblDelayListFrame.Size = UDim2.new(1, -20, 0, 50)
-kblDelayListFrame.Position = UDim2.new(0, 10, 0, 196)
+kblDelayListFrame.Size = UDim2.new(1, -20, 0, 55)
+kblDelayListFrame.Position = UDim2.new(0, 10, 0, 168)
 kblDelayListFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 kblDelayListFrame.Parent = kblContent
 local kblDelayListCorner = Instance.new("UICorner")
@@ -549,19 +541,19 @@ kblDelayListLayout.Parent = kblDelayScroll
 
 -- KBL Clear Delays Button
 local kblClearDelayBtn = Instance.new("TextButton")
-kblClearDelayBtn.Size = UDim2.new(1, -20, 0, 22)
-kblClearDelayBtn.Position = UDim2.new(0, 10, 0, 250)
+kblClearDelayBtn.Size = UDim2.new(1, -20, 0, 20)
+kblClearDelayBtn.Position = UDim2.new(0, 10, 0, 226)
 kblClearDelayBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 kblClearDelayBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 kblClearDelayBtn.Text = "Clear All KBL Delays"
 kblClearDelayBtn.Font = Enum.Font.GothamBold
-kblClearDelayBtn.TextSize = 10
+kblClearDelayBtn.TextSize = 9
 kblClearDelayBtn.Parent = kblContent
 local kblClearDelayCorner = Instance.new("UICorner")
 kblClearDelayCorner.CornerRadius = UDim.new(0, 6)
 kblClearDelayCorner.Parent = kblClearDelayBtn
 
--- Chat Settings Content
+-- ========== CHAT SETTINGS CONTENT ==========
 local chatSettingsContent = Instance.new("Frame")
 chatSettingsContent.Size = UDim2.new(1, 0, 1, -56)
 chatSettingsContent.Position = UDim2.new(0, 0, 0, 56)
@@ -767,7 +759,7 @@ addDelayCorner.Parent = addDelayInput
 local addDelayBtn = Instance.new("TextButton")
 addDelayBtn.Size = UDim2.new(0, 28, 1, 0)
 addDelayBtn.Position = UDim2.new(1, -30, 0, 0)
-addDelayBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+addDelayBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
 addDelayBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 addDelayBtn.Text = "+"
 addDelayBtn.Font = Enum.Font.GothamBold
@@ -1003,8 +995,8 @@ local function toggleAdvancedMode()
     local currentPos = mainFrame.Position
     
     if advancedMode then
-        mainFrame.Size = UDim2.new(0, 220, 0, 250)
-        mainFrame.Position = UDim2.new(currentPos.X.Scale, currentPos.X.Offset, currentPos.Y.Scale, currentPos.Y.Offset - 52)
+        mainFrame.Size = UDim2.new(0, 220, 0, 280)
+        mainFrame.Position = UDim2.new(currentPos.X.Scale, currentPos.X.Offset, currentPos.Y.Scale, currentPos.Y.Offset - 67)
         
         compactContent.Visible = false
         
@@ -1018,7 +1010,7 @@ local function toggleAdvancedMode()
         settingsBtn.Text = "◀"
     else
         mainFrame.Size = UDim2.new(0, 220, 0, 145)
-        mainFrame.Position = UDim2.new(currentPos.X.Scale, currentPos.X.Offset, currentPos.Y.Scale, currentPos.Y.Offset + 52)
+        mainFrame.Position = UDim2.new(currentPos.X.Scale, currentPos.X.Offset, currentPos.Y.Scale, currentPos.Y.Offset + 67)
         
         compactContent.Visible = true
         
@@ -1447,7 +1439,7 @@ end)
 
 -- ========== ADD DELAY ==========
 addDelayBtn.MouseButton1Click:Connect(function()
-    local text = addDelayInput.Text:gsub("^%s+", ""):gsub("%s+\$", "")
+    local text = addDelayInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
     local num = tonumber(text)
     if num and num >= 0.1 then
         table.insert(delayList, num)
