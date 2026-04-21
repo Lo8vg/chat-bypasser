@@ -18,6 +18,11 @@ local suffixIndex = 1
 local currentTab = "kbl"
 local advancedMode = false
 
+-- PREFIX SETTINGS (NEW)
+local prefixEnabled = false
+local prefixes = {"LOOOOOOOOOOOOOOOOOOOOOOOL"}
+local prefixIndex = 1
+
 -- KBL Settings
 local kblMessages = {
     "BAHAHAHAHAHAHAHAHA",
@@ -253,7 +258,7 @@ charCounter.TextSize = 9
 charCounter.TextXAlignment = Enum.TextXAlignment.Right
 charCounter.Parent = compactContent
 
--- ========== TAB BAR ==========
+-- ========== TAB BAR (5 TABS NOW) ==========
 local tabBar = Instance.new("Frame")
 tabBar.Size = UDim2.new(1, 0, 0, 28)
 tabBar.Position = UDim2.new(0, 0, 0, 28)
@@ -262,58 +267,71 @@ tabBar.Visible = false
 tabBar.Parent = mainFrame
 
 local kblTabBtn = Instance.new("TextButton")
-kblTabBtn.Size = UDim2.new(0.25, -2, 1, -4)
+kblTabBtn.Size = UDim2.new(0.2, -2, 1, -4)
 kblTabBtn.Position = UDim2.new(0, 2, 0, 2)
 kblTabBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
 kblTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 kblTabBtn.Text = "KBL"
 kblTabBtn.Font = Enum.Font.GothamBold
-kblTabBtn.TextSize = 11
+kblTabBtn.TextSize = 10
 kblTabBtn.Parent = tabBar
 local kblTabCorner = Instance.new("UICorner")
 kblTabCorner.CornerRadius = UDim.new(0, 6)
 kblTabCorner.Parent = kblTabBtn
 
 local chatTabBtn = Instance.new("TextButton")
-chatTabBtn.Size = UDim2.new(0.25, -2, 1, -4)
-chatTabBtn.Position = UDim2.new(0.25, 1, 0, 2)
+chatTabBtn.Size = UDim2.new(0.2, -2, 1, -4)
+chatTabBtn.Position = UDim2.new(0.2, 1, 0, 2)
 chatTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 chatTabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 chatTabBtn.Text = "Chat"
 chatTabBtn.Font = Enum.Font.GothamBold
-chatTabBtn.TextSize = 11
+chatTabBtn.TextSize = 10
 chatTabBtn.Parent = tabBar
 local chatTabCorner = Instance.new("UICorner")
 chatTabCorner.CornerRadius = UDim.new(0, 6)
 chatTabCorner.Parent = chatTabBtn
 
 local mimicTabBtn = Instance.new("TextButton")
-mimicTabBtn.Size = UDim2.new(0.25, -2, 1, -4)
-mimicTabBtn.Position = UDim2.new(0.5, 1, 0, 2)
+mimicTabBtn.Size = UDim2.new(0.2, -2, 1, -4)
+mimicTabBtn.Position = UDim2.new(0.4, 1, 0, 2)
 mimicTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 mimicTabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 mimicTabBtn.Text = "Mimic"
 mimicTabBtn.Font = Enum.Font.GothamBold
-mimicTabBtn.TextSize = 11
+mimicTabBtn.TextSize = 10
 mimicTabBtn.Parent = tabBar
 local mimicTabCorner = Instance.new("UICorner")
 mimicTabCorner.CornerRadius = UDim.new(0, 6)
 mimicTabCorner.Parent = mimicTabBtn
 
 local speedTabBtn = Instance.new("TextButton")
-speedTabBtn.Size = UDim2.new(0.25, -2, 1, -4)
-speedTabBtn.Position = UDim2.new(0.75, 0, 0, 2)
+speedTabBtn.Size = UDim2.new(0.2, -2, 1, -4)
+speedTabBtn.Position = UDim2.new(0.6, 1, 0, 2)
 speedTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 speedTabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 speedTabBtn.Text = "Speed"
 speedTabBtn.Font = Enum.Font.GothamBold
-speedTabBtn.TextSize = 11
+speedTabBtn.TextSize = 10
 speedTabBtn.Parent = tabBar
 local speedTabCorner = Instance.new("UICorner")
 speedTabCorner.CornerRadius = UDim.new(0, 6)
 speedTabCorner.Parent = speedTabBtn
 
--- ========== KBL CONTENT (FIXED LAYOUT) ==========
+local prefixTabBtn = Instance.new("TextButton")
+prefixTabBtn.Size = UDim2.new(0.2, -2, 1, -4)
+prefixTabBtn.Position = UDim2.new(0.8, 0, 0, 2)
+prefixTabBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+prefixTabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+prefixTabBtn.Text = "Prefix"
+prefixTabBtn.Font = Enum.Font.GothamBold
+prefixTabBtn.TextSize = 10
+prefixTabBtn.Parent = tabBar
+local prefixTabCorner = Instance.new("UICorner")
+prefixTabCorner.CornerRadius = UDim.new(0, 6)
+prefixTabCorner.Parent = prefixTabBtn
+
+-- ========== KBL CONTENT ==========
 local kblContent = Instance.new("Frame")
 kblContent.Size = UDim2.new(1, 0, 1, -56)
 kblContent.Position = UDim2.new(0, 0, 0, 56)
@@ -321,7 +339,6 @@ kblContent.BackgroundTransparency = 1
 kblContent.Visible = false
 kblContent.Parent = mainFrame
 
--- Preview Box (smaller)
 local previewBox = Instance.new("Frame")
 previewBox.Size = UDim2.new(1, -20, 0, 40)
 previewBox.Position = UDim2.new(0, 10, 0, 5)
@@ -354,7 +371,6 @@ previewText.TextXAlignment = Enum.TextXAlignment.Left
 previewText.TextWrapped = true
 previewText.Parent = previewBox
 
--- Status Label
 local kblStatus = Instance.new("TextLabel")
 kblStatus.Size = UDim2.new(1, -20, 0, 12)
 kblStatus.Position = UDim2.new(0, 10, 0, 48)
@@ -366,14 +382,12 @@ kblStatus.TextSize = 9
 kblStatus.TextXAlignment = Enum.TextXAlignment.Left
 kblStatus.Parent = kblContent
 
--- Button Row
 local kblBtnRow = Instance.new("Frame")
 kblBtnRow.Size = UDim2.new(1, -20, 0, 24)
 kblBtnRow.Position = UDim2.new(0, 10, 0, 62)
 kblBtnRow.BackgroundTransparency = 1
 kblBtnRow.Parent = kblContent
 
--- Send Button
 local kblSendBtn = Instance.new("TextButton")
 kblSendBtn.Size = UDim2.new(0.5, -2, 1, 0)
 kblSendBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
@@ -386,7 +400,6 @@ local kblSendCorner = Instance.new("UICorner")
 kblSendCorner.CornerRadius = UDim.new(0, 6)
 kblSendCorner.Parent = kblSendBtn
 
--- Pause Button
 local kblPauseBtn = Instance.new("TextButton")
 kblPauseBtn.Size = UDim2.new(0.5, -2, 1, 0)
 kblPauseBtn.Position = UDim2.new(0.5, 2, 0, 0)
@@ -400,7 +413,6 @@ local kblPauseCorner = Instance.new("UICorner")
 kblPauseCorner.CornerRadius = UDim.new(0, 6)
 kblPauseCorner.Parent = kblPauseBtn
 
--- Speed Mode Title
 local kblSpeedTitle = Instance.new("TextLabel")
 kblSpeedTitle.Size = UDim2.new(1, -20, 0, 14)
 kblSpeedTitle.Position = UDim2.new(0, 10, 0, 90)
@@ -411,7 +423,6 @@ kblSpeedTitle.Font = Enum.Font.GothamBold
 kblSpeedTitle.TextSize = 10
 kblSpeedTitle.Parent = kblContent
 
--- Speed Mode Buttons
 local kblModeRow = Instance.new("Frame")
 kblModeRow.Size = UDim2.new(1, -20, 0, 20)
 kblModeRow.Position = UDim2.new(0, 10, 0, 106)
@@ -456,7 +467,6 @@ local kblConstCorner = Instance.new("UICorner")
 kblConstCorner.CornerRadius = UDim.new(0, 4)
 kblConstCorner.Parent = kblConstBtn
 
--- KBL Constant Delay Input (shown when mode is constant)
 local kblConstInput = Instance.new("TextBox")
 kblConstInput.Size = UDim2.new(1, -20, 0, 22)
 kblConstInput.Position = UDim2.new(0, 10, 0, 130)
@@ -473,7 +483,6 @@ local kblConstCorner = Instance.new("UICorner")
 kblConstCorner.CornerRadius = UDim.new(0, 6)
 kblConstCorner.Parent = kblConstInput
 
--- KBL Delay Input Row (shown when mode is NOT constant)
 local kblDelayRow = Instance.new("Frame")
 kblDelayRow.Size = UDim2.new(1, -20, 0, 22)
 kblDelayRow.Position = UDim2.new(0, 10, 0, 130)
@@ -507,7 +516,6 @@ local kblAddCorner = Instance.new("UICorner")
 kblAddCorner.CornerRadius = UDim.new(0, 6)
 kblAddCorner.Parent = kblAddDelayBtn
 
--- KBL Delay List Title
 local kblDelayListTitle = Instance.new("TextLabel")
 kblDelayListTitle.Size = UDim2.new(1, -20, 0, 12)
 kblDelayListTitle.Position = UDim2.new(0, 10, 0, 154)
@@ -518,7 +526,6 @@ kblDelayListTitle.Font = Enum.Font.Gotham
 kblDelayListTitle.TextSize = 9
 kblDelayListTitle.Parent = kblContent
 
--- KBL Delay List Frame
 local kblDelayListFrame = Instance.new("Frame")
 kblDelayListFrame.Size = UDim2.new(1, -20, 0, 55)
 kblDelayListFrame.Position = UDim2.new(0, 10, 0, 168)
@@ -539,7 +546,6 @@ local kblDelayListLayout = Instance.new("UIListLayout")
 kblDelayListLayout.Padding = UDim.new(0, 2)
 kblDelayListLayout.Parent = kblDelayScroll
 
--- KBL Clear Delays Button
 local kblClearDelayBtn = Instance.new("TextButton")
 kblClearDelayBtn.Size = UDim2.new(1, -20, 0, 20)
 kblClearDelayBtn.Position = UDim2.new(0, 10, 0, 226)
@@ -561,7 +567,6 @@ chatSettingsContent.BackgroundTransparency = 1
 chatSettingsContent.Visible = false
 chatSettingsContent.Parent = mainFrame
 
--- Case Mode Buttons
 local caseRow = Instance.new("Frame")
 caseRow.Size = UDim2.new(1, -20, 0, 24)
 caseRow.Position = UDim2.new(0, 10, 0, 10)
@@ -907,6 +912,125 @@ local dropdownLayout = Instance.new("UIListLayout")
 dropdownLayout.Padding = UDim.new(0, 2)
 dropdownLayout.Parent = dropdownScroll
 
+-- ========== PREFIX CONTENT (NEW TAB) ==========
+local prefixContent = Instance.new("Frame")
+prefixContent.Size = UDim2.new(1, 0, 1, -56)
+prefixContent.Position = UDim2.new(0, 0, 0, 56)
+prefixContent.BackgroundTransparency = 1
+prefixContent.Visible = false
+prefixContent.Parent = mainFrame
+
+local prefixToggle = Instance.new("TextButton")
+prefixToggle.Size = UDim2.new(1, -20, 0, 26)
+prefixToggle.Position = UDim2.new(0, 10, 0, 8)
+prefixToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+prefixToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+prefixToggle.Text = "PREFIX: OFF"
+prefixToggle.Font = Enum.Font.GothamBold
+prefixToggle.TextSize = 12
+prefixToggle.Parent = prefixContent
+local prefixToggleCorner = Instance.new("UICorner")
+prefixToggleCorner.CornerRadius = UDim.new(0, 6)
+prefixToggleCorner.Parent = prefixToggle
+
+local prefixInfoLabel = Instance.new("TextLabel")
+prefixInfoLabel.Size = UDim2.new(1, -20, 0, 14)
+prefixInfoLabel.Position = UDim2.new(0, 10, 0, 38)
+prefixInfoLabel.BackgroundTransparency = 1
+prefixInfoLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+prefixInfoLabel.Text = "Prefix auto-truncates to fit 200 chars"
+prefixInfoLabel.Font = Enum.Font.Gotham
+prefixInfoLabel.TextSize = 9
+prefixInfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+prefixInfoLabel.Parent = prefixContent
+
+local prefixInput = Instance.new("TextBox")
+prefixInput.Size = UDim2.new(1, -70, 0, 24)
+prefixInput.Position = UDim2.new(0, 10, 0, 56)
+prefixInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+prefixInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+prefixInput.Text = ""
+prefixInput.PlaceholderText = "Add prefix..."
+prefixInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+prefixInput.Font = Enum.Font.Gotham
+prefixInput.TextSize = 12
+prefixInput.ClearTextOnFocus = false
+prefixInput.Parent = prefixContent
+local prefixInputCorner = Instance.new("UICorner")
+prefixInputCorner.CornerRadius = UDim.new(0, 6)
+prefixInputCorner.Parent = prefixInput
+
+local addPrefixBtn = Instance.new("TextButton")
+addPrefixBtn.Size = UDim2.new(0, 50, 0, 24)
+addPrefixBtn.Position = UDim2.new(1, -60, 0, 56)
+addPrefixBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+addPrefixBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+addPrefixBtn.Text = "Add"
+addPrefixBtn.Font = Enum.Font.GothamBold
+addPrefixBtn.TextSize = 12
+addPrefixBtn.Parent = prefixContent
+local addPrefixCorner = Instance.new("UICorner")
+addPrefixCorner.CornerRadius = UDim.new(0, 6)
+addPrefixCorner.Parent = addPrefixBtn
+
+local prefixListLabel = Instance.new("TextLabel")
+prefixListLabel.Size = UDim2.new(1, -20, 0, 14)
+prefixListLabel.Position = UDim2.new(0, 10, 0, 84)
+prefixListLabel.BackgroundTransparency = 1
+prefixListLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+prefixListLabel.Text = "Prefixes (tap X to remove)"
+prefixListLabel.Font = Enum.Font.Gotham
+prefixListLabel.TextSize = 9
+prefixListLabel.TextXAlignment = Enum.TextXAlignment.Left
+prefixListLabel.Parent = prefixContent
+
+local prefixListFrame = Instance.new("Frame")
+prefixListFrame.Size = UDim2.new(1, -20, 0, 100)
+prefixListFrame.Position = UDim2.new(0, 10, 0, 100)
+prefixListFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+prefixListFrame.Parent = prefixContent
+local prefixListCorner = Instance.new("UICorner")
+prefixListCorner.CornerRadius = UDim.new(0, 6)
+prefixListCorner.Parent = prefixListFrame
+
+local prefixScroll = Instance.new("ScrollingFrame")
+prefixScroll.Size = UDim2.new(1, -10, 1, -10)
+prefixScroll.Position = UDim2.new(0, 5, 0, 5)
+prefixScroll.BackgroundTransparency = 1
+prefixScroll.ScrollBarThickness = 4
+prefixScroll.Parent = prefixListFrame
+local prefixScrollCorner = Instance.new("UICorner")
+prefixScrollCorner.CornerRadius = UDim.new(0, 4)
+prefixScrollCorner.Parent = prefixScroll
+
+local prefixLayout = Instance.new("UIListLayout")
+prefixLayout.Padding = UDim.new(0, 2)
+prefixLayout.Parent = prefixScroll
+
+local prefixPreviewLabel = Instance.new("TextLabel")
+prefixPreviewLabel.Size = UDim2.new(1, -20, 0, 14)
+prefixPreviewLabel.Position = UDim2.new(0, 10, 0, 205)
+prefixPreviewLabel.BackgroundTransparency = 1
+prefixPreviewLabel.TextColor3 = Color3.fromRGB(100, 200, 100)
+prefixPreviewLabel.Text = "Preview: [prefix] YOUR MESSAGE"
+prefixPreviewLabel.Font = Enum.Font.Gotham
+prefixPreviewLabel.TextSize = 9
+prefixPreviewLabel.TextXAlignment = Enum.TextXAlignment.Left
+prefixPreviewLabel.Parent = prefixContent
+
+local clearPrefixBtn = Instance.new("TextButton")
+clearPrefixBtn.Size = UDim2.new(1, -20, 0, 22)
+clearPrefixBtn.Position = UDim2.new(0, 10, 0, 222)
+clearPrefixBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+clearPrefixBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+clearPrefixBtn.Text = "Clear All Prefixes"
+clearPrefixBtn.Font = Enum.Font.GothamBold
+clearPrefixBtn.TextSize = 10
+clearPrefixBtn.Parent = prefixContent
+local clearPrefixCorner = Instance.new("UICorner")
+clearPrefixCorner.CornerRadius = UDim.new(0, 6)
+clearPrefixCorner.Parent = clearPrefixBtn
+
 -- ========== DRAGGING ==========
 local dragging = false
 local dragInput, dragStart, startPos
@@ -956,7 +1080,7 @@ mainFrame.InputBegan:Connect(function(input)
 end)
 
 mainFrame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.User.InputInputType == Enum.UserInputType.Touch then
         mainDragInput = input
     end
 end)
@@ -988,7 +1112,7 @@ killBtn.MouseButton1Click:Connect(function()
     screenGui:Destroy()
 end)
 
--- ========== TOGGLE ADVANCED MODE (FIXED POSITION) ==========
+-- ========== TOGGLE ADVANCED MODE ==========
 local function toggleAdvancedMode()
     advancedMode = not advancedMode
     
@@ -1005,6 +1129,7 @@ local function toggleAdvancedMode()
         chatSettingsContent.Visible = false
         mimicContent.Visible = false
         speedContent.Visible = false
+        prefixContent.Visible = false
         
         titleLabel.Text = "⚙ Settings"
         settingsBtn.Text = "◀"
@@ -1019,6 +1144,7 @@ local function toggleAdvancedMode()
         chatSettingsContent.Visible = false
         mimicContent.Visible = false
         speedContent.Visible = false
+        prefixContent.Visible = false
         
         titleLabel.Text = "💬 Quick Chat"
         settingsBtn.Text = "⚙"
@@ -1036,6 +1162,7 @@ local function switchTab(tab)
     chatSettingsContent.Visible = (tab == "chat")
     mimicContent.Visible = (tab == "mimic")
     speedContent.Visible = (tab == "speed")
+    prefixContent.Visible = (tab == "prefix")
     
     kblTabBtn.BackgroundColor3 = tab == "kbl" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     kblTabBtn.TextColor3 = tab == "kbl" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
@@ -1048,6 +1175,9 @@ local function switchTab(tab)
     
     speedTabBtn.BackgroundColor3 = tab == "speed" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     speedTabBtn.TextColor3 = tab == "speed" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
+    
+    prefixTabBtn.BackgroundColor3 = tab == "prefix" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
+    prefixTabBtn.TextColor3 = tab == "prefix" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
 end
 
 kblTabBtn.MouseButton1Click:Connect(function()
@@ -1064,6 +1194,10 @@ end)
 
 speedTabBtn.MouseButton1Click:Connect(function()
     switchTab("speed")
+end)
+
+prefixTabBtn.MouseButton1Click:Connect(function()
+    switchTab("prefix")
 end)
 
 -- ========== KBL DELAY LIST UI UPDATE ==========
@@ -1137,8 +1271,47 @@ local function getKblDelay()
     end
 end
 
+-- ========== SMART PREFIX TRUNCATION ==========
+local function applyPrefix(msg)
+    if not prefixEnabled or #prefixes == 0 then
+        return msg
+    end
+    
+    local prefix = prefixes[prefixIndex]
+    prefixIndex = prefixIndex + 1
+    if prefixIndex > #prefixes then prefixIndex = 1 end
+    
+    -- Space between prefix and message
+    local space = " "
+    
+    -- Calculate available space for message
+    local prefixLen = #prefix
+    local spaceLen = #space
+    local maxMsgLen = MAX_CHARS - prefixLen - spaceLen
+    
+    -- If message fits entirely, just add prefix + space + message
+    if #msg <= maxMsgLen then
+        return prefix .. space .. msg
+    end
+    
+    -- If prefix itself is too long, truncate prefix to leave at least 10 chars for message
+    if maxMsgLen < 10 then
+        local neededChars = #msg
+        local maxPrefixLen = MAX_CHARS - neededChars - spaceLen
+        if maxPrefixLen < 1 then
+            maxPrefixLen = 1
+        end
+        prefix = prefix:sub(1, maxPrefixLen)
+        return prefix .. space .. msg
+    end
+    
+    -- Truncate message to fit
+    local truncatedMsg = msg:sub(1, maxMsgLen)
+    return prefix .. space .. truncatedMsg
+end
+
 local function sendMessage(msg)
-    local message = msg
+    local message = applyPrefix(msg)
     
     if caseMode == "upper" then
         message = string.upper(message)
@@ -1287,7 +1460,7 @@ kblConstBtn.MouseButton1Click:Connect(function()
 end)
 
 kblAddDelayBtn.MouseButton1Click:Connect(function()
-    local text = kblDelayInput.Text:gsub("^%s+", ""):gsub("%s+\$", "")
+    local text = kblDelayInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
     local num = tonumber(text)
     if num and num >= 0.1 then
         table.insert(kblDelayList, num)
@@ -1302,7 +1475,7 @@ kblClearDelayBtn.MouseButton1Click:Connect(function()
     updateKblDelayListUI()
 end)
 
--- ========== CHARACTER LIMIT (PER-LINE) ==========
+-- ========== CHARACTER LIMIT ==========
 textbox:GetPropertyChangedSignal("Text"):Connect(function()
     local text = textbox.Text
     local lines = {}
@@ -1421,7 +1594,6 @@ local function updateModeButtons()
     addDelayRow.Visible = delayMode ~= "constant"
 end
 
--- ========== DELAY MODE BUTTONS ==========
 randomBtn.MouseButton1Click:Connect(function()
     delayMode = "random"
     updateModeButtons()
@@ -1437,7 +1609,6 @@ constBtn.MouseButton1Click:Connect(function()
     updateModeButtons()
 end)
 
--- ========== ADD DELAY ==========
 addDelayBtn.MouseButton1Click:Connect(function()
     local text = addDelayInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
     local num = tonumber(text)
@@ -1448,7 +1619,6 @@ addDelayBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ========== CLEAR ALL DELAYS ==========
 clearDelayBtn.MouseButton1Click:Connect(function()
     delayList = {}
     delayIndex = 1
@@ -1535,7 +1705,6 @@ sendAllBtn.MouseButton1Click:Connect(function()
     if text == "" then return end
     
     if chatSending then
-        -- Stop sending
         chatSending = false
         chatPaused = false
         chatIndex = 1
@@ -1746,6 +1915,94 @@ addSuffixBtn.MouseButton1Click:Connect(function()
     end
 end)
 
+-- ========== PREFIX FUNCTIONS ==========
+local function updatePrefixList()
+    for _, child in pairs(prefixScroll:GetChildren()) do
+        if child:IsA("Frame") then
+            child:Destroy()
+        end
+    end
+    
+    for i, prefix in ipairs(prefixes) do
+        local item = Instance.new("Frame")
+        item.Size = UDim2.new(1, 0, 0, 20)
+        item.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        item.Parent = prefixScroll
+        
+        local itemCorner = Instance.new("UICorner")
+        itemCorner.CornerRadius = UDim.new(0, 4)
+        itemCorner.Parent = item
+        
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, -26, 1, 0)
+        label.Position = UDim2.new(0, 5, 0, 0)
+        label.BackgroundTransparency = 1
+        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        label.Text = i..". "..prefix
+        label.Font = Enum.Font.Gotham
+        label.TextSize = 10
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.TextTruncate = Enum.TextTruncate.AtEnd
+        label.Parent = item
+        
+        local deleteBtn = Instance.new("TextButton")
+        deleteBtn.Size = UDim2.new(0, 20, 0, 20)
+        deleteBtn.Position = UDim2.new(1, -22, 0, 0)
+        deleteBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+        deleteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        deleteBtn.Text = "X"
+        deleteBtn.Font = Enum.Font.GothamBold
+        deleteBtn.TextSize = 9
+        deleteBtn.Parent = item
+        
+        local deleteCorner = Instance.new("UICorner")
+        deleteCorner.CornerRadius = UDim.new(0, 4)
+        deleteCorner.Parent = deleteBtn
+        
+        deleteBtn.MouseButton1Click:Connect(function()
+            table.remove(prefixes, i)
+            if prefixIndex > #prefixes then prefixIndex = 1 end
+            updatePrefixList()
+            if #prefixes > 0 then
+                prefixPreviewLabel.Text = "Preview: ["..prefixes[1].."] YOUR MESSAGE"
+            else
+                prefixPreviewLabel.Text = "Preview: [prefix] YOUR MESSAGE"
+            end
+        end)
+    end
+    
+    prefixScroll.CanvasSize = UDim2.new(0, 0, 0, prefixLayout.AbsoluteContentSize.Y)
+end
+
+prefixToggle.MouseButton1Click:Connect(function()
+    prefixEnabled = not prefixEnabled
+    
+    if prefixEnabled then
+        prefixToggle.Text = "PREFIX: ON"
+        prefixToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
+    else
+        prefixToggle.Text = "PREFIX: OFF"
+        prefixToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+    end
+end)
+
+addPrefixBtn.MouseButton1Click:Connect(function()
+    local text = prefixInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
+    if text ~= "" then
+        table.insert(prefixes, text)
+        prefixInput.Text = ""
+        updatePrefixList()
+        prefixPreviewLabel.Text = "Preview: ["..prefixes[1].."] YOUR MESSAGE"
+    end
+end)
+
+clearPrefixBtn.MouseButton1Click:Connect(function()
+    prefixes = {}
+    prefixIndex = 1
+    updatePrefixList()
+    prefixPreviewLabel.Text = "Preview: [prefix] YOUR MESSAGE"
+end)
+
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         if dropdownFrame.Visible then
@@ -1775,8 +2032,9 @@ updateDelayListUI()
 updateModeButtons()
 updateSuffixList()
 updateCaseButtons()
+updatePrefixList()
 
 print("✅ Compact Multi-Chat Hub Loaded")
 print("📌 KBL tab with premade messages ready")
 print("📌 Press RightCtrl to toggle visibility")
-print("📌 Use P button to pause/resume during chat send")
+print("📌 Prefix tab: Auto-truncates to fit 200 chars")
