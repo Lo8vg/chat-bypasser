@@ -515,6 +515,52 @@ local kblConstCorner = Instance.new("UICorner")
 kblConstCorner.CornerRadius = UDim.new(0, 6)
 kblConstCorner.Parent = kblConstInput
 
+-- KBL Delay List Title
+local kblDelayListTitle = Instance.new("TextLabel")
+kblDelayListTitle.Size = UDim2.new(1, -20, 0, 14)
+kblDelayListTitle.Position = UDim2.new(0, 10, 0, 180)
+kblDelayListTitle.BackgroundTransparency = 1
+kblDelayListTitle.TextColor3 = Color3.fromRGB(150, 150, 150)
+kblDelayListTitle.Text = "KBL Delays (tap X to remove)"
+kblDelayListTitle.Font = Enum.Font.Gotham
+kblDelayListTitle.TextSize = 9
+kblDelayListTitle.Parent = kblContent
+
+-- KBL Delay List Frame
+local kblDelayListFrame = Instance.new("Frame")
+kblDelayListFrame.Size = UDim2.new(1, -20, 0, 50)
+kblDelayListFrame.Position = UDim2.new(0, 10, 0, 196)
+kblDelayListFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+kblDelayListFrame.Parent = kblContent
+local kblDelayListCorner = Instance.new("UICorner")
+kblDelayListCorner.CornerRadius = UDim.new(0, 6)
+kblDelayListCorner.Parent = kblDelayListFrame
+
+local kblDelayScroll = Instance.new("ScrollingFrame")
+kblDelayScroll.Size = UDim2.new(1, -6, 1, -6)
+kblDelayScroll.Position = UDim2.new(0, 3, 0, 3)
+kblDelayScroll.BackgroundTransparency = 1
+kblDelayScroll.ScrollBarThickness = 3
+kblDelayScroll.Parent = kblDelayListFrame
+
+local kblDelayListLayout = Instance.new("UIListLayout")
+kblDelayListLayout.Padding = UDim.new(0, 2)
+kblDelayListLayout.Parent = kblDelayScroll
+
+-- KBL Clear Delays Button
+local kblClearDelayBtn = Instance.new("TextButton")
+kblClearDelayBtn.Size = UDim2.new(1, -20, 0, 22)
+kblClearDelayBtn.Position = UDim2.new(0, 10, 0, 250)
+kblClearDelayBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+kblClearDelayBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+kblClearDelayBtn.Text = "Clear All KBL Delays"
+kblClearDelayBtn.Font = Enum.Font.GothamBold
+kblClearDelayBtn.TextSize = 10
+kblClearDelayBtn.Parent = kblContent
+local kblClearDelayCorner = Instance.new("UICorner")
+kblClearDelayCorner.CornerRadius = UDim.new(0, 6)
+kblClearDelayCorner.Parent = kblClearDelayBtn
+
 -- Chat Settings Content
 local chatSettingsContent = Instance.new("Frame")
 chatSettingsContent.Size = UDim2.new(1, 0, 1, -56)
@@ -963,7 +1009,6 @@ local function toggleAdvancedMode()
         compactContent.Visible = false
         
         tabBar.Visible = true
-        advancedContent.Visible = true
         kblContent.Visible = true
         chatSettingsContent.Visible = false
         mimicContent.Visible = false
@@ -978,7 +1023,6 @@ local function toggleAdvancedMode()
         compactContent.Visible = true
         
         tabBar.Visible = false
-        advancedContent.Visible = false
         kblContent.Visible = false
         chatSettingsContent.Visible = false
         mimicContent.Visible = false
@@ -1029,6 +1073,59 @@ end)
 speedTabBtn.MouseButton1Click:Connect(function()
     switchTab("speed")
 end)
+
+-- ========== KBL DELAY LIST UI UPDATE ==========
+local function updateKblDelayListUI()
+    for _, child in pairs(kblDelayScroll:GetChildren()) do
+        if child:IsA("Frame") then
+            child:Destroy()
+        end
+    end
+    
+    for i, d in ipairs(kblDelayList) do
+        local item = Instance.new("Frame")
+        item.Size = UDim2.new(1, 0, 0, 18)
+        item.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+        item.Parent = kblDelayScroll
+        
+        local itemCorner = Instance.new("UICorner")
+        itemCorner.CornerRadius = UDim.new(0, 4)
+        itemCorner.Parent = item
+        
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, -22, 1, 0)
+        label.Position = UDim2.new(0, 5, 0, 0)
+        label.BackgroundTransparency = 1
+        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        label.Text = i..". "..d.."s"
+        label.Font = Enum.Font.Gotham
+        label.TextSize = 10
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Parent = item
+        
+        local delBtn = Instance.new("TextButton")
+        delBtn.Size = UDim2.new(0, 16, 0, 16)
+        delBtn.Position = UDim2.new(1, -18, 0.5, -8)
+        delBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+        delBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        delBtn.Text = "X"
+        delBtn.Font = Enum.Font.GothamBold
+        delBtn.TextSize = 8
+        delBtn.Parent = item
+        
+        local delCorner = Instance.new("UICorner")
+        delCorner.CornerRadius = UDim.new(0, 4)
+        delCorner.Parent = delBtn
+        
+        delBtn.MouseButton1Click:Connect(function()
+            table.remove(kblDelayList, i)
+            if kblDelayIndex > #kblDelayList then kblDelayIndex = 1 end
+            updateKblDelayListUI()
+        end)
+    end
+    
+    kblDelayScroll.CanvasSize = UDim2.new(0, 0, 0, kblDelayListLayout.AbsoluteContentSize.Y)
+end
 
 -- ========== KBL FUNCTIONS ==========
 local function getKblDelay()
@@ -1177,6 +1274,9 @@ local function updateKblModeButtons()
     
     kblDelayRow.Visible = kblDelayMode ~= "constant"
     kblConstInput.Visible = kblDelayMode == "constant"
+    kblDelayListTitle.Visible = kblDelayMode ~= "constant"
+    kblDelayListFrame.Visible = kblDelayMode ~= "constant"
+    kblClearDelayBtn.Visible = kblDelayMode ~= "constant"
 end
 
 kblRandomBtn.MouseButton1Click:Connect(function()
@@ -1200,7 +1300,14 @@ kblAddDelayBtn.MouseButton1Click:Connect(function()
     if num and num >= 0.1 then
         table.insert(kblDelayList, num)
         kblDelayInput.Text = ""
+        updateKblDelayListUI()
     end
+end)
+
+kblClearDelayBtn.MouseButton1Click:Connect(function()
+    kblDelayList = {}
+    kblDelayIndex = 1
+    updateKblDelayListUI()
 end)
 
 -- ========== CHARACTER LIMIT (PER-LINE) ==========
@@ -1550,6 +1657,7 @@ local function onPlayerChatted(plr, msg)
         suffixIndex = 1
     end
 end
+
 local function setupPlayerListener(plr)
     plr.Chatted:Connect(function(msg)
         onPlayerChatted(plr, msg)
@@ -1670,6 +1778,7 @@ end)
 
 -- Initialize
 updateKblModeButtons()
+updateKblDelayListUI()
 updateDelayListUI()
 updateModeButtons()
 updateSuffixList()
