@@ -1,28 +1,28 @@
--- Combat Movement Helper (Builds on your Auto-Walk)
--- Keep your movement logic, adds combat features
+-- Combat Movement Helper (Fixed with Full GUI)
 
 local player = game.Players.LocalPlayer
-local Humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
-local HumanoidRootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
--- Settings (all customizable in GUI)
-local autoWalkEnabled = false
-local autoJumpEnabled = true
-local autoSwingEnabled = true
-local autoEquipSword = true
-local randomDirectionEnabled = true
+-- Settings
+local settings = {
+    autoWalk = false,
+    autoJump = true,
+    autoSwing = true,
+    autoEquipSword = true,
+    randomDirection = true,
+    jumpDelay = 1.5,
+    swingDelay = 0.3,
+    swingsPerJump = 2,
+    directionInterval = 5
+}
 
-local jumpDelay = 1.5 -- seconds between jumps
-local swingDelay = 0.3 -- seconds between swings
-local swingsPerJump = 2 -- how many swings per jump
-local directionChangeInterval = 5 -- seconds before changing direction
-local swingRange = 15 -- sword reach
-
--- Movement variables
+-- Variables
+local running = false
 local currentDirection = Vector3.new(0, 0, -1)
 local lastDirectionChange = 0
 local lastJumpTime = 0
-local lastSwingTime = 0
+local isJumping = false
 
 -- Create ScreenGui
 local screenGui = Instance.new("ScreenGui")
@@ -30,82 +30,118 @@ screenGui.Name = "CombatMovementGUI"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = player.PlayerGui
 
--- Main Frame
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 200, 0, 300)
-mainFrame.Position = UDim2.new(0, 20, 0.5, -150)
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-mainFrame.BorderSizePixel = 2
-mainFrame.BorderColor3 = Color3.fromRGB(60, 60, 60)
-mainFrame.Parent = screenGui
-mainFrame.Visible = false
-
-local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(0, 8)
-mainCorner.Parent = mainFrame
-
--- Title
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 30)
-title.BackgroundTransparency = 1
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Text = "Combat Movement"
-title.Font = Enum.Font.GothamBold
-title.TextSize = 14
-title.Parent = mainFrame
-
--- Toggle Button (small, draggable like original)
+-- Toggle Button (small, always visible)
 local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(0, 120, 0, 28)
-toggleBtn.Position = UDim2.new(0.5, -60, 0.9, -14)
-toggleBtn.Text = "Movement: OFF"
+toggleBtn.Size = UDim2.new(0, 130, 0, 28)
+toggleBtn.Position = UDim2.new(0.5, -65, 0.9, -35)
 toggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.Text = "Movement: OFF"
 toggleBtn.Font = Enum.Font.GothamBold
 toggleBtn.TextSize = 12
 toggleBtn.Parent = screenGui
-toggleBtn.Draggable = true
-toggleBtn.Active = true
 
 local toggleCorner = Instance.new("UICorner")
 toggleCorner.CornerRadius = UDim.new(0, 6)
 toggleCorner.Parent = toggleBtn
 
--- Settings Button
+-- Settings Button (gear icon next to toggle)
 local settingsBtn = Instance.new("TextButton")
 settingsBtn.Size = UDim2.new(0, 28, 0, 28)
-settingsBtn.Position = UDim2.new(1, -32, 0, 30)
+settingsBtn.Position = UDim2.new(0.5, 70, 0.9, -35)
 settingsBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 settingsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 settingsBtn.Text = "⚙"
 settingsBtn.Font = Enum.Font.GothamBold
-settingsBtn.TextSize = 14
-settingsBtn.Parent = mainFrame
+settingsBtn.TextSize = 16
+settingsBtn.Parent = screenGui
 
 local settingsCorner = Instance.new("UICorner")
 settingsCorner.CornerRadius = UDim.new(0, 6)
 settingsCorner.Parent = settingsBtn
 
--- Content Container
-local content = Instance.new("Frame")
-content.Size = UDim2.new(1, -20, 1, -70)
-content.Position = UDim2.new(0, 10, 0, 35)
-content.BackgroundTransparency = 1
-content.Parent = mainFrame
+-- Main Settings Frame (hidden by default)
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 220, 0, 340)
+mainFrame.Position = UDim2.new(0.5, -110, 0.5, -170)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+mainFrame.BorderSizePixel = 2
+mainFrame.BorderColor3 = Color3.fromRGB(60, 60, 60)
+mainFrame.Visible = false
+mainFrame.Parent = screenGui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 8)
+mainCorner.Parent = mainFrame
+
+-- Title Bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+titleBar.Parent = mainFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = titleBar
+
+local titleFix = Instance.new("Frame")
+titleFix.Size = UDim2.new(1, 0, 0, 15)
+titleFix.Position = UDim2.new(0, 0, 1, -15)
+titleFix.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+titleFix.BorderSizePixel = 0
+titleFix.Parent = titleBar
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -50, 1, 0)
+titleLabel.Position = UDim2.new(0, 10, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Text = "Combat Movement"
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 14
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Parent = titleBar
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 24, 0, 24)
+closeBtn.Position = UDim2.new(1, -28, 0.5, -12)
+closeBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.Text = "X"
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 12
+closeBtn.Parent = titleBar
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 6)
+closeCorner.Parent = closeBtn
+
+-- Scrollable Content
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Size = UDim2.new(1, -20, 1, -40)
+scrollFrame.Position = UDim2.new(0, 10, 0, 35)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.ScrollBarThickness = 4
+scrollFrame.Parent = mainFrame
 
 local contentLayout = Instance.new("UIListLayout")
-contentLayout.Padding = UDim.new(0, 8)
-contentLayout.Parent = content
+contentLayout.Padding = UDim.new(0, 6)
+contentLayout.Parent = scrollFrame
 
--- Helper function to create toggle
+-- Helper: Create Toggle
 local function createToggle(name, default, callback)
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 0, 24)
-    frame.BackgroundTransparency = 1
-    frame.Parent = content
+    frame.Size = UDim2.new(1, 0, 0, 26)
+    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    frame.Parent = scrollFrame
+    
+    local frameCorner = Instance.new("UICorner")
+    frameCorner.CornerRadius = UDim.new(0, 6)
+    frameCorner.Parent = frame
     
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(0.6, 0, 1, 0)
+    label.Size = UDim2.new(0.55, 0, 1, 0)
+    label.Position = UDim2.new(0, 8, 0, 0)
     label.BackgroundTransparency = 1
     label.TextColor3 = Color3.fromRGB(255, 255, 255)
     label.Text = name
@@ -115,9 +151,9 @@ local function createToggle(name, default, callback)
     label.Parent = frame
     
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.35, 0, 1, 0)
-    btn.Position = UDim2.new(0.65, 0, 0, 0)
-    btn.BackgroundColor3 = default and Color3.fromRGB(0, 180, 80) or Color3.fromRGB(180, 60, 60)
+    btn.Size = UDim2.new(0.4, 0, 0, 20)
+    btn.Position = UDim2.new(0.57, 0, 0.5, -10)
+    btn.BackgroundColor3 = default and Color3.fromRGB(0, 180, 80) or Color3.fromRGB(80, 80, 80)
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Text = default and "ON" or "OFF"
     btn.Font = Enum.Font.GothamBold
@@ -131,174 +167,194 @@ local function createToggle(name, default, callback)
     btn.MouseButton1Click:Connect(function()
         local state = btn.Text == "OFF"
         btn.Text = state and "ON" or "OFF"
-        btn.BackgroundColor3 = state and Color3.fromRGB(0, 180, 80) or Color3.fromRGB(180, 60, 60)
+        btn.BackgroundColor3 = state and Color3.fromRGB(0, 180, 80) or Color3.fromRGB(80, 80, 80)
         callback(state)
     end)
     
     return btn
 end
 
--- Helper function to create slider
+-- Helper: Create Slider
 local function createSlider(name, minVal, maxVal, defaultVal, callback)
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, 0, 0, 40)
-    frame.BackgroundTransparency = 1
-    frame.Parent = content
+    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    frame.Parent = scrollFrame
+    
+    local frameCorner = Instance.new("UICorner")
+    frameCorner.CornerRadius = UDim.new(0, 6)
+    frameCorner.Parent = frame
     
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 0, 14)
-    label.Position = UDim2.new(0, 0, 0, 0)
+    label.Size = UDim2.new(1, -10, 0, 16)
+    label.Position = UDim2.new(0, 8, 0, 4)
     label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(200, 200, 200)
-    label.Text = name..": "..defaultVal
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.Text = name .. ": " .. defaultVal
     label.Font = Enum.Font.Gotham
     label.TextSize = 10
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = frame
     
-    local slider = Instance.new("TextButton")
-    slider.Size = UDim2.new(1, 0, 0, 16)
-    slider.Position = UDim2.new(0, 0, 0, 20)
-    slider.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    slider.Text = ""
-    slider.Parent = frame
+    local sliderBg = Instance.new("Frame")
+    sliderBg.Size = UDim2.new(1, -16, 0, 10)
+    sliderBg.Position = UDim2.new(0, 8, 0, 24)
+    sliderBg.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    sliderBg.Parent = frame
     
-    local sliderCorner = Instance.new("UICorner")
-    sliderCorner.CornerRadius = UDim.new(0, 4)
-    sliderCorner.Parent = slider
+    local sliderBgCorner = Instance.new("UICorner")
+    sliderBgCorner.CornerRadius = UDim.new(0, 4)
+    sliderBgCorner.Parent = sliderBg
     
-    local fill = Instance.new("Frame")
-    fill.Size = UDim2.new((defaultVal - minVal) / (maxVal - minVal), 0, 1, 0)
-    fill.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-    fill.Parent = slider
+    local sliderFill = Instance.new("Frame")
+    sliderFill.Size = UDim2.new((defaultVal - minVal) / (maxVal - minVal), 0, 1, 0)
+    sliderFill.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+    sliderFill.Parent = sliderBg
     
-    local fillCorner = Instance.new("UICorner")
-    fillCorner.Radius = UDim.new(0, 4)
-    fillCorner.Parent = fill
+    local sliderFillCorner = Instance.new("UICorner")
+    sliderFillCorner.CornerRadius = UDim.new(0, 4)
+    sliderFillCorner.Parent = sliderFill
     
-    local dragging = false
-    
-    slider.MouseButton1Down:Connect(function()
-        dragging = true
-        local input = game:GetService("UserInputService"):GetMouseLocation()
-        local relativeX = math.clamp((input.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
-        local value = minVal + (maxVal - minVal) * relativeX
-        value = math.round(value * 10) / 10
-        fill.Size = UDim2.new(relativeX, 0, 1, 0)
-        label.Text = name..": "..value
-        callback(value)
-    end)
-    
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local relativeX = math.clamp((input.Position.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
-            local value = minVal + (maxVal - minVal) * relativeX
+    -- Make it clickable
+    sliderBg.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            local mouseX = input.Position.X
+            local sliderPos = sliderBg.AbsolutePosition.X
+            local sliderSize = sliderBg.AbsoluteSize.X
+            local percent = math.clamp((mouseX - sliderPos) / sliderSize, 0, 1)
+            local value = minVal + (maxVal - minVal) * percent
             value = math.round(value * 10) / 10
-            fill.Size = UDim2.new(relativeX, 0, 1, 0)
-            label.Text = name..": "..value
+            
+            sliderFill.Size = UDim2.new(percent, 0, 1, 0)
+            label.Text = name .. ": " .. value
             callback(value)
         end
     end)
     
-    game:GetService("UserInputService").InputEnded:Connect(function(input)
+    -- Dragging
+    local dragging = false
+    sliderBg.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement then
             dragging = false
         end
     end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local mouseX = input.Position.X
+            local sliderPos = sliderBg.AbsolutePosition.X
+            local sliderSize = sliderBg.AbsoluteSize.X
+            local percent = math.clamp((mouseX - sliderPos) / sliderSize, 0, 1)
+            local value = minVal + (maxVal - minVal) * percent
+            value = math.round(value * 10) / 10
+            
+            sliderFill.Size = UDim2.new(percent, 0, 1, 0)
+            label.Text = name .. ": " .. value
+            callback(value)
+        end
+    end)
 end
 
--- Create toggles
-createToggle("Auto Walk", false, function(state)
-    autoWalkEnabled = state
-end)
+-- Create all toggles and sliders
+createToggle("Auto Walk", false, function(v) settings.autoWalk = v end)
+createToggle("Auto Jump", true, function(v) settings.autoJump = v end)
+createToggle("Auto Swing", true, function(v) settings.autoSwing = v end)
+createToggle("Auto Equip Sword", true, function(v) settings.autoEquipSword = v end)
+createToggle("Random Direction", true, function(v) settings.randomDirection = v end)
 
-createToggle("Auto Jump", true, function(state)
-    autoJumpEnabled = state
-end)
+createSlider("Jump Delay", 0.5, 5, settings.jumpDelay, function(v) settings.jumpDelay = v end)
+createSlider("Swing Delay", 0.1, 1, settings.swingDelay, function(v) settings.swingDelay = v end)
+createSlider("Swings Per Jump", 1, 5, settings.swingsPerJump, function(v) settings.swingsPerJump = math.floor(v) end)
+createSlider("Direction Interval", 2, 15, settings.directionInterval, function(v) settings.directionInterval = v end)
 
-createToggle("Auto Swing", true, function(state)
-    autoSwingEnabled = state
-end)
+-- Dragging for main frame
+local dragging = false
+local dragStart, startPos
 
-createToggle("Auto Equip Sword", true, function(state)
-    autoEquipSword = state
-end)
-
-createToggle("Random Direction", true, function(state)
-    randomDirectionEnabled = state
-end)
-
--- Create sliders
-createSlider("Jump Delay (sec)", 0.5, 5, jumpDelay, function(val)
-    jumpDelay = val
-end)
-
-createSlider("Swing Delay (sec)", 0.1, 2, swingDelay, function(val)
-    swingDelay = val
-end)
-
-createSlider("Swings Per Jump", 1, 5, swingsPerJump, function(val)
-    swingsPerJump = math.floor(val)
-end)
-
-createSlider("Direction Change (sec)", 2, 15, directionChangeInterval, function(val)
-    directionChangeInterval = val
-end)
-
--- Function to check for obstacles (YOUR ORIGINAL LOGIC)
-local function checkForObstacles(direction)
-    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
-        return false
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
     end
+end)
+
+mainFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Toggle visibility of settings
+settingsBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = not mainFrame.Visible
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = false
+end)
+
+-- Obstacle check (your original logic)
+local function checkForObstacles(direction)
+    local character = player.Character
+    if not character then return false end
+    
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return false end
     
     local raycastParams = RaycastParams.new()
-    raycastParams.FilterDescendantsInstances = {player.Character}
+    raycastParams.FilterDescendantsInstances = {character}
     raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-    local raycastResult = workspace:Raycast(player.Character.HumanoidRootPart.Position, direction * 13, raycastParams)
     
-    if raycastResult and raycastResult.Instance then
-        return true
-    end
-    return false
+    local result = workspace:Raycast(rootPart.Position, direction * 13, raycastParams)
+    return result and result.Instance ~= nil
 end
 
--- Function to calculate clear path (YOUR ORIGINAL LOGIC)
+-- Calculate clear path (your original logic)
 local function calculateClearPath(direction)
     if not checkForObstacles(direction) then
         return direction
-    else
-        local leftDirection = (direction + Vector3.new(-1, 0, 0)).Unit
-        local rightDirection = (direction + Vector3.new(1, 0, 0)).Unit
-        local backDirection = -direction
-        
-        if not checkForObstacles(leftDirection) then
-            return leftDirection
-        elseif not checkForObstacles(rightDirection) then
-            return rightDirection
-        elseif not checkForObstacles(backDirection) then
-            return backDirection
-        else
-            local randomDirection = Vector3.new(math.random(-1, 1), 0, math.random(-1, 1)).Unit
-            return randomDirection
-        end
     end
+    
+    local leftDir = (direction + Vector3.new(-1, 0, 0)).Unit
+    local rightDir = (direction + Vector3.new(1, 0, 0)).Unit
+    local backDir = -direction
+    
+    if not checkForObstacles(leftDir) then return leftDir end
+    if not checkForObstacles(rightDir) then return rightDir end
+    if not checkForObstacles(backDir) then return backDir end
+    
+    return Vector3.new(math.random(-1, 1), 0, math.random(-1, 1)).Unit
 end
 
--- Function to get random direction
+-- Get random direction
 local function getRandomDirection()
     local angle = math.random() * math.pi * 2
     return Vector3.new(math.cos(angle), 0, math.sin(angle))
 end
 
--- Function to find sword in inventory
+-- Find sword
 local function findSword()
     local character = player.Character
     if not character then return nil end
     
-    -- Check if already equipped
-    local tool = character:FindFirstChildOfClass("Tool")
-    if tool and tool:FindFirstChild("Handle") then
-        return tool
+    -- Check equipped
+    local equipped = character:FindFirstChildOfClass("Tool")
+    if equipped and equipped:FindFirstChild("Handle") then
+        return equipped
     end
     
     -- Check backpack
@@ -314,45 +370,33 @@ local function findSword()
     return nil
 end
 
--- Function to swing sword
+-- Swing sword
 local function swingSword()
-    if not autoSwingEnabled then return end
-    
     local sword = findSword()
-    if not sword then return end
-    
+    if sword and sword:FindFirstChild("Handle") then
+        sword:Activate()
+    end
+end
+
+-- Equip sword
+local function equipSword()
     local character = player.Character
     if not character then return end
     
     local humanoid = character:FindFirstChild("Humanoid")
     if not humanoid then return end
     
-    -- Equip if not equipped
-    if autoEquipSword and sword.Parent ~= character then
+    local sword = findSword()
+    if sword and sword.Parent ~= character then
         humanoid:EquipTool(sword)
-        wait(0.1)
-    end
-    
-    -- Activate sword (swing)
-    sword:Activate()
-end
-
--- Function to jump
-local function jump()
-    local character = player.Character
-    if not character then return end
-    
-    local humanoid = character:FindFirstChild("Humanoid")
-    if humanoid then
-        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end
 
 -- Main loop
-local running = false
-local lastTime = 0
-
 local function mainLoop()
+    lastDirectionChange = tick()
+    lastJumpTime = tick()
+    
     while running do
         local character = player.Character
         if not character then
@@ -368,97 +412,58 @@ local function mainLoop()
             continue
         end
         
-        local currentTime = tick()
+        local now = tick()
         
         -- Auto equip sword
-        if autoEquipSword then
-            local sword = findSword()
-            if sword and sword.Parent ~= character then
-                humanoid:EquipTool(sword)
-            end
+        if settings.autoEquipSword then
+            equipSword()
         end
         
         -- Random direction change
-        if randomDirectionEnabled and currentTime - lastDirectionChange >= directionChangeInterval then
+        if settings.randomDirection and (now - lastDirectionChange) >= settings.directionInterval then
             currentDirection = getRandomDirection()
-            lastDirectionChange = currentTime
+            lastDirectionChange = now
         end
         
-        -- Auto walk (YOUR ORIGINAL MOVEMENT LOGIC)
-        if autoWalkEnabled then
+        -- Auto walk (your original movement)
+        if settings.autoWalk then
             local clearPath = calculateClearPath(currentDirection)
             humanoid:MoveTo(rootPart.Position + clearPath * 16)
         end
         
-        -- Auto jump
-        if autoJumpEnabled and currentTime - lastJumpTime >= jumpDelay then
-            jump()
-            lastJumpTime = currentTime
+        -- Auto jump and swing
+        if settings.autoJump and (now - lastJumpTime) >= settings.jumpDelay and not isJumping then
+            isJumping = true
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            lastJumpTime = now
             
-            -- Swing sword multiple times during jump
-            if autoSwingEnabled then
-                for i = 1, swingsPerJump do
-                    wait(swingDelay)
+            -- Swing sword during jump
+            if settings.autoSwing then
+                for i = 1, settings.swingsPerJump do
+                    wait(settings.swingDelay)
                     swingSword()
                 end
             end
+            
+            wait(0.3)
+            isJumping = false
         end
         
-        wait(0.1)
+        wait(0.05)
     end
 end
 
--- Toggle main function
-local function toggleMovement()
+-- Toggle button
+toggleBtn.MouseButton1Click:Connect(function()
     running = not running
     
     if running then
         toggleBtn.Text = "Movement: ON"
         toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-        lastDirectionChange = tick()
-        lastJumpTime = tick()
         spawn(mainLoop)
     else
         toggleBtn.Text = "Movement: OFF"
         toggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    end
-end
-
--- Settings button to show/hide GUI
-settingsBtn.MouseButton1Click:Connect(function()
-    mainFrame.Visible = not mainFrame.Visible
-end)
-
--- Toggle button click
-toggleBtn.MouseButton1Click:Connect(function()
-    toggleMovement()
-end)
-
--- Make main frame draggable
-local dragInput, dragStart, startPos
-mainFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragStart = input.Position
-        startPos = mainFrame.Position
-        
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragInput = nil
-            end
-        end)
-    end
-end)
-
-mainFrame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement then
-        dragInput = input
-    end
-end)
-
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if input == dragInput and mainFrame.Visible then
-        local delta = input.Position - dragStart
-        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
@@ -471,5 +476,5 @@ player.CharacterAdded:Connect(function()
 end)
 
 print("✅ Combat Movement Helper Loaded")
-print("📌 Click toggle button to start/stop")
+print("📌 Click toggle to start/stop")
 print("📌 Click ⚙ to open settings")
