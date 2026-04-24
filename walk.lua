@@ -9,11 +9,13 @@ local player = Players.LocalPlayer
 local autoWalkEnabled = false
 local autoEquipEnabled = false
 local equipDelay = 0.5
+local customToolName = "swuvle"  -- Change this to match your tool name in backpack
 
 -- Variables
 local currentWalkDirection = nil
 local lastCameraDirection = nil
 local equipState = false
+local swordTool = nil
 
 local COLORS = {
     background = Color3.fromRGB(245, 245, 245),
@@ -338,24 +340,31 @@ local function findBestDirection(preferredDirection)
     return Vector3.new(math.cos(randomAngle), 0, math.sin(randomAngle)), true
 end
 
--- Find ONLY the "swuvle" tool by name
+-- Find tool by name OR by partial name match
 local function findSword()
     local character = player.Character
     local backpack = player:FindFirstChild("Backpack")
     
-    -- Check if "swuvle" is equipped (in character)
-    if character then
-        local tool = character:FindFirstChild("swuvle")
-        if tool and tool:IsA("Tool") then
-            return tool
+    if not backpack then return nil end
+    
+    -- Search backpack for tool matching customToolName
+    for _, item in pairs(backpack:GetChildren()) do
+        if item:IsA("Tool") then
+            -- Exact match
+            if item.Name == customToolName then
+                return item
+            end
+            -- Partial match (contains the name)
+            if item.Name:lower():find(customToolName:lower()) then
+                return item
+            end
         end
     end
     
-    -- Check if "swuvle" is in backpack (not equipped)
-    if backpack then
-        local tool = backpack:FindFirstChild("swuvle")
-        if tool and tool:IsA("Tool") then
-            return tool
+    -- If not found, return first tool in backpack
+    for _, item in pairs(backpack:GetChildren()) do
+        if item:IsA("Tool") then
+            return item
         end
     end
     
@@ -402,17 +411,21 @@ local function equipLoop()
         local character = player.Character
         if character then
             local humanoid = character:FindFirstChild("Humanoid")
-            local sword = findSword()
             
-            if humanoid and sword then
-                if equipState then
-                    -- Currently equipped, unequip it (goes back to backpack)
-                    humanoid:UnequipTools()
-                else
-                    -- Currently unequipped, equip it
-                    humanoid:EquipTool(sword)
+            if humanoid then
+                -- Find sword every time in case it changed
+                swordTool = findSword()
+                
+                if swordTool then
+                    if equipState then
+                        -- Currently equipped, unequip it
+                        humanoid:UnequipTools()
+                    else
+                        -- Currently unequipped, equip it
+                        humanoid:EquipTool(swordTool)
+                    end
+                    equipState = not equipState
                 end
-                equipState = not equipState
             end
         end
         wait(equipDelay)
@@ -452,3 +465,4 @@ equipToggle.MouseButton1Click:Connect(function()
 end)
 
 print("✅ Auto Walk + Auto Equip Loaded")
+print("📌 Custom tool name: " .. customToolName)
