@@ -1,4 +1,4 @@
--- Compact Chat Hub (Fixed KBL Delay Display)
+-- Compact Chat Hub (Updated)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -27,8 +27,8 @@ local kblMessages = {
 local kblIndex = 1
 local kblRunning = false
 local kblPaused = false
-local kblDelayMode = "random"
-local kblDelayList = {0.7, 0.9, 1, 2, 0.8}
+local kblDelayMode = "sequential"
+local kblDelayList = {2, 1.8, 1.6}
 local kblDelayIndex = 1
 
 -- Main Chat Send Settings
@@ -38,8 +38,8 @@ local chatLines = {}
 local chatIndex = 1
 
 -- Delay Settings
-local delayMode = "random"
-local delayList = {0.7, 0.9, 1, 2, 0.8}
+local delayMode = "sequential"
+local delayList = {1.2, 1.5, 0.9}
 local delayIndex = 1
 local constantDelay = 0.5
 
@@ -107,7 +107,7 @@ titleFix.BorderSizePixel = 0
 titleFix.Parent = titleBar
 
 local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, -100, 1, 0)
+titleLabel.Size = UDim2.new(1, -30, 1, 0)
 titleLabel.Position = UDim2.new(0, 10, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -117,20 +117,20 @@ titleLabel.TextSize = 13
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = titleBar
 
--- Kill Button (X)
-local killBtn = Instance.new("TextButton")
-killBtn.Size = UDim2.new(0, 28, 0, 22)
-killBtn.Position = UDim2.new(1, -32, 0.5, -11)
-killBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-killBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-killBtn.Text = "X"
-killBtn.Font = Enum.Font.GothamBold
-killBtn.TextSize = 14
-killBtn.Parent = titleBar
+-- Collapse Button (-)
+local collapseBtn = Instance.new("TextButton")
+collapseBtn.Size = UDim2.new(0, 28, 0, 22)
+collapseBtn.Position = UDim2.new(1, -32, 0.5, -11)
+collapseBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+collapseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+collapseBtn.Text = "-"
+collapseBtn.Font = Enum.Font.GothamBold
+collapseBtn.TextSize = 14
+collapseBtn.Parent = titleBar
 
-local killCorner = Instance.new("UICorner")
-killCorner.CornerRadius = UDim.new(0, 6)
-killCorner.Parent = killBtn
+local collapseCorner = Instance.new("UICorner")
+collapseCorner.CornerRadius = UDim.new(0, 6)
+collapseCorner.Parent = collapseBtn
 
 -- Settings Button (Gear Icon)
 local settingsBtn = Instance.new("TextButton")
@@ -146,21 +146,6 @@ settingsBtn.Parent = titleBar
 local settingsCorner = Instance.new("UICorner")
 settingsCorner.CornerRadius = UDim.new(0, 6)
 settingsCorner.Parent = settingsBtn
-
--- Collapse Button (-)
-local collapseBtn = Instance.new("TextButton")
-collapseBtn.Size = UDim2.new(0, 28, 0, 22)
-collapseBtn.Position = UDim2.new(1, -96, 0.5, -11)
-collapseBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-collapseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-collapseBtn.Text = "-"
-collapseBtn.Font = Enum.Font.GothamBold
-collapseBtn.TextSize = 14
-collapseBtn.Parent = titleBar
-
-local collapseCorner = Instance.new("UICorner")
-collapseCorner.CornerRadius = UDim.new(0, 6)
-collapseCorner.Parent = collapseBtn
 
 -- ========== COMPACT CONTENT (Default) ==========
 local compactContent = Instance.new("Frame")
@@ -192,31 +177,17 @@ local textboxCorner = Instance.new("UICorner")
 textboxCorner.CornerRadius = UDim.new(0, 6)
 textboxCorner.Parent = textbox
 
--- Button Row
+-- Button Row (SWAPPED: P on left, C in middle, S on right)
 local compactRow = Instance.new("Frame")
 compactRow.Size = UDim2.new(1, -20, 0, 32)
 compactRow.Position = UDim2.new(0, 10, 0, 75)
 compactRow.BackgroundTransparency = 1
 compactRow.Parent = compactContent
 
--- Clear Button
-local clearBtn = Instance.new("TextButton")
-clearBtn.Size = UDim2.new(0, 35, 1, 0)
-clearBtn.Position = UDim2.new(0, 0, 0, 0)
-clearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-clearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-clearBtn.Text = "C"
-clearBtn.Font = Enum.Font.GothamBold
-clearBtn.TextSize = 13
-clearBtn.Parent = compactRow
-local clearCorner = Instance.new("UICorner")
-clearCorner.CornerRadius = UDim.new(0, 6)
-clearCorner.Parent = clearBtn
-
--- Pause Button
+-- Pause Button (NOW ON LEFT)
 local pauseBtn = Instance.new("TextButton")
 pauseBtn.Size = UDim2.new(0, 35, 1, 0)
-pauseBtn.Position = UDim2.new(0, 40, 0, 0)
+pauseBtn.Position = UDim2.new(0, 0, 0, 0)
 pauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
 pauseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 pauseBtn.Text = "P"
@@ -227,7 +198,21 @@ local pauseCorner = Instance.new("UICorner")
 pauseCorner.CornerRadius = UDim.new(0, 6)
 pauseCorner.Parent = pauseBtn
 
--- Send Button
+-- Clear Button (NOW IN MIDDLE)
+local clearBtn = Instance.new("TextButton")
+clearBtn.Size = UDim2.new(0, 35, 1, 0)
+clearBtn.Position = UDim2.new(0, 40, 0, 0)
+clearBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+clearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+clearBtn.Text = "C"
+clearBtn.Font = Enum.Font.GothamBold
+clearBtn.TextSize = 13
+clearBtn.Parent = compactRow
+local clearCorner = Instance.new("UICorner")
+clearCorner.CornerRadius = UDim.new(0, 6)
+clearCorner.Parent = clearBtn
+
+-- Send Button (ALWAYS ON RIGHT, NO TOGGLE)
 local sendAllBtn = Instance.new("TextButton")
 sendAllBtn.Size = UDim2.new(1, -80, 1, 0)
 sendAllBtn.Position = UDim2.new(0, 80, 0, 0)
@@ -420,8 +405,8 @@ kblModeRow.Parent = kblContent
 
 local kblRandomBtn = Instance.new("TextButton")
 kblRandomBtn.Size = UDim2.new(0.33, -2, 1, 0)
-kblRandomBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-kblRandomBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+kblRandomBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+kblRandomBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 kblRandomBtn.Text = "Random"
 kblRandomBtn.Font = Enum.Font.GothamBold
 kblRandomBtn.TextSize = 9
@@ -433,8 +418,8 @@ kblRandomCorner.Parent = kblRandomBtn
 local kblSeqBtn = Instance.new("TextButton")
 kblSeqBtn.Size = UDim2.new(0.33, -2, 1, 0)
 kblSeqBtn.Position = UDim2.new(0.33, 2, 0, 0)
-kblSeqBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-kblSeqBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+kblSeqBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+kblSeqBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 kblSeqBtn.Text = "Seq"
 kblSeqBtn.Font = Enum.Font.GothamBold
 kblSeqBtn.TextSize = 9
@@ -617,6 +602,20 @@ statusLabel.TextSize = 10
 statusLabel.TextXAlignment = Enum.TextXAlignment.Left
 statusLabel.Parent = chatSettingsContent
 
+-- Kill Button (MOVED HERE FROM TITLE BAR)
+local killBtn = Instance.new("TextButton")
+killBtn.Size = UDim2.new(1, -20, 0, 26)
+killBtn.Position = UDim2.new(0, 10, 0, 62)
+killBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+killBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+killBtn.Text = "KILL SCRIPT"
+killBtn.Font = Enum.Font.GothamBold
+killBtn.TextSize = 12
+killBtn.Parent = chatSettingsContent
+local killCorner = Instance.new("UICorner")
+killCorner.CornerRadius = UDim.new(0, 6)
+killCorner.Parent = killBtn
+
 -- ========== SPEED CONTENT ==========
 local speedContent = Instance.new("Frame")
 speedContent.Size = UDim2.new(1, 0, 1, -56)
@@ -643,8 +642,8 @@ modeRow.Parent = speedContent
 
 local randomBtn = Instance.new("TextButton")
 randomBtn.Size = UDim2.new(0.33, -2, 1, 0)
-randomBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-randomBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+randomBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+randomBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
 randomBtn.Text = "Random"
 randomBtn.Font = Enum.Font.GothamBold
 randomBtn.TextSize = 9
@@ -656,8 +655,8 @@ randomCorner.Parent = randomBtn
 local seqBtn = Instance.new("TextButton")
 seqBtn.Size = UDim2.new(0.33, -2, 1, 0)
 seqBtn.Position = UDim2.new(0.33, 2, 0, 0)
-seqBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-seqBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+seqBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+seqBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 seqBtn.Text = "Seq"
 seqBtn.Font = Enum.Font.GothamBold
 seqBtn.TextSize = 9
@@ -1218,8 +1217,8 @@ kblSendBtn.MouseButton1Click:Connect(function()
         kblRunning = true
         kblPaused = false
         kblIndex = 1
-        kblSendBtn.Text = "STOP"
-        kblSendBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+        kblSendBtn.Text = "SEND"
+        kblSendBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
         kblStatus.Text = "Messages: "..#kblMessages.." | Running..."
         kblStatus.TextColor3 = Color3.fromRGB(100, 200, 255)
         spawn(runKbl)
@@ -1501,7 +1500,7 @@ normalBtn.MouseButton1Click:Connect(function()
     updateCaseButtons()
 end)
 
--- ========== MAIN CHAT SEND WITH PAUSE ==========
+-- ========== MAIN CHAT SEND (NO TOGGLE - JUST SENDS) ==========
 local function runChatSend()
     while chatSending and chatIndex <= #chatLines do
         if chatPaused then
@@ -1517,10 +1516,6 @@ local function runChatSend()
                 chatPaused = false
                 chatIndex = 1
                 chatLines = {}
-                sendAllBtn.Text = "S"
-                sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-                pauseBtn.Text = "P"
-                pauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
                 return
             end
             
@@ -1533,19 +1528,6 @@ end
 sendAllBtn.MouseButton1Click:Connect(function()
     local text = textbox.Text
     if text == "" then return end
-    
-    if chatSending then
-        -- Stop sending
-        chatSending = false
-        chatPaused = false
-        chatIndex = 1
-        chatLines = {}
-        sendAllBtn.Text = "S"
-        sendAllBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
-        pauseBtn.Text = "P"
-        pauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
-        return
-    end
     
     local lines = {}
     for line in text:gmatch("[^\n]+") do
@@ -1560,9 +1542,6 @@ sendAllBtn.MouseButton1Click:Connect(function()
     chatIndex = 1
     chatSending = true
     chatPaused = false
-    
-    sendAllBtn.Text = "STOP"
-    sendAllBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
     
     spawn(runChatSend)
 end)
