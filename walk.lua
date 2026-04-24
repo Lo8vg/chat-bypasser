@@ -1,4 +1,4 @@
--- AUTO WALK + COMBO (Simple)
+-- AUTO WALK (Simple)
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -7,12 +7,13 @@ local player = Players.LocalPlayer
 
 -- SETTINGS
 local TOOL_NAME = "swuvle"
-local comboDelay = 0.5
+local equipDelay = 0.5
 
 -- Variables
 local currentWalkDirection = nil
 local lastCameraDirection = nil
-local comboRunning = false
+local equipRunning = false
+local equipState = false
 
 local COLORS = {
     background = Color3.fromRGB(245, 245, 245),
@@ -48,8 +49,8 @@ hubCorner.Parent = hubButton
 
 -- Main Frame
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 200, 0, 210)
-mainFrame.Position = UDim2.new(0.5, -100, 0.5, -105)
+mainFrame.Size = UDim2.new(0, 200, 0, 150)
+mainFrame.Position = UDim2.new(0.5, -100, 0.5, -75)
 mainFrame.BackgroundColor3 = COLORS.background
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -126,32 +127,21 @@ local wtCorner = Instance.new("UICorner")
 wtCorner.CornerRadius = UDim.new(0, 6)
 wtCorner.Parent = walkToggle
 
--- Combo Toggle
-local comboToggle = Instance.new("TextButton")
-comboToggle.Size = UDim2.new(1, 0, 0, 32)
-comboToggle.BackgroundColor3 = COLORS.buttonDanger
-comboToggle.TextColor3 = COLORS.textLight
-comboToggle.Text = "COMBO: OFF"
-comboToggle.Font = Enum.Font.GothamBold
-comboToggle.TextSize = 12
-comboToggle.Parent = content
+-- Auto Equip Toggle
+local equipToggle = Instance.new("TextButton")
+equipToggle.Size = UDim2.new(1, 0, 0, 32)
+equipToggle.BackgroundColor3 = COLORS.buttonDanger
+equipToggle.TextColor3 = COLORS.textLight
+equipToggle.Text = "AUTO EQUIP: OFF"
+equipToggle.Font = Enum.Font.GothamBold
+equipToggle.TextSize = 12
+equipToggle.Parent = content
 
-local ctCorner = Instance.new("UICorner")
-ctCorner.CornerRadius = UDim.new(0, 6)
-ctCorner.Parent = comboToggle
+local etCorner = Instance.new("UICorner")
+etCorner.CornerRadius = UDim.new(0, 6)
+etCorner.Parent = equipToggle
 
--- Combo Info
-local comboInfo = Instance.new("TextLabel")
-comboInfo.Size = UDim2.new(1, 0, 0, 16)
-comboInfo.BackgroundTransparency = 1
-comboInfo.TextColor3 = COLORS.textDark
-comboInfo.Text = "Equip + Jump + Swing"
-comboInfo.Font = Enum.Font.Gotham
-comboInfo.TextSize = 9
-comboInfo.TextXAlignment = Enum.TextXAlignment.Left
-comboInfo.Parent = content
-
--- Combo Delay Slider
+-- Equip Delay Slider
 local delayFrame = Instance.new("Frame")
 delayFrame.Size = UDim2.new(1, 0, 0, 32)
 delayFrame.BackgroundColor3 = COLORS.cardBg
@@ -166,7 +156,7 @@ delayLabel.Size = UDim2.new(1, 0, 0, 14)
 delayLabel.Position = UDim2.new(0, 8, 0, 2)
 delayLabel.BackgroundTransparency = 1
 delayLabel.TextColor3 = COLORS.textDark
-delayLabel.Text = "Combo Delay: " .. comboDelay .. "s"
+delayLabel.Text = "Equip Delay: " .. equipDelay .. "s"
 delayLabel.Font = Enum.Font.Gotham
 delayLabel.TextSize = 10
 delayLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -183,49 +173,13 @@ dsbCorner.CornerRadius = UDim.new(0, 4)
 dsbCorner.Parent = delaySliderBg
 
 local delaySliderFill = Instance.new("Frame")
-delaySliderFill.Size = UDim2.new((comboDelay - 0.1) / 2.9, 0, 1, 0)
+delaySliderFill.Size = UDim2.new((equipDelay - 0.1) / 2.9, 0, 1, 0)
 delaySliderFill.BackgroundColor3 = COLORS.buttonPrimary
 delaySliderFill.Parent = delaySliderBg
 
 local dsfCorner = Instance.new("UICorner")
 dsfCorner.CornerRadius = UDim.new(0, 4)
 dsfCorner.Parent = delaySliderFill
-
--- Tool Name Input
-local toolFrame = Instance.new("Frame")
-toolFrame.Size = UDim2.new(1, 0, 0, 32)
-toolFrame.BackgroundColor3 = COLORS.cardBg
-toolFrame.Parent = content
-
-local tfCorner = Instance.new("UICorner")
-tfCorner.CornerRadius = UDim.new(0, 6)
-tfCorner.Parent = toolFrame
-
-local toolLabel = Instance.new("TextLabel")
-toolLabel.Size = UDim2.new(0.4, 0, 1, 0)
-toolLabel.Position = UDim2.new(0, 8, 0, 0)
-toolLabel.BackgroundTransparency = 1
-toolLabel.TextColor3 = COLORS.textDark
-toolLabel.Text = "Tool:"
-toolLabel.Font = Enum.Font.Gotham
-toolLabel.TextSize = 10
-toolLabel.TextXAlignment = Enum.TextXAlignment.Left
-toolLabel.Parent = toolFrame
-
-local toolInput = Instance.new("TextBox")
-toolInput.Size = UDim2.new(0.55, -8, 0, 22)
-toolInput.Position = UDim2.new(0.45, 4, 0.5, -11)
-toolInput.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-toolInput.TextColor3 = COLORS.textDark
-toolInput.Text = TOOL_NAME
-toolInput.Font = Enum.Font.Gotham
-toolInput.TextSize = 10
-toolInput.PlaceholderText = "Tool name"
-toolInput.Parent = toolFrame
-
-local tiCorner = Instance.new("UICorner")
-tiCorner.CornerRadius = UDim.new(0, 4)
-tiCorner.Parent = toolInput
 
 -- Dragging
 local dragging = false
@@ -307,9 +261,9 @@ delaySliderBg.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         sliderDragging = true
         local pos = math.clamp((input.Position.X - delaySliderBg.AbsolutePosition.X) / delaySliderBg.AbsoluteSize.X, 0, 1)
-        comboDelay = math.round((0.1 + 2.9 * pos) * 10) / 10
+        equipDelay = math.round((0.1 + 2.9 * pos) * 10) / 10
         delaySliderFill.Size = UDim2.new(pos, 0, 1, 0)
-        delayLabel.Text = "Combo Delay: " .. comboDelay .. "s"
+        delayLabel.Text = "Equip Delay: " .. equipDelay .. "s"
     end
 end)
 
@@ -322,19 +276,9 @@ end)
 UserInputService.InputChanged:Connect(function(input)
     if sliderDragging then
         local pos = math.clamp((input.Position.X - delaySliderBg.AbsolutePosition.X) / delaySliderBg.AbsoluteSize.X, 0, 1)
-        comboDelay = math.round((0.1 + 2.9 * pos) * 10) / 10
+        equipDelay = math.round((0.1 + 2.9 * pos) * 10) / 10
         delaySliderFill.Size = UDim2.new(pos, 0, 1, 0)
-        delayLabel.Text = "Combo Delay: " .. comboDelay .. "s"
-    end
-end)
-
--- Tool input
-toolInput.FocusLost:Connect(function()
-    local newName = toolInput.Text:match("^%s*(.-)%s*$")
-    if newName and newName ~= "" then
-        TOOL_NAME = newName
-    else
-        toolInput.Text = TOOL_NAME
+        delayLabel.Text = "Equip Delay: " .. equipDelay .. "s"
     end
 end)
 
@@ -394,9 +338,9 @@ local function findBestDirection(preferredDirection)
     return Vector3.new(math.cos(randomAngle), 0, math.sin(randomAngle)), true
 end
 
--- ========== COMBO FUNCTION ==========
+-- ========== EQUIP FUNCTION (your method) ==========
 
-local function doCombo()
+local function equipUnequip()
     local character = player.Character
     local backpack = player:FindFirstChild("Backpack")
     
@@ -410,17 +354,15 @@ local function doCombo()
     
     if not tool or not tool:IsA("Tool") then return end
     
-    -- 1. Equip if in backpack
-    if tool.Parent == backpack then
+    if equipState then
+        -- Unequip
+        humanoid:UnequipTools()
+    else
+        -- Equip
         humanoid:EquipTool(tool)
-        task.wait()
     end
     
-    -- 2. Jump
-    humanoid.Jump = true
-    
-    -- 3. Swing
-    tool:Activate()
+    equipState = not equipState
 end
 
 -- ========== MAIN LOOPS ==========
@@ -457,10 +399,10 @@ local function walkLoop()
     end
 end
 
-local function comboLoop()
-    while comboRunning do
-        doCombo()
-        task.wait(comboDelay)
+local function equipLoop()
+    while equipRunning do
+        equipUnequip()
+        task.wait(equipDelay)
     end
 end
 
@@ -478,23 +420,37 @@ walkToggle.MouseButton1Click:Connect(function()
     else
         walkToggle.Text = "AUTO WALK: OFF"
         walkToggle.BackgroundColor3 = COLORS.buttonDanger
+        currentWalkDirection = nil
     end
 end)
 
-comboToggle.MouseButton1Click:Connect(function()
-    comboRunning = not comboRunning
-
-    if comboRunning then
-        comboToggle.Text = "COMBO: ON"
-        comboToggle.BackgroundColor3 = COLORS.buttonSuccess
-        print("✅ Combo ON")
-        task.spawn(comboLoop)
+equipToggle.MouseButton1Click:Connect(function()
+    equipRunning = not equipRunning
+    
+    if equipRunning then
+        -- Check if tool exists first
+        local character = player.Character
+        local backpack = player:FindFirstChild("Backpack")
+        local tool = character and (character:FindFirstChild(TOOL_NAME) or backpack and backpack:FindFirstChild(TOOL_NAME))
+        
+        if not tool then
+            equipToggle.Text = "AUTO EQUIP: OFF"
+            equipToggle.BackgroundColor3 = COLORS.buttonDanger
+            equipRunning = false
+            print("❌ Tool '" .. TOOL_NAME .. "' not found!")
+            return
+        end
+        
+        equipToggle.Text = "AUTO EQUIP: ON"
+        equipToggle.BackgroundColor3 = COLORS.buttonSuccess
+        equipState = false
+        print("✅ Found tool: " .. TOOL_NAME)
+        task.spawn(equipLoop)
     else
-        comboToggle.Text = "COMBO: OFF"
-        comboToggle.BackgroundColor3 = COLORS.buttonDanger
-        print("❌ Combo OFF")
+        equipToggle.Text = "AUTO EQUIP: OFF"
+        equipToggle.BackgroundColor3 = COLORS.buttonDanger
     end
 end)
 
-print("✅ Auto Walk + Combo Loaded")
+print("✅ Auto Walk + Auto Equip Loaded")
 print("📌 Tool name: " .. TOOL_NAME)
