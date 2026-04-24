@@ -5,15 +5,16 @@ local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 
--- SETTINGS
-local TOOL_NAME = "swuvle"
+-- Settings
+local autoWalkEnabled = false
+local autoEquipEnabled = false
 local equipDelay = 0.5
 
 -- Variables
 local currentWalkDirection = nil
 local lastCameraDirection = nil
-local equipRunning = false
 local equipState = false
+local savedSword = nil  -- Store the sword ONCE
 
 local COLORS = {
     background = Color3.fromRGB(245, 245, 245),
@@ -212,7 +213,7 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 hubButton.MouseButton1Click:Connect(function()
-    task.wait(0.05)
+    wait(0.05)
     if not dragging then
         hubButton.Visible = false
         mainFrame.Visible = true
@@ -338,36 +339,34 @@ local function findBestDirection(preferredDirection)
     return Vector3.new(math.cos(randomAngle), 0, math.sin(randomAngle)), true
 end
 
--- ========== EQUIP FUNCTION (your method) ==========
-
-local function equipUnequip()
+-- Find tool in character (equipped) or backpack
+local function findTool()
     local character = player.Character
     local backpack = player:FindFirstChild("Backpack")
     
-    if not character or not backpack then return end
-    
-    local humanoid = character:FindFirstChild("Humanoid")
-    if not humanoid then return end
-    
-    -- Find tool in character OR backpack
-    local tool = character:FindFirstChild(TOOL_NAME) or backpack:FindFirstChild(TOOL_NAME)
-    
-    if not tool or not tool:IsA("Tool") then return end
-    
-    if equipState then
-        -- Unequip
-        humanoid:UnequipTools()
-    else
-        -- Equip
-        humanoid:EquipTool(tool)
+    if character then
+        for _, item in pairs(character:GetChildren()) do
+            if item:IsA("Tool") then
+                return item
+            end
+        end
     end
     
-    equipState = not equipState
+    if backpack then
+        for _, item in pairs(backpack:GetChildren()) do
+            if item:IsA("Tool") then
+                return item
+            end
+        end
+    end
+    
+    return nil
 end
 
 -- ========== MAIN LOOPS ==========
 
 local walkRunning = false
+local equipRunning = false
 
 local function walkLoop()
     while walkRunning do
@@ -395,14 +394,28 @@ local function walkLoop()
                 humanoid:MoveTo(rootPart.Position + currentWalkDirection * 16)
             end
         end
-        task.wait(0.1)
+        wait(0.1)
     end
 end
 
 local function equipLoop()
     while equipRunning do
-        equipUnequip()
-        task.wait(equipDelay)
+        local character = player.Character
+        if character then
+            local humanoid = character:FindFirstChild("Humanoid")
+            
+            if humanoid and savedSword then
+                if equipState then
+                    -- Unequip all
+                    humanoid:UnequipTools()
+                else
+                    -- Equip the saved sword
+                    humanoid:EquipTool(savedSword)
+                end
+                equipState = not equipState
+            end
+        end
+        wait(equipDelay)
     end
 end
 
@@ -416,7 +429,7 @@ walkToggle.MouseButton1Click:Connect(function()
         walkToggle.BackgroundColor3 = COLORS.buttonSuccess
         currentWalkDirection = nil
         lastCameraDirection = nil
-        task.spawn(walkLoop)
+        spawn(walkLoop)
     else
         walkToggle.Text = "AUTO WALK: OFF"
         walkToggle.BackgroundColor3 = COLORS.buttonDanger
@@ -428,29 +441,27 @@ equipToggle.MouseButton1Click:Connect(function()
     equipRunning = not equipRunning
     
     if equipRunning then
-        -- Check if tool exists first
-        local character = player.Character
-        local backpack = player:FindFirstChild("Backpack")
-        local tool = character and (character:FindFirstChild(TOOL_NAME) or backpack and backpack:FindFirstChild(TOOL_NAME))
+        -- FIND AND SAVE THE SWORD ONCE when turning ON
+        savedSword = findTool()
         
-        if not tool then
+        if not savedSword then
             equipToggle.Text = "AUTO EQUIP: OFF"
             equipToggle.BackgroundColor3 = COLORS.buttonDanger
             equipRunning = false
-            print("❌ Tool '" .. TOOL_NAME .. "' not found!")
+            print("❌ No tool found!")
             return
         end
         
         equipToggle.Text = "AUTO EQUIP: ON"
         equipToggle.BackgroundColor3 = COLORS.buttonSuccess
         equipState = false
-        print("✅ Found tool: " .. TOOL_NAME)
-        task.spawn(equipLoop)
+        print("✅ Saved tool: " .. savedSword.Name)
+        spawn(equipLoop)
     else
         equipToggle.Text = "AUTO EQUIP: OFF"
         equipToggle.BackgroundColor3 = COLORS.buttonDanger
+        savedSword = nil
     end
 end)
 
 print("✅ Auto Walk + Auto Equip Loaded")
-print("📌 Tool name: " .. TOOL_NAME)
