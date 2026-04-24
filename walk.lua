@@ -7,10 +7,13 @@ local player = Players.LocalPlayer
 
 -- Settings
 local autoWalkEnabled = false
+local autoEquipEnabled = false
+local equipDelay = 0.5
 
--- Current walking direction (persists until we need to change it)
+-- Variables
 local currentWalkDirection = nil
 local lastCameraDirection = nil
+local equipState = false
 
 local COLORS = {
     background = Color3.fromRGB(245, 245, 245),
@@ -46,8 +49,8 @@ hubCorner.Parent = hubButton
 
 -- Main Frame
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 200, 0, 100)
-mainFrame.Position = UDim2.new(0.5, -100, 0.5, -50)
+mainFrame.Size = UDim2.new(0, 200, 0, 150)
+mainFrame.Position = UDim2.new(0.5, -100, 0.5, -75)
 mainFrame.BackgroundColor3 = COLORS.background
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -99,20 +102,84 @@ local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(0, 5)
 closeCorner.Parent = closeBtn
 
--- Toggle Button
+-- Content
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1, -24, 1, -40)
+content.Position = UDim2.new(0, 12, 0, 36)
+content.BackgroundTransparency = 1
+content.Parent = mainFrame
+
+local contentLayout = Instance.new("UIListLayout")
+contentLayout.Padding = UDim.new(0, 6)
+contentLayout.Parent = content
+
+-- Auto Walk Toggle
 local walkToggle = Instance.new("TextButton")
-walkToggle.Size = UDim2.new(1, -24, 0, 40)
-walkToggle.Position = UDim2.new(0, 12, 0, 44)
+walkToggle.Size = UDim2.new(1, 0, 0, 32)
 walkToggle.BackgroundColor3 = COLORS.buttonDanger
 walkToggle.TextColor3 = COLORS.textLight
 walkToggle.Text = "AUTO WALK: OFF"
 walkToggle.Font = Enum.Font.GothamBold
-walkToggle.TextSize = 14
-walkToggle.Parent = mainFrame
+walkToggle.TextSize = 12
+walkToggle.Parent = content
 
 local wtCorner = Instance.new("UICorner")
-wtCorner.CornerRadius = UDim.new(0, 8)
+wtCorner.CornerRadius = UDim.new(0, 6)
 wtCorner.Parent = walkToggle
+
+-- Auto Equip Toggle
+local equipToggle = Instance.new("TextButton")
+equipToggle.Size = UDim2.new(1, 0, 0, 32)
+equipToggle.BackgroundColor3 = COLORS.buttonDanger
+equipToggle.TextColor3 = COLORS.textLight
+equipToggle.Text = "AUTO EQUIP: OFF"
+equipToggle.Font = Enum.Font.GothamBold
+equipToggle.TextSize = 12
+equipToggle.Parent = content
+
+local etCorner = Instance.new("UICorner")
+etCorner.CornerRadius = UDim.new(0, 6)
+etCorner.Parent = equipToggle
+
+-- Equip Delay Slider
+local delayFrame = Instance.new("Frame")
+delayFrame.Size = UDim2.new(1, 0, 0, 32)
+delayFrame.BackgroundColor3 = COLORS.cardBg
+delayFrame.Parent = content
+
+local dfCorner = Instance.new("UICorner")
+dfCorner.CornerRadius = UDim.new(0, 6)
+dfCorner.Parent = delayFrame
+
+local delayLabel = Instance.new("TextLabel")
+delayLabel.Size = UDim2.new(1, 0, 0, 14)
+delayLabel.Position = UDim2.new(0, 8, 0, 2)
+delayLabel.BackgroundTransparency = 1
+delayLabel.TextColor3 = COLORS.textDark
+delayLabel.Text = "Equip Delay: " .. equipDelay .. "s"
+delayLabel.Font = Enum.Font.Gotham
+delayLabel.TextSize = 10
+delayLabel.TextXAlignment = Enum.TextXAlignment.Left
+delayLabel.Parent = delayFrame
+
+local delaySliderBg = Instance.new("Frame")
+delaySliderBg.Size = UDim2.new(1, -16, 0, 8)
+delaySliderBg.Position = UDim2.new(0, 8, 0, 20)
+delaySliderBg.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+delaySliderBg.Parent = delayFrame
+
+local dsbCorner = Instance.new("UICorner")
+dsbCorner.CornerRadius = UDim.new(0, 4)
+dsbCorner.Parent = delaySliderBg
+
+local delaySliderFill = Instance.new("Frame")
+delaySliderFill.Size = UDim2.new((equipDelay - 0.1) / 2.9, 0, 1, 0)
+delaySliderFill.BackgroundColor3 = COLORS.buttonPrimary
+delaySliderFill.Parent = delaySliderBg
+
+local dsfCorner = Instance.new("UICorner")
+dsfCorner.CornerRadius = UDim.new(0, 4)
+dsfCorner.Parent = delaySliderFill
 
 -- Dragging
 local dragging = false
@@ -187,6 +254,34 @@ closeBtn.MouseButton1Click:Connect(function()
     hubButton.Visible = true
 end)
 
+-- Delay Slider Logic
+local sliderDragging = false
+
+delaySliderBg.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        sliderDragging = true
+        local pos = math.clamp((input.Position.X - delaySliderBg.AbsolutePosition.X) / delaySliderBg.AbsoluteSize.X, 0, 1)
+        equipDelay = math.round((0.1 + 2.9 * pos) * 10) / 10
+        delaySliderFill.Size = UDim2.new(pos, 0, 1, 0)
+        delayLabel.Text = "Equip Delay: " .. equipDelay .. "s"
+    end
+end)
+
+delaySliderBg.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        sliderDragging = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if sliderDragging then
+        local pos = math.clamp((input.Position.X - delaySliderBg.AbsolutePosition.X) / delaySliderBg.AbsoluteSize.X, 0, 1)
+        equipDelay = math.round((0.1 + 2.9 * pos) * 10) / 10
+        delaySliderFill.Size = UDim2.new(pos, 0, 1, 0)
+        delayLabel.Text = "Equip Delay: " .. equipDelay .. "s"
+    end
+end)
+
 -- ========== FUNCTIONS ==========
 
 local function checkForObstacles(direction, distance)
@@ -220,12 +315,10 @@ local function areDirectionsSimilar(dir1, dir2, threshold)
 end
 
 local function findBestDirection(preferredDirection)
-    -- Try preferred direction first
     if not checkForObstacles(preferredDirection, 15) then
         return preferredDirection, false
     end
     
-    -- Try 8 directions around
     local angles = {45, 90, 135, 180, 225, 270, 315}
     
     for _, angleOffset in pairs(angles) do
@@ -241,14 +334,46 @@ local function findBestDirection(preferredDirection)
         end
     end
     
-    -- Last resort - pick a completely random direction far away
     local randomAngle = math.random() * math.pi * 2
     return Vector3.new(math.cos(randomAngle), 0, math.sin(randomAngle)), true
 end
 
--- ========== MAIN LOOP ==========
+-- Find ONLY the sword (not every tool)
+local function findSword()
+    local character = player.Character
+    local backpack = player:FindFirstChild("Backpack")
+    
+    -- Check if sword is already equipped
+    if character then
+        for _, item in pairs(character:GetChildren()) do
+            if item:IsA("Tool") then
+                -- Check if it has a Handle (typical sword indicator)
+                if item:FindFirstChild("Handle") then
+                    return item
+                end
+            end
+        end
+    end
+    
+    -- Check backpack for sword
+    if backpack then
+        for _, item in pairs(backpack:GetChildren()) do
+            if item:IsA("Tool") then
+                -- Check if it has a Handle
+                if item:FindFirstChild("Handle") then
+                    return item
+                end
+            end
+        end
+    end
+    
+    return nil
+end
+
+-- ========== MAIN LOOPS ==========
 
 local walkRunning = false
+local equipRunning = false
 
 local function walkLoop()
     while walkRunning do
@@ -260,28 +385,16 @@ local function walkLoop()
             if humanoid and rootPart then
                 local cameraDirection = getCameraDirection()
                 
-                -- Check if camera direction changed significantly (user moved camera)
                 local cameraChanged = not areDirectionsSimilar(cameraDirection, lastCameraDirection, 0.9)
-                
-                -- Check if path in camera direction is clear
                 local cameraPathClear = not checkForObstacles(cameraDirection, 15)
                 
-                -- Update walking direction when:
-                -- 1. We don't have a direction yet
-                -- 2. Camera changed AND the new camera direction is clear
-                -- 3. Current path is blocked
-                
                 if not currentWalkDirection then
-                    -- First time - start with camera direction
                     currentWalkDirection, _ = findBestDirection(cameraDirection)
                     lastCameraDirection = cameraDirection
                 elseif cameraChanged and cameraPathClear then
-                    -- User moved camera to a new clear direction
                     currentWalkDirection = cameraDirection
                     lastCameraDirection = cameraDirection
                 elseif checkForObstacles(currentWalkDirection, 15) then
-                    -- Current path blocked - find new direction
-                    -- Try to go somewhat related to camera, but avoid obstacles
                     currentWalkDirection, _ = findBestDirection(cameraDirection)
                 end
                 
@@ -292,7 +405,29 @@ local function walkLoop()
     end
 end
 
--- ========== TOGGLE ==========
+local function equipLoop()
+    while equipRunning do
+        local character = player.Character
+        if character then
+            local humanoid = character:FindFirstChild("Humanoid")
+            local sword = findSword()
+            
+            if humanoid and sword then
+                if equipState then
+                    -- Currently equipped, unequip it
+                    humanoid:UnequipTools()
+                else
+                    -- Currently unequipped, equip it
+                    humanoid:EquipTool(sword)
+                end
+                equipState = not equipState
+            end
+        end
+        wait(equipDelay)
+    end
+end
+
+-- ========== TOGGLES ==========
 
 walkToggle.MouseButton1Click:Connect(function()
     walkRunning = not walkRunning
@@ -310,5 +445,18 @@ walkToggle.MouseButton1Click:Connect(function()
     end
 end)
 
-print("✅ Auto Walk Loaded")
-print("📌 Follows camera, avoids walls smoothly")
+equipToggle.MouseButton1Click:Connect(function()
+    equipRunning = not equipRunning
+    
+    if equipRunning then
+        equipToggle.Text = "AUTO EQUIP: ON"
+        equipToggle.BackgroundColor3 = COLORS.buttonSuccess
+        equipState = false
+        spawn(equipLoop)
+    else
+        equipToggle.Text = "AUTO EQUIP: OFF"
+        equipToggle.BackgroundColor3 = COLORS.buttonDanger
+    end
+end)
+
+print("✅ Auto Walk + Auto Equip Loaded")
