@@ -1,4 +1,4 @@
--- IMMORTALITY (Hardcore Version)
+-- INVISIBILITY (Decoy Mode)
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -8,14 +8,19 @@ local player = Players.LocalPlayer
 local COLOR_OFF = Color3.fromRGB(220, 53, 69)
 local COLOR_ON = Color3.fromRGB(40, 167, 69)
 
+-- States
+local INVISIBLE = false
+local decoyClone = nil
+local connections = {}
+
 -- GUI
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ImmortalityGui"
+screenGui.Name = "InvisibilityGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = player.PlayerGui
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 140, 0, 100)
+mainFrame.Size = UDim2.new(0, 120, 0, 60)
 mainFrame.Position = UDim2.new(0, 10, 0.3, 0)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BorderSizePixel = 0
@@ -37,200 +42,196 @@ mfPadding.Parent = mainFrame
 
 -- Title
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -12, 0, 18)
+title.Size = UDim2.new(1, -12, 0, 16)
 title.BackgroundTransparency = 1
-title.Text = "IMMORTALITY"
+title.Text = "INVISIBLE"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.Font = Enum.Font.GothamBold
-title.TextSize = 11
+title.TextSize = 10
 title.Parent = mainFrame
 
--- Buttons
-local godBtn = Instance.new("TextButton")
-godBtn.Size = UDim2.new(1, -12, 0, 22)
-godBtn.BackgroundColor3 = COLOR_OFF
-godBtn.BorderSizePixel = 0
-godBtn.Text = "GOD MODE"
-godBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-godBtn.Font = Enum.Font.GothamBold
-godBtn.TextSize = 10
-godBtn.Parent = mainFrame
+-- Toggle Button
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(1, -12, 0, 24)
+toggleBtn.BackgroundColor3 = COLOR_OFF
+toggleBtn.BorderSizePixel = 0
+toggleBtn.Text = "OFF"
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 11
+toggleBtn.Parent = mainFrame
 
-local godCorner = Instance.new("UICorner")
-godCorner.CornerRadius = UDim.new(0, 4)
-godCorner.Parent = godBtn
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 4)
+btnCorner.Parent = toggleBtn
 
-local healthBtn = Instance.new("TextButton")
-healthBtn.Size = UDim2.new(1, -12, 0, 22)
-healthBtn.BackgroundColor3 = COLOR_OFF
-healthBtn.BorderSizePixel = 0
-healthBtn.Text = "HEALTH LOCK"
-healthBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-healthBtn.Font = Enum.Font.GothamBold
-healthBtn.TextSize = 10
-healthBtn.Parent = mainFrame
+-- ========== FUNCTIONS ==========
 
-local healthCorner = Instance.new("UICorner")
-healthCorner.CornerRadius = UDim.new(0, 4)
-healthCorner.Parent = healthBtn
-
-local maxHealthBtn = Instance.new("TextButton")
-maxHealthBtn.Size = UDim2.new(1, -12, 0, 22)
-maxHealthBtn.BackgroundColor3 = COLOR_OFF
-maxHealthBtn.BorderSizePixel = 0
-maxHealthBtn.Text = "INFINITE HP"
-maxHealthBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-maxHealthBtn.Font = Enum.Font.GothamBold
-maxHealthBtn.TextSize = 10
-maxHealthBtn.Parent = mainFrame
-
-local maxCorner = Instance.new("UICorner")
-maxCorner.CornerRadius = UDim.new(0, 4)
-maxCorner.Parent = maxHealthBtn
-
--- States
-local GOD_ENABLED = false
-local HEALTH_LOCK_ENABLED = false
-local INFINITE_HP_ENABLED = false
-
-local connections = {}
-local forceField = nil
-
--- ========== GOD MODE (ForceField) ==========
-local function enableGod()
-    local character = player.Character
-    if character then
-        -- Remove old FF
-        local oldFF = character:FindFirstChild("GodForceField")
-        if oldFF then oldFF:Destroy() end
-        
-        -- Create new ForceField
-        forceField = Instance.new("ForceField")
-        forceField.Name = "GodForceField"
-        forceField.Parent = character
+local function makeInvisible(character)
+    -- Set all parts invisible
+    for _, part in pairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Transparency = 1
+        elseif part:IsA("Decal") or part:IsA("Texture") then
+            part.Transparency = 1
+        elseif part:IsA("Accessory") then
+            for _, p in pairs(part:GetDescendants()) do
+                if p:IsA("BasePart") then
+                    p.Transparency = 1
+                end
+            end
+        end
+    end
+    
+    -- Face
+    local head = character:FindFirstChild("Head")
+    if head then
+        local face = head:FindFirstChild("face")
+        if face then face.Transparency = 1 end
     end
 end
 
-local function disableGod()
-    if forceField then
-        forceField:Destroy()
-        forceField = nil
+local function makeVisible(character)
+    -- Set all parts visible
+    for _, part in pairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Transparency = 0
+        elseif part:IsA("Decal") or part:IsA("Texture") then
+            part.Transparency = 0
+        elseif part:IsA("Accessory") then
+            for _, p in pairs(part:GetDescendants()) do
+                if p:IsA("BasePart") then
+                    p.Transparency = 0
+                end
+            end
+        end
     end
-    local character = player.Character
-    if character then
-        local ff = character:FindFirstChild("GodForceField")
-        if ff then ff:Destroy() end
+    
+    -- Face
+    local head = character:FindFirstChild("Head")
+    if head then
+        local face = head:FindFirstChild("face")
+        if face then face.Transparency = 0 end
     end
 end
 
--- ========== HEALTH LOCK (Locks health EVERY frame) ==========
-local function enableHealthLock()
-    connections.healthLock = RunService.Heartbeat:Connect(function()
-        local character = player.Character
-        if character then
-            local humanoid = character:FindFirstChild("Humanoid")
-            if humanoid then
-                -- Always set health to max
-                if humanoid.Health < humanoid.MaxHealth then
-                    humanoid.Health = humanoid.MaxHealth
+local function createDecoy(character)
+    -- Clone the character
+    decoyClone = character:Clone()
+    decoyClone.Name = "Decoy"
+    
+    -- Remove scripts and humanoids from decoy
+    for _, script in pairs(decoyClone:GetDescendants()) do
+        if script:IsA("Script") or script:IsA("LocalScript") then
+            script:Destroy()
+        end
+    end
+    
+    local humanoid = decoyClone:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid.MaxHealth = math.huge
+        humanoid.Health = math.huge
+    end
+    
+    -- Parent decoy to workspace
+    decoyClone.Parent = workspace
+    
+    -- Position decoy at current position
+    decoyClone:SetPrimaryPartCFrame(character:GetPrimaryPartCFrame())
+    
+    return decoyClone
+end
+
+local function removeDecoy()
+    if decoyClone then
+        decoyClone:Destroy()
+        decoyClone = nil
+    end
+end
+
+local function enableInvisibility()
+    local character = player.Character
+    if not character then return end
+    
+    -- Create decoy at current position
+    createDecoy(character)
+    
+    -- Make real character invisible
+    makeInvisible(character)
+    
+    -- Keep decoy in place (freeze it)
+    connections.decoyFreeze = RunService.Heartbeat:Connect(function()
+        if decoyClone and decoyClone.PrimaryPart then
+            -- Keep decoy frozen in place
+            for _, part in pairs(decoyClone:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.Anchored = true
+                    part.Velocity = Vector3.new(0, 0, 0)
+                    part.RotVelocity = Vector3.new(0, 0, 0)
+                end
+            end
+        end
+    end)
+    
+    -- Continuously make invisible (in case of respawn/reset)
+    connections.invisLoop = RunService.Heartbeat:Connect(function()
+        if player.Character then
+            for _, part in pairs(player.Character:GetDescendants()) do
+                if part:IsA("BasePart") and part.Transparency < 1 then
+                    part.Transparency = 1
                 end
             end
         end
     end)
 end
 
-local function disableHealthLock()
-    if connections.healthLock then
-        connections.healthLock:Disconnect()
-        connections.healthLock = nil
+local function disableInvisibility()
+    -- Stop connections
+    if connections.decoyFreeze then
+        connections.decoyFreeze:Disconnect()
+        connections.decoyFreeze = nil
+    end
+    if connections.invisLoop then
+        connections.invisLoop:Disconnect()
+        connections.invisLoop = nil
+    end
+    
+    -- Remove decoy
+    removeDecoy()
+    
+    -- Make character visible again
+    local character = player.Character
+    if character then
+        makeVisible(character)
     end
 end
 
--- ========== INFINITE HP (Sets maxhealth to huge) ==========
-local function enableInfiniteHP()
-    connections.infiniteHP = RunService.Heartbeat:Connect(function()
+-- ========== TOGGLE ==========
+
+toggleBtn.MouseButton1Click:Connect(function()
+    INVISIBLE = not INVISIBLE
+    
+    if INVISIBLE then
+        toggleBtn.Text = "ON"
+        toggleBtn.BackgroundColor3 = COLOR_ON
+        enableInvisibility()
+    else
+        toggleBtn.Text = "OFF"
+        toggleBtn.BackgroundColor3 = COLOR_OFF
+        disableInvisibility()
+    end
+end)
+
+-- Cleanup on respawn
+player.CharacterAdded:Connect(function()
+    if INVISIBLE then
+        wait(0.5)
         local character = player.Character
         if character then
-            local humanoid = character:FindFirstChild("Humanoid")
-            if humanoid then
-                -- Set max health to huge number
-                if humanoid.MaxHealth ~= math.huge then
-                    humanoid.MaxHealth = math.huge
-                end
-                -- Set health to huge
-                if humanoid.Health ~= math.huge then
-                    humanoid.Health = math.huge
-                end
-            end
-        end
-    end)
-    
-    -- Also set on current character
-    local character = player.Character
-    if character then
-        local humanoid = character:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.MaxHealth = math.huge
-            humanoid.Health = math.huge
+            createDecoy(character)
+            makeInvisible(character)
         end
     end
-end
-
-local function disableInfiniteHP()
-    if connections.infiniteHP then
-        connections.infiniteHP:Disconnect()
-        connections.infiniteHP = nil
-    end
-    -- Reset health
-    local character = player.Character
-    if character then
-        local humanoid = character:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.MaxHealth = 100
-            humanoid.Health = 100
-        end
-    end
-end
-
--- ========== TOGGLES ==========
-godBtn.MouseButton1Click:Connect(function()
-    GOD_ENABLED = not GOD_ENABLED
-    godBtn.BackgroundColor3 = GOD_ENABLED and COLOR_ON or COLOR_OFF
-    
-    if GOD_ENABLED then
-        enableGod()
-    else
-        disableGod()
-    end
-end)
-
-healthBtn.MouseButton1Click:Connect(function()
-    HEALTH_LOCK_ENABLED = not HEALTH_LOCK_ENABLED
-    healthBtn.BackgroundColor3 = HEALTH_LOCK_ENABLED and COLOR_ON or COLOR_OFF
-    
-    if HEALTH_LOCK_ENABLED then
-        enableHealthLock()
-    else
-        disableHealthLock()
-    end
-end)
-
-maxHealthBtn.MouseButton1Click:Connect(function()
-    INFINITE_HP_ENABLED = not INFINITE_HP_ENABLED
-    maxHealthBtn.BackgroundColor3 = INFINITE_HP_ENABLED and COLOR_ON or COLOR_OFF
-    
-    if INFINITE_HP_ENABLED then
-        enableInfiniteHP()
-    else
-        disableInfiniteHP()
-    end
-end)
-
--- Re-apply on respawn
-player.CharacterAdded:Connect(function(character)
-    wait(0.5)
-    if GOD_ENABLED then enableGod() end
-    -- Health lock and infinite HP auto-run via heartbeat, no need to re-apply
 end)
 
 -- ========== DRAGGING ==========
@@ -258,6 +259,5 @@ game:GetService("UserInputService").InputChanged:Connect(function(input)
     end
 end)
 
-print("✅ Hardcore Immortality Loaded")
-print("📌 Enable all 3 for maximum protection")
-print("📌 If still dying, tell me what game")
+print("✅ Invisibility Loaded")
+print("📌 Toggle ON to become invisible + create decoy")
