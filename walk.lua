@@ -11,9 +11,7 @@ local equipUnequipEnabled = false
 local equipDelay = 0.5
 
 -- Variables
-local currentDirection = Vector3.new(0, 0, -1)
-local lastEquipTime = 0
-local equipState = false -- false = unequipped, true = equipped
+local equipState = false
 
 local COLORS = {
     background = Color3.fromRGB(245, 245, 245),
@@ -250,7 +248,7 @@ titleBar.InputBegan:Connect(function(input)
 end)
 
 titleBar.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.User.UserInputType == Enum.UserInputType.Touch then
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         mfDragInput = input
     end
 end)
@@ -312,25 +310,33 @@ local function checkForObstacles(direction)
     return result and result.Instance ~= nil
 end
 
-local function calculateClearPath(direction)
-    if not checkForObstacles(direction) then
-        return direction
+local function getCameraDirection()
+    local camera = workspace.CurrentCamera
+    if camera then
+        local lookVector = camera.CFrame.LookVector
+        return Vector3.new(lookVector.X, 0, lookVector.Z).Unit
+    end
+    return Vector3.new(0, 0, -1)
+end
+
+local function calculateClearPath(baseDirection)
+    -- Try to follow camera direction first
+    if not checkForObstacles(baseDirection) then
+        return baseDirection
     end
     
-    -- Try different directions
-    local leftDir = (direction + Vector3.new(-1, 0, 0)).Unit
-    local rightDir = (direction + Vector3.new(1, 0, 0)).Unit
-    local backDir = -direction
+    -- If blocked, try left and right
+    local leftDir = (baseDirection + Vector3.new(-1, 0, 0)).Unit
+    local rightDir = (baseDirection + Vector3.new(1, 0, 0)).Unit
     
     if not checkForObstacles(leftDir) then return leftDir end
     if not checkForObstacles(rightDir) then return rightDir end
+    
+    -- Try backwards
+    local backDir = -baseDirection
     if not checkForObstacles(backDir) then return backDir end
     
-    -- Random direction if all blocked
-    return Vector3.new(math.random(-1, 1), 0, math.random(-1, 1)).Unit
-end
-
-local function getRandomDirection()
+    -- Last resort - random diagonal
     local angle = math.random() * math.pi * 2
     return Vector3.new(math.cos(angle), 0, math.sin(angle))
 end
@@ -367,16 +373,13 @@ local function walkLoop()
             local rootPart = character:FindFirstChild("HumanoidRootPart")
             
             if humanoid and rootPart then
-                -- Check for obstacles and change direction if blocked
-                if checkForObstacles(currentDirection) then
-                    currentDirection = calculateClearPath(currentDirection)
-                    -- If still blocked, go random
-                    if checkForObstacles(currentDirection) then
-                        currentDirection = getRandomDirection()
-                    end
-                end
+                -- Always get camera direction (follows where you're looking)
+                local cameraDirection = getCameraDirection()
                 
-                humanoid:MoveTo(rootPart.Position + currentDirection * 16)
+                -- Apply obstacle avoidance to camera direction
+                local clearPath = calculateClearPath(cameraDirection)
+                
+                humanoid:MoveTo(rootPart.Position + clearPath * 16)
             end
         end
         wait(0.1)
@@ -392,10 +395,8 @@ local function equipLoop()
             
             if humanoid and sword then
                 if equipState then
-                    -- Currently equipped, unequip it
                     humanoid:UnequipTools()
                 else
-                    -- Currently unequipped, equip it
                     humanoid:EquipTool(sword)
                 end
                 equipState = not equipState
@@ -434,11 +435,6 @@ equipToggle.MouseButton1Click:Connect(function()
     end
 end)
 
--- Handle respawn
-player.CharacterAdded:Connect(function()
-    currentDirection = Vector3.new(0, 0, -1)
-end)
-
 print("✅ Auto Walk Loaded")
-print("📌 Auto Walk avoids walls and changes direction")
+print("📌 Follows your camera direction, avoids walls")
 print("📌 Equip Cycle makes sword appear/disappear")
