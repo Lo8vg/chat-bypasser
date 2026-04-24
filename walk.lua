@@ -338,32 +338,24 @@ local function findBestDirection(preferredDirection)
     return Vector3.new(math.cos(randomAngle), 0, math.sin(randomAngle)), true
 end
 
--- Find ONLY the sword (not every tool)
+-- Find ONLY the "swuvle" tool by name
 local function findSword()
     local character = player.Character
     local backpack = player:FindFirstChild("Backpack")
     
-    -- Check if sword is already equipped
+    -- Check if "swuvle" is equipped (in character)
     if character then
-        for _, item in pairs(character:GetChildren()) do
-            if item:IsA("Tool") then
-                -- Check if it has a Handle (typical sword indicator)
-                if item:FindFirstChild("Handle") then
-                    return item
-                end
-            end
+        local tool = character:FindFirstChild("swuvle")
+        if tool and tool:IsA("Tool") then
+            return tool
         end
     end
     
-    -- Check backpack for sword
+    -- Check if "swuvle" is in backpack (not equipped)
     if backpack then
-        for _, item in pairs(backpack:GetChildren()) do
-            if item:IsA("Tool") then
-                -- Check if it has a Handle
-                if item:FindFirstChild("Handle") then
-                    return item
-                end
-            end
+        local tool = backpack:FindFirstChild("swuvle")
+        if tool and tool:IsA("Tool") then
+            return tool
         end
     end
     
@@ -414,7 +406,7 @@ local function equipLoop()
             
             if humanoid and sword then
                 if equipState then
-                    -- Currently equipped, unequip it
+                    -- Currently equipped, unequip it (goes back to backpack)
                     humanoid:UnequipTools()
                 else
                     -- Currently unequipped, equip it
