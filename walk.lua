@@ -14,6 +14,7 @@ local equipDelay = 0.5
 local currentWalkDirection = nil
 local lastCameraDirection = nil
 local equipState = false
+local savedSword = nil  -- Store the sword ONCE
 
 local COLORS = {
     background = Color3.fromRGB(245, 245, 245),
@@ -338,36 +339,24 @@ local function findBestDirection(preferredDirection)
     return Vector3.new(math.cos(randomAngle), 0, math.sin(randomAngle)), true
 end
 
--- Same method as the other script - checks character first, then backpack
-local function getSword()
-    local character = player.Character
-    if not character then return nil end
-    
-    -- Check if tool is already equipped (in character)
-    for _, item in pairs(character:GetChildren()) do
-        if item:IsA("Tool") then
-            return item
-        end
-    end
-    return nil
-end
-
-local function findSword()
+-- Find tool in character (equipped) or backpack
+local function findTool()
     local character = player.Character
     local backpack = player:FindFirstChild("Backpack")
-    local humanoid = character and character:FindFirstChild("Humanoid")
     
-    if not character or not backpack or not humanoid then return nil end
+    if character then
+        for _, item in pairs(character:GetChildren()) do
+            if item:IsA("Tool") then
+                return item
+            end
+        end
+    end
     
-    -- First check if already equipped
-    local currentTool = getSword()
-    if currentTool then return currentTool end
-    
-    -- Then check backpack and equip first tool found
-    for _, item in pairs(backpack:GetChildren()) do
-        if item:IsA("Tool") then
-            humanoid:EquipTool(item)
-            return item
+    if backpack then
+        for _, item in pairs(backpack:GetChildren()) do
+            if item:IsA("Tool") then
+                return item
+            end
         end
     end
     
@@ -415,23 +404,15 @@ local function equipLoop()
         if character then
             local humanoid = character:FindFirstChild("Humanoid")
             
-            if humanoid then
-                -- First find and equip a sword if not already equipped
-                local sword = getSword()
-                if not sword then
-                    sword = findSword()
+            if humanoid and savedSword then
+                if equipState then
+                    -- Unequip all
+                    humanoid:UnequipTools()
+                else
+                    -- Equip the saved sword
+                    humanoid:EquipTool(savedSword)
                 end
-                
-                if sword then
-                    if equipState then
-                        -- Unequip all tools
-                        humanoid:UnequipTools()
-                    else
-                        -- Equip the sword
-                        humanoid:EquipTool(sword)
-                    end
-                    equipState = not equipState
-                end
+                equipState = not equipState
             end
         end
         wait(equipDelay)
@@ -460,13 +441,26 @@ equipToggle.MouseButton1Click:Connect(function()
     equipRunning = not equipRunning
     
     if equipRunning then
+        -- FIND AND SAVE THE SWORD ONCE when turning ON
+        savedSword = findTool()
+        
+        if not savedSword then
+            equipToggle.Text = "AUTO EQUIP: OFF"
+            equipToggle.BackgroundColor3 = COLORS.buttonDanger
+            equipRunning = false
+            print("❌ No tool found!")
+            return
+        end
+        
         equipToggle.Text = "AUTO EQUIP: ON"
         equipToggle.BackgroundColor3 = COLORS.buttonSuccess
         equipState = false
+        print("✅ Saved tool: " .. savedSword.Name)
         spawn(equipLoop)
     else
         equipToggle.Text = "AUTO EQUIP: OFF"
         equipToggle.BackgroundColor3 = COLORS.buttonDanger
+        savedSword = nil
     end
 end)
 
