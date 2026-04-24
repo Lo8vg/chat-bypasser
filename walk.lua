@@ -8,6 +8,10 @@ local player = Players.LocalPlayer
 -- Settings
 local autoWalkEnabled = false
 
+-- Current walking direction (persists until we need to change it)
+local currentWalkDirection = nil
+local lastCameraDirection = nil
+
 local COLORS = {
     background = Color3.fromRGB(245, 245, 245),
     header = Color3.fromRGB(255, 255, 255),
@@ -185,7 +189,7 @@ end)
 
 -- ========== FUNCTIONS ==========
 
-local function checkForObstacles(direction)
+local function checkForObstacles(direction, distance)
     local character = player.Character
     if not character then return false end
     
@@ -196,7 +200,7 @@ local function checkForObstacles(direction)
     raycastParams.FilterDescendantsInstances = {character}
     raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
     
-    local result = workspace:Raycast(rootPart.Position, direction * 13, raycastParams)
+    local result = workspace:Raycast(rootPart.Position, direction * distance, raycastParams)
     return result and result.Instance ~= nil
 end
 
@@ -209,22 +213,37 @@ local function getCameraDirection()
     return Vector3.new(0, 0, -1)
 end
 
-local function calculateClearPath(baseDirection)
-    if not checkForObstacles(baseDirection) then
-        return baseDirection
+local function areDirectionsSimilar(dir1, dir2, threshold)
+    if not dir1 or not dir2 then return false end
+    local dot = dir1:Dot(dir2)
+    return dot > threshold
+end
+
+local function findBestDirection(preferredDirection)
+    -- Try preferred direction first
+    if not checkForObstacles(preferredDirection, 15) then
+        return preferredDirection, false
     end
     
-    local leftDir = (baseDirection + Vector3.new(-1, 0, 0)).Unit
-    local rightDir = (baseDirection + Vector3.new(1, 0, 0)).Unit
+    -- Try 8 directions around
+    local angles = {45, 90, 135, 180, 225, 270, 315}
     
-    if not checkForObstacles(leftDir) then return leftDir end
-    if not checkForObstacles(rightDir) then return rightDir end
+    for _, angleOffset in pairs(angles) do
+        local radians = math.rad(angleOffset)
+        local newDir = Vector3.new(
+            preferredDirection.X * math.cos(radians) - preferredDirection.Z * math.sin(radians),
+            0,
+            preferredDirection.X * math.sin(radians) + preferredDirection.Z * math.cos(radians)
+        ).Unit
+        
+        if not checkForObstacles(newDir, 15) then
+            return newDir, true
+        end
+    end
     
-    local backDir = -baseDirection
-    if not checkForObstacles(backDir) then return backDir end
-    
-    local angle = math.random() * math.pi * 2
-    return Vector3.new(math.cos(angle), 0, math.sin(angle))
+    -- Last resort - pick a completely random direction far away
+    local randomAngle = math.random() * math.pi * 2
+    return Vector3.new(math.cos(randomAngle), 0, math.sin(randomAngle)), true
 end
 
 -- ========== MAIN LOOP ==========
@@ -240,8 +259,33 @@ local function walkLoop()
             
             if humanoid and rootPart then
                 local cameraDirection = getCameraDirection()
-                local clearPath = calculateClearPath(cameraDirection)
-                humanoid:MoveTo(rootPart.Position + clearPath * 16)
+                
+                -- Check if camera direction changed significantly (user moved camera)
+                local cameraChanged = not areDirectionsSimilar(cameraDirection, lastCameraDirection, 0.9)
+                
+                -- Check if path in camera direction is clear
+                local cameraPathClear = not checkForObstacles(cameraDirection, 15)
+                
+                -- Update walking direction when:
+                -- 1. We don't have a direction yet
+                -- 2. Camera changed AND the new camera direction is clear
+                -- 3. Current path is blocked
+                
+                if not currentWalkDirection then
+                    -- First time - start with camera direction
+                    currentWalkDirection, _ = findBestDirection(cameraDirection)
+                    lastCameraDirection = cameraDirection
+                elseif cameraChanged and cameraPathClear then
+                    -- User moved camera to a new clear direction
+                    currentWalkDirection = cameraDirection
+                    lastCameraDirection = cameraDirection
+                elseif checkForObstacles(currentWalkDirection, 15) then
+                    -- Current path blocked - find new direction
+                    -- Try to go somewhat related to camera, but avoid obstacles
+                    currentWalkDirection, _ = findBestDirection(cameraDirection)
+                end
+                
+                humanoid:MoveTo(rootPart.Position + currentWalkDirection * 16)
             end
         end
         wait(0.1)
@@ -256,11 +300,15 @@ walkToggle.MouseButton1Click:Connect(function()
     if walkRunning then
         walkToggle.Text = "AUTO WALK: ON"
         walkToggle.BackgroundColor3 = COLORS.buttonSuccess
+        currentWalkDirection = nil
+        lastCameraDirection = nil
         spawn(walkLoop)
     else
         walkToggle.Text = "AUTO WALK: OFF"
         walkToggle.BackgroundColor3 = COLORS.buttonDanger
+        currentWalkDirection = nil
     end
 end)
 
 print("✅ Auto Walk Loaded")
+print("📌 Follows camera, avoids walls smoothly")
