@@ -1,15 +1,8 @@
--- IMMORTALITY (All-in-One Protection)
+-- IMMORTALITY (Hardcore Version)
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
-
--- Settings
-local GOD_ENABLED = false
-local HEAL_ENABLED = false
-local ANTI_FLING_ENABLED = false
-local ANTI_TP_ENABLED = false
-local ANTI_FREEZE_ENABLED = false
 
 -- Colors
 local COLOR_OFF = Color3.fromRGB(220, 53, 69)
@@ -22,7 +15,7 @@ screenGui.ResetOnSpawn = false
 screenGui.Parent = player.PlayerGui
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 130, 0, 130)
+mainFrame.Size = UDim2.new(0, 140, 0, 100)
 mainFrame.Position = UDim2.new(0, 10, 0.3, 0)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BorderSizePixel = 0
@@ -53,67 +46,68 @@ title.TextSize = 11
 title.Parent = mainFrame
 
 -- Buttons
-local buttons = {}
+local godBtn = Instance.new("TextButton")
+godBtn.Size = UDim2.new(1, -12, 0, 22)
+godBtn.BackgroundColor3 = COLOR_OFF
+godBtn.BorderSizePixel = 0
+godBtn.Text = "GOD MODE"
+godBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+godBtn.Font = Enum.Font.GothamBold
+godBtn.TextSize = 10
+godBtn.Parent = mainFrame
 
-local function createToggle(name, defaultState)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -12, 0, 22)
-    btn.BackgroundColor3 = defaultState and COLOR_ON or COLOR_OFF
-    btn.BorderSizePixel = 0
-    btn.Text = name
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 10
-    btn.Parent = mainFrame
-    
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 4)
-    btnCorner.Parent = btn
-    
-    return btn
-end
+local godCorner = Instance.new("UICorner")
+godCorner.CornerRadius = UDim.new(0, 4)
+godCorner.Parent = godBtn
 
--- GOD MODE (ForceField + Health Lock)
-local godBtn = createToggle("GOD MODE", false)
+local healthBtn = Instance.new("TextButton")
+healthBtn.Size = UDim2.new(1, -12, 0, 22)
+healthBtn.BackgroundColor3 = COLOR_OFF
+healthBtn.BorderSizePixel = 0
+healthBtn.Text = "HEALTH LOCK"
+healthBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+healthBtn.Font = Enum.Font.GothamBold
+healthBtn.TextSize = 10
+healthBtn.Parent = mainFrame
 
--- AUTO HEAL
-local healBtn = createToggle("AUTO HEAL", false)
+local healthCorner = Instance.new("UICorner")
+healthCorner.CornerRadius = UDim.new(0, 4)
+healthCorner.Parent = healthBtn
 
--- ANTI FLING
-local flingBtn = createToggle("ANTI FLING", false)
+local maxHealthBtn = Instance.new("TextButton")
+maxHealthBtn.Size = UDim2.new(1, -12, 0, 22)
+maxHealthBtn.BackgroundColor3 = COLOR_OFF
+maxHealthBtn.BorderSizePixel = 0
+maxHealthBtn.Text = "INFINITE HP"
+maxHealthBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+maxHealthBtn.Font = Enum.Font.GothamBold
+maxHealthBtn.TextSize = 10
+maxHealthBtn.Parent = mainFrame
 
--- ANTI TP KILL
-local tpBtn = createToggle("ANTI TP KILL", false)
+local maxCorner = Instance.new("UICorner")
+maxCorner.CornerRadius = UDim.new(0, 4)
+maxCorner.Parent = maxHealthBtn
 
--- ANTI FREEZE
-local freezeBtn = createToggle("ANTI FREEZE", false)
+-- States
+local GOD_ENABLED = false
+local HEALTH_LOCK_ENABLED = false
+local INFINITE_HP_ENABLED = false
 
--- Connections table
 local connections = {}
 local forceField = nil
 
--- ========== GOD MODE ==========
+-- ========== GOD MODE (ForceField) ==========
 local function enableGod()
     local character = player.Character
-    if not character then return end
-    
-    local humanoid = character:FindFirstChild("Humanoid")
-    if humanoid then
-        humanoid.MaxHealth = math.huge
-        humanoid.Health = math.huge
-    end
-    
-    -- Create ForceField
-    if forceField then forceField:Destroy() end
-    forceField = Instance.new("ForceField")
-    forceField.Name = "GodForceField"
-    forceField.Parent = character
-    
-    -- Anti-break joints
-    for _, part in pairs(character:GetDescendants()) do
-        if part:IsA("BreakableJoint") or part:IsA("Motor6D") or part:IsA("Weld") then
-            part.Anchored = false
-        end
+    if character then
+        -- Remove old FF
+        local oldFF = character:FindFirstChild("GodForceField")
+        if oldFF then oldFF:Destroy() end
+        
+        -- Create new ForceField
+        forceField = Instance.new("ForceField")
+        forceField.Name = "GodForceField"
+        forceField.Parent = character
     end
 end
 
@@ -122,7 +116,72 @@ local function disableGod()
         forceField:Destroy()
         forceField = nil
     end
+    local character = player.Character
+    if character then
+        local ff = character:FindFirstChild("GodForceField")
+        if ff then ff:Destroy() end
+    end
+end
+
+-- ========== HEALTH LOCK (Locks health EVERY frame) ==========
+local function enableHealthLock()
+    connections.healthLock = RunService.Heartbeat:Connect(function()
+        local character = player.Character
+        if character then
+            local humanoid = character:FindFirstChild("Humanoid")
+            if humanoid then
+                -- Always set health to max
+                if humanoid.Health < humanoid.MaxHealth then
+                    humanoid.Health = humanoid.MaxHealth
+                end
+            end
+        end
+    end)
+end
+
+local function disableHealthLock()
+    if connections.healthLock then
+        connections.healthLock:Disconnect()
+        connections.healthLock = nil
+    end
+end
+
+-- ========== INFINITE HP (Sets maxhealth to huge) ==========
+local function enableInfiniteHP()
+    connections.infiniteHP = RunService.Heartbeat:Connect(function()
+        local character = player.Character
+        if character then
+            local humanoid = character:FindFirstChild("Humanoid")
+            if humanoid then
+                -- Set max health to huge number
+                if humanoid.MaxHealth ~= math.huge then
+                    humanoid.MaxHealth = math.huge
+                end
+                -- Set health to huge
+                if humanoid.Health ~= math.huge then
+                    humanoid.Health = math.huge
+                end
+            end
+        end
+    end)
     
+    -- Also set on current character
+    local character = player.Character
+    if character then
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.MaxHealth = math.huge
+            humanoid.Health = math.huge
+        end
+    end
+end
+
+local function disableInfiniteHP()
+    if connections.infiniteHP then
+        connections.infiniteHP:Disconnect()
+        connections.infiniteHP = nil
+    end
+    -- Reset health
     local character = player.Character
     if character then
         local humanoid = character:FindFirstChild("Humanoid")
@@ -133,186 +192,45 @@ local function disableGod()
     end
 end
 
--- ========== AUTO HEAL ==========
-local function startHeal()
-    connections.heal = RunService.Heartbeat:Connect(function()
-        local character = player.Character
-        if character then
-            local humanoid = character:FindFirstChild("Humanoid")
-            if humanoid and humanoid.Health < humanoid.MaxHealth then
-                humanoid.Health = humanoid.MaxHealth
-            end
-        end
-    end)
-end
-
--- ========== ANTI FLING ==========
-local function startAntiFling()
-    connections.fling = RunService.Heartbeat:Connect(function()
-        local character = player.Character
-        if not character then return end
-        
-        local rootPart = character:FindFirstChild("HumanoidRootPart")
-        if not rootPart then return end
-        
-        -- Limit velocity
-        local velocity = rootPart:FindFirstChild("Velocity")
-        if velocity then
-            velocity.Velocity = Vector3.new(0, 0, 0)
-        end
-        
-        -- Remove BodyMovers on others
-        for _, otherPlayer in pairs(Players:GetPlayers()) do
-            if otherPlayer ~= player and otherPlayer.Character then
-                for _, part in pairs(otherPlayer.Character:GetDescendants()) do
-                    if part:IsA("BodyMover") or part:IsA("BodyVelocity") or part:IsA("BodyGyro") or part:IsA("BodyPosition") or part:IsA("BodyThrust") or part:IsA("BodyAngularVelocity") then
-                        part:Destroy()
-                    end
-                end
-            end
-        end
-        
-        -- Cap rootPart velocity
-        if rootPart.AssemblyLinearVelocity.Magnitude > 100 then
-            rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-        end
-        
-        -- Cap angular velocity
-        if rootPart.AssemblyAngularVelocity.Magnitude > 50 then
-            rootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-        end
-    end)
-end
-
--- ========== ANTI TP KILL ==========
-local lastSafePosition = nil
-
-local function startAntiTP()
-    connections.tp = RunService.Heartbeat:Connect(function()
-        local character = player.Character
-        if not character then return end
-        
-        local rootPart = character:FindFirstChild("HumanoidRootPart")
-        local humanoid = character:FindFirstChild("Humanoid")
-        
-        if rootPart and humanoid then
-            -- If health suddenly drops and we're far from last safe position
-            if humanoid.Health > 0 then
-                lastSafePosition = rootPart.CFrame
-            else
-                -- Teleport back to safe position
-                if lastSafePosition then
-                    rootPart.CFrame = lastSafePosition
-                    humanoid.Health = humanoid.MaxHealth
-                end
-            end
-            
-            -- Anti-void
-            if rootPart.Position.Y < -100 then
-                rootPart.CFrame = CFrame.new(0, 50, 0)
-            end
-        end
-    end)
-end
-
--- ========== ANTI FREEZE ==========
-local function startAntiFreeze()
-    connections.freeze = RunService.Heartbeat:Connect(function()
-        local character = player.Character
-        if not character then return end
-        
-        local humanoid = character:FindFirstChild("Humanoid")
-        local rootPart = character:FindFirstChild("HumanoidRootPart")
-        
-        if humanoid and rootPart then
-            -- Unfreeze walkspeed
-            if humanoid.WalkSpeed == 0 then
-                humanoid.WalkSpeed = 16
-            end
-            
-            -- Unfreeze jump
-            if humanoid.JumpPower == 0 then
-                humanoid.JumpPower = 50
-            end
-            
-            -- Remove any ice/freeze effects
-            for _, part in pairs(character:GetDescendants()) do
-                if part:IsA("BodyVelocity") or part:IsA("BodyGyro") or part:IsA("BodyPosition") then
-                    if part.Name:lower():find("freeze") or part.Name:lower():find("ice") then
-                        part:Destroy()
-                    end
-                end
-            end
-        end
-    end)
-end
-
--- ========== TOGGLE FUNCTIONS ==========
-local function stopConnection(name)
-    if connections[name] then
-        connections[name]:Disconnect()
-        connections[name] = nil
-    end
-end
-
+-- ========== TOGGLES ==========
 godBtn.MouseButton1Click:Connect(function()
     GOD_ENABLED = not GOD_ENABLED
     godBtn.BackgroundColor3 = GOD_ENABLED and COLOR_ON or COLOR_OFF
     
     if GOD_ENABLED then
         enableGod()
-        player.CharacterAdded:Connect(function()
-            wait(0.5)
-            if GOD_ENABLED then enableGod() end
-        end)
     else
         disableGod()
     end
 end)
 
-healBtn.MouseButton1Click:Connect(function()
-    HEAL_ENABLED = not HEAL_ENABLED
-    healBtn.BackgroundColor3 = HEAL_ENABLED and COLOR_ON or COLOR_OFF
+healthBtn.MouseButton1Click:Connect(function()
+    HEALTH_LOCK_ENABLED = not HEALTH_LOCK_ENABLED
+    healthBtn.BackgroundColor3 = HEALTH_LOCK_ENABLED and COLOR_ON or COLOR_OFF
     
-    if HEAL_ENABLED then
-        startHeal()
+    if HEALTH_LOCK_ENABLED then
+        enableHealthLock()
     else
-        stopConnection("heal")
+        disableHealthLock()
     end
 end)
 
-flingBtn.MouseButton1Click:Connect(function()
-    ANTI_FLING_ENABLED = not ANTI_FLING_ENABLED
-    flingBtn.BackgroundColor3 = ANTI_FLING_ENABLED and COLOR_ON or COLOR_OFF
+maxHealthBtn.MouseButton1Click:Connect(function()
+    INFINITE_HP_ENABLED = not INFINITE_HP_ENABLED
+    maxHealthBtn.BackgroundColor3 = INFINITE_HP_ENABLED and COLOR_ON or COLOR_OFF
     
-    if ANTI_FLING_ENABLED then
-        startAntiFling()
+    if INFINITE_HP_ENABLED then
+        enableInfiniteHP()
     else
-        stopConnection("fling")
+        disableInfiniteHP()
     end
 end)
 
-tpBtn.MouseButton1Click:Connect(function()
-    ANTI_TP_ENABLED = not ANTI_TP_ENABLED
-    tpBtn.BackgroundColor3 = ANTI_TP_ENABLED and COLOR_ON or COLOR_OFF
-    
-    if ANTI_TP_ENABLED then
-        startAntiTP()
-    else
-        stopConnection("tp")
-        lastSafePosition = nil
-    end
-end)
-
-freezeBtn.MouseButton1Click:Connect(function()
-    ANTI_FREEZE_ENABLED = not ANTI_FREEZE_ENABLED
-    freezeBtn.BackgroundColor3 = ANTI_FREEZE_ENABLED and COLOR_ON or COLOR_OFF
-    
-    if ANTI_FREEZE_ENABLED then
-        startAntiFreeze()
-    else
-        stopConnection("freeze")
-    end
+-- Re-apply on respawn
+player.CharacterAdded:Connect(function(character)
+    wait(0.5)
+    if GOD_ENABLED then enableGod() end
+    -- Health lock and infinite HP auto-run via heartbeat, no need to re-apply
 end)
 
 -- ========== DRAGGING ==========
@@ -340,5 +258,6 @@ game:GetService("UserInputService").InputChanged:Connect(function(input)
     end
 end)
 
-print("✅ Immortality Script Loaded")
-print("📌 Enable all toggles for maximum protection")
+print("✅ Hardcore Immortality Loaded")
+print("📌 Enable all 3 for maximum protection")
+print("📌 If still dying, tell me what game")
