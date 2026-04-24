@@ -48,8 +48,8 @@ hubCorner.Parent = hubButton
 
 -- Main Frame (expanded height)
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 200, 0, 210)
-mainFrame.Position = UDim2.new(0.5, -100, 0.5, -105)
+mainFrame.Size = UDim2.new(0, 200, 0, 230)
+mainFrame.Position = UDim2.new(0.5, -100, 0.5, -115)
 mainFrame.BackgroundColor3 = COLORS.background
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -139,6 +139,17 @@ comboToggle.Parent = content
 local ctCorner = Instance.new("UICorner")
 ctCorner.CornerRadius = UDim.new(0, 6)
 ctCorner.Parent = comboToggle
+
+-- Status Label (for errors)
+local statusLbl = Instance.new("TextLabel")
+statusLbl.Size = UDim2.new(1, 0, 0, 16)
+statusLbl.BackgroundTransparency = 1
+statusLbl.TextColor3 = COLORS.buttonDanger
+statusLbl.Text = ""
+statusLbl.Font = Enum.Font.Gotham
+statusLbl.TextSize = 9
+statusLbl.TextXAlignment = Enum.TextXAlignment.Left
+statusLbl.Parent = content
 
 -- Combo Info
 local comboInfo = Instance.new("TextLabel")
@@ -333,6 +344,8 @@ toolInput.FocusLost:Connect(function()
     local newName = toolInput.Text:match("^%s*(.-)%s*$")
     if newName and newName ~= "" then
         TOOL_NAME = newName
+        statusLbl.Text = "Tool set: " .. TOOL_NAME
+        statusLbl.TextColor3 = COLORS.buttonSuccess
         print("Tool name set to: " .. TOOL_NAME)
     else
         toolInput.Text = TOOL_NAME
@@ -395,7 +408,7 @@ local function findBestDirection(preferredDirection)
     return Vector3.new(math.cos(randomAngle), 0, math.sin(randomAngle)), true
 end
 
--- ========== COMBO FUNCTION (equip + jump + swing synced) ==========
+-- ========== COMBO FUNCTION ==========
 
 local function doCombo()
     local character = player.Character
@@ -406,7 +419,7 @@ local function doCombo()
     local humanoid = character:FindFirstChild("Humanoid")
     if not humanoid then return end
     
-    -- Find tool in character OR backpack (same method that works)
+    -- Find tool in character OR backpack
     local tool = character:FindFirstChild(TOOL_NAME) or backpack:FindFirstChild(TOOL_NAME)
     
     if not tool or not tool:IsA("Tool") then return end
@@ -414,7 +427,7 @@ local function doCombo()
     -- 1. Equip if in backpack
     if tool.Parent == backpack then
         humanoid:EquipTool(tool)
-        task.wait() -- tiny sync frame
+        task.wait() -- sync frame
     end
     
     -- 2. Jump
@@ -475,38 +488,53 @@ walkToggle.MouseButton1Click:Connect(function()
         walkToggle.BackgroundColor3 = COLORS.buttonSuccess
         currentWalkDirection = nil
         lastCameraDirection = nil
+        statusLbl.Text = ""
         task.spawn(walkLoop)
     else
         walkToggle.Text = "AUTO WALK: OFF"
         walkToggle.BackgroundColor3 = COLORS.buttonDanger
-        currentWalkDirection = nil
     end
 end)
 
 comboToggle.MouseButton1Click:Connect(function()
-    comboRunning = not comboRunning
-    
-    if comboRunning then
-        -- Check if tool exists first
+    if not comboRunning then
+        -- TURNING ON
         local character = player.Character
         local backpack = player:FindFirstChild("Backpack")
-        local tool = character and (character:FindFirstChild(TOOL_NAME) or backpack and backpack:FindFirstChild(TOOL_NAME))
         
-        if not tool then
-            comboToggle.Text = "COMBO: OFF"
-            comboToggle.BackgroundColor3 = COLORS.buttonDanger
-            comboRunning = false
-            print("❌ Tool '" .. TOOL_NAME .. "' not found!")
+        if not character then
+            statusLbl.Text = "ERROR: No character!"
+            statusLbl.TextColor3 = COLORS.buttonDanger
             return
         end
         
+        if not backpack then
+            statusLbl.Text = "ERROR: No backpack!"
+            statusLbl.TextColor3 = COLORS.buttonDanger
+            return
+        end
+        
+        local tool = character:FindFirstChild(TOOL_NAME) or backpack:FindFirstChild(TOOL_NAME)
+        
+        if not tool then
+            statusLbl.Text = "ERROR: Tool '" .. TOOL_NAME .. "' not found!"
+            statusLbl.TextColor3 = COLORS.buttonDanger
+            return
+        end
+        
+        -- All checks passed - turn ON
+        comboRunning = true
         comboToggle.Text = "COMBO: ON"
         comboToggle.BackgroundColor3 = COLORS.buttonSuccess
-        print("✅ Combo started with: " .. TOOL_NAME)
+        statusLbl.Text = "Running with: " .. TOOL_NAME
+        statusLbl.TextColor3 = COLORS.buttonSuccess
         task.spawn(comboLoop)
     else
+        -- TURNING OFF
+        comboRunning = false
         comboToggle.Text = "COMBO: OFF"
         comboToggle.BackgroundColor3 = COLORS.buttonDanger
+        statusLbl.Text = ""
     end
 end)
 
