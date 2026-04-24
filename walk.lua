@@ -7,11 +7,6 @@ local player = Players.LocalPlayer
 
 -- Settings
 local autoWalkEnabled = false
-local equipUnequipEnabled = false
-local equipDelay = 0.5
-
--- Variables
-local equipState = false
 
 local COLORS = {
     background = Color3.fromRGB(245, 245, 245),
@@ -47,8 +42,8 @@ hubCorner.Parent = hubButton
 
 -- Main Frame
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 220, 0, 140)
-mainFrame.Position = UDim2.new(0.5, -110, 0.5, -70)
+mainFrame.Size = UDim2.new(0, 200, 0, 100)
+mainFrame.Position = UDim2.new(0.5, -100, 0.5, -50)
 mainFrame.BackgroundColor3 = COLORS.background
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -100,97 +95,20 @@ local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(0, 5)
 closeCorner.Parent = closeBtn
 
--- Content
-local content = Instance.new("Frame")
-content.Size = UDim2.new(1, -16, 1, -40)
-content.Position = UDim2.new(0, 8, 0, 36)
-content.BackgroundTransparency = 1
-content.Parent = mainFrame
-
-local contentLayout = Instance.new("UIListLayout")
-contentLayout.Padding = UDim.new(0, 6)
-contentLayout.Parent = content
-
--- Auto Walk Toggle
-local walkToggleFrame = Instance.new("Frame")
-walkToggleFrame.Size = UDim2.new(1, 0, 0, 32)
-walkToggleFrame.BackgroundColor3 = COLORS.cardBg
-walkToggleFrame.Parent = content
-local wtfCorner = Instance.new("UICorner")
-wtfCorner.CornerRadius = UDim.new(0, 6)
-wtfCorner.Parent = walkToggleFrame
-
+-- Toggle Button
 local walkToggle = Instance.new("TextButton")
-walkToggle.Size = UDim2.new(1, -12, 0, 26)
-walkToggle.Position = UDim2.new(0, 6, 0, 3)
+walkToggle.Size = UDim2.new(1, -24, 0, 40)
+walkToggle.Position = UDim2.new(0, 12, 0, 44)
 walkToggle.BackgroundColor3 = COLORS.buttonDanger
 walkToggle.TextColor3 = COLORS.textLight
 walkToggle.Text = "AUTO WALK: OFF"
 walkToggle.Font = Enum.Font.GothamBold
-walkToggle.TextSize = 12
-walkToggle.Parent = walkToggleFrame
+walkToggle.TextSize = 14
+walkToggle.Parent = mainFrame
+
 local wtCorner = Instance.new("UICorner")
-wtCorner.CornerRadius = UDim.new(0, 5)
+wtCorner.CornerRadius = UDim.new(0, 8)
 wtCorner.Parent = walkToggle
-
--- Equip/Unequip Toggle
-local equipToggleFrame = Instance.new("Frame")
-equipToggleFrame.Size = UDim2.new(1, 0, 0, 32)
-equipToggleFrame.BackgroundColor3 = COLORS.cardBg
-equipToggleFrame.Parent = content
-local etfCorner = Instance.new("UICorner")
-etfCorner.CornerRadius = UDim.new(0, 6)
-etfCorner.Parent = equipToggleFrame
-
-local equipToggle = Instance.new("TextButton")
-equipToggle.Size = UDim2.new(1, -12, 0, 26)
-equipToggle.Position = UDim2.new(0, 6, 0, 3)
-equipToggle.BackgroundColor3 = COLORS.buttonDanger
-equipToggle.TextColor3 = COLORS.textLight
-equipToggle.Text = "EQUIP CYCLE: OFF"
-equipToggle.Font = Enum.Font.GothamBold
-equipToggle.TextSize = 12
-equipToggle.Parent = equipToggleFrame
-local etCorner = Instance.new("UICorner")
-etCorner.CornerRadius = UDim.new(0, 5)
-etCorner.Parent = equipToggle
-
--- Equip Delay Slider
-local delayFrame = Instance.new("Frame")
-delayFrame.Size = UDim2.new(1, 0, 0, 36)
-delayFrame.BackgroundColor3 = COLORS.cardBg
-delayFrame.Parent = content
-local dfCorner = Instance.new("UICorner")
-dfCorner.CornerRadius = UDim.new(0, 6)
-dfCorner.Parent = delayFrame
-
-local delayLabel = Instance.new("TextLabel")
-delayLabel.Size = UDim2.new(1, -12, 0, 14)
-delayLabel.Position = UDim2.new(0, 6, 0, 4)
-delayLabel.BackgroundTransparency = 1
-delayLabel.TextColor3 = COLORS.textDark
-delayLabel.Text = "Equip Delay: " .. equipDelay .. "s"
-delayLabel.Font = Enum.Font.Gotham
-delayLabel.TextSize = 10
-delayLabel.TextXAlignment = Enum.TextXAlignment.Left
-delayLabel.Parent = delayFrame
-
-local delaySliderBg = Instance.new("Frame")
-delaySliderBg.Size = UDim2.new(1, -12, 0, 8)
-delaySliderBg.Position = UDim2.new(0, 6, 0, 22)
-delaySliderBg.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-delaySliderBg.Parent = delayFrame
-local dsbCorner = Instance.new("UICorner")
-dsbCorner.CornerRadius = UDim.new(0, 4)
-dsbCorner.Parent = delaySliderBg
-
-local delaySliderFill = Instance.new("Frame")
-delaySliderFill.Size = UDim2.new((equipDelay - 0.1) / 2.9, 0, 1, 0)
-delaySliderFill.BackgroundColor3 = COLORS.buttonPrimary
-delaySliderFill.Parent = delaySliderBg
-local dsfCorner = Instance.new("UICorner")
-dsfCorner.CornerRadius = UDim.new(0, 4)
-dsfCorner.Parent = delaySliderFill
 
 -- Dragging
 local dragging = false
@@ -265,34 +183,6 @@ closeBtn.MouseButton1Click:Connect(function()
     hubButton.Visible = true
 end)
 
--- Delay Slider Logic
-local sliderDragging = false
-
-delaySliderBg.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        sliderDragging = true
-        local pos = math.clamp((input.Position.X - delaySliderBg.AbsolutePosition.X) / delaySliderBg.AbsoluteSize.X, 0, 1)
-        equipDelay = math.round((0.1 + 2.9 * pos) * 10) / 10
-        delaySliderFill.Size = UDim2.new(pos, 0, 1, 0)
-        delayLabel.Text = "Equip Delay: " .. equipDelay .. "s"
-    end
-end)
-
-delaySliderBg.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        sliderDragging = false
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if sliderDragging then
-        local pos = math.clamp((input.Position.X - delaySliderBg.AbsolutePosition.X) / delaySliderBg.AbsoluteSize.X, 0, 1)
-        equipDelay = math.round((0.1 + 2.9 * pos) * 10) / 10
-        delaySliderFill.Size = UDim2.new(pos, 0, 1, 0)
-        delayLabel.Text = "Equip Delay: " .. equipDelay .. "s"
-    end
-end)
-
 -- ========== FUNCTIONS ==========
 
 local function checkForObstacles(direction)
@@ -320,50 +210,26 @@ local function getCameraDirection()
 end
 
 local function calculateClearPath(baseDirection)
-    -- Try to follow camera direction first
     if not checkForObstacles(baseDirection) then
         return baseDirection
     end
     
-    -- If blocked, try left and right
     local leftDir = (baseDirection + Vector3.new(-1, 0, 0)).Unit
     local rightDir = (baseDirection + Vector3.new(1, 0, 0)).Unit
     
     if not checkForObstacles(leftDir) then return leftDir end
     if not checkForObstacles(rightDir) then return rightDir end
     
-    -- Try backwards
     local backDir = -baseDirection
     if not checkForObstacles(backDir) then return backDir end
     
-    -- Last resort - random diagonal
     local angle = math.random() * math.pi * 2
     return Vector3.new(math.cos(angle), 0, math.sin(angle))
 end
 
-local function findSword()
-    local character = player.Character
-    if not character then return nil end
-    
-    local equipped = character:FindFirstChildOfClass("Tool")
-    if equipped then return equipped end
-    
-    local backpack = player:FindFirstChild("Backpack")
-    if backpack then
-        for _, item in pairs(backpack:GetChildren()) do
-            if item:IsA("Tool") then
-                return item
-            end
-        end
-    end
-    
-    return nil
-end
-
--- ========== MAIN LOOPS ==========
+-- ========== MAIN LOOP ==========
 
 local walkRunning = false
-local equipRunning = false
 
 local function walkLoop()
     while walkRunning do
@@ -373,12 +239,8 @@ local function walkLoop()
             local rootPart = character:FindFirstChild("HumanoidRootPart")
             
             if humanoid and rootPart then
-                -- Always get camera direction (follows where you're looking)
                 local cameraDirection = getCameraDirection()
-                
-                -- Apply obstacle avoidance to camera direction
                 local clearPath = calculateClearPath(cameraDirection)
-                
                 humanoid:MoveTo(rootPart.Position + clearPath * 16)
             end
         end
@@ -386,27 +248,7 @@ local function walkLoop()
     end
 end
 
-local function equipLoop()
-    while equipRunning do
-        local character = player.Character
-        if character then
-            local humanoid = character:FindFirstChild("Humanoid")
-            local sword = findSword()
-            
-            if humanoid and sword then
-                if equipState then
-                    humanoid:UnequipTools()
-                else
-                    humanoid:EquipTool(sword)
-                end
-                equipState = not equipState
-            end
-        end
-        wait(equipDelay)
-    end
-end
-
--- ========== TOGGLES ==========
+-- ========== TOGGLE ==========
 
 walkToggle.MouseButton1Click:Connect(function()
     walkRunning = not walkRunning
@@ -421,20 +263,4 @@ walkToggle.MouseButton1Click:Connect(function()
     end
 end)
 
-equipToggle.MouseButton1Click:Connect(function()
-    equipRunning = not equipRunning
-    
-    if equipRunning then
-        equipToggle.Text = "EQUIP CYCLE: ON"
-        equipToggle.BackgroundColor3 = COLORS.buttonSuccess
-        equipState = false
-        spawn(equipLoop)
-    else
-        equipToggle.Text = "EQUIP CYCLE: OFF"
-        equipToggle.BackgroundColor3 = COLORS.buttonDanger
-    end
-end)
-
 print("✅ Auto Walk Loaded")
-print("📌 Follows your camera direction, avoids walls")
-print("📌 Equip Cycle makes sword appear/disappear")
