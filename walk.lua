@@ -46,10 +46,10 @@ local hubCorner = Instance.new("UICorner")
 hubCorner.CornerRadius = UDim.new(0, 12)
 hubCorner.Parent = hubButton
 
--- Main Frame (expanded height)
+-- Main Frame
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 200, 0, 230)
-mainFrame.Position = UDim2.new(0.5, -100, 0.5, -115)
+mainFrame.Size = UDim2.new(0, 200, 0, 210)
+mainFrame.Position = UDim2.new(0.5, -100, 0.5, -105)
 mainFrame.BackgroundColor3 = COLORS.background
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -139,17 +139,6 @@ comboToggle.Parent = content
 local ctCorner = Instance.new("UICorner")
 ctCorner.CornerRadius = UDim.new(0, 6)
 ctCorner.Parent = comboToggle
-
--- Status Label (for errors)
-local statusLbl = Instance.new("TextLabel")
-statusLbl.Size = UDim2.new(1, 0, 0, 16)
-statusLbl.BackgroundTransparency = 1
-statusLbl.TextColor3 = COLORS.buttonDanger
-statusLbl.Text = ""
-statusLbl.Font = Enum.Font.Gotham
-statusLbl.TextSize = 9
-statusLbl.TextXAlignment = Enum.TextXAlignment.Left
-statusLbl.Parent = content
 
 -- Combo Info
 local comboInfo = Instance.new("TextLabel")
@@ -344,9 +333,6 @@ toolInput.FocusLost:Connect(function()
     local newName = toolInput.Text:match("^%s*(.-)%s*$")
     if newName and newName ~= "" then
         TOOL_NAME = newName
-        statusLbl.Text = "Tool set: " .. TOOL_NAME
-        statusLbl.TextColor3 = COLORS.buttonSuccess
-        print("Tool name set to: " .. TOOL_NAME)
     else
         toolInput.Text = TOOL_NAME
     end
@@ -427,7 +413,7 @@ local function doCombo()
     -- 1. Equip if in backpack
     if tool.Parent == backpack then
         humanoid:EquipTool(tool)
-        task.wait() -- sync frame
+        task.wait()
     end
     
     -- 2. Jump
@@ -488,7 +474,6 @@ walkToggle.MouseButton1Click:Connect(function()
         walkToggle.BackgroundColor3 = COLORS.buttonSuccess
         currentWalkDirection = nil
         lastCameraDirection = nil
-        statusLbl.Text = ""
         task.spawn(walkLoop)
     else
         walkToggle.Text = "AUTO WALK: OFF"
@@ -497,44 +482,17 @@ walkToggle.MouseButton1Click:Connect(function()
 end)
 
 comboToggle.MouseButton1Click:Connect(function()
-    if not comboRunning then
-        -- TURNING ON
-        local character = player.Character
-        local backpack = player:FindFirstChild("Backpack")
-        
-        if not character then
-            statusLbl.Text = "ERROR: No character!"
-            statusLbl.TextColor3 = COLORS.buttonDanger
-            return
-        end
-        
-        if not backpack then
-            statusLbl.Text = "ERROR: No backpack!"
-            statusLbl.TextColor3 = COLORS.buttonDanger
-            return
-        end
-        
-        local tool = character:FindFirstChild(TOOL_NAME) or backpack:FindFirstChild(TOOL_NAME)
-        
-        if not tool then
-            statusLbl.Text = "ERROR: Tool '" .. TOOL_NAME .. "' not found!"
-            statusLbl.TextColor3 = COLORS.buttonDanger
-            return
-        end
-        
-        -- All checks passed - turn ON
-        comboRunning = true
+    comboRunning = not comboRunning
+
+    if comboRunning then
         comboToggle.Text = "COMBO: ON"
         comboToggle.BackgroundColor3 = COLORS.buttonSuccess
-        statusLbl.Text = "Running with: " .. TOOL_NAME
-        statusLbl.TextColor3 = COLORS.buttonSuccess
+        print("✅ Combo ON")
         task.spawn(comboLoop)
     else
-        -- TURNING OFF
-        comboRunning = false
         comboToggle.Text = "COMBO: OFF"
         comboToggle.BackgroundColor3 = COLORS.buttonDanger
-        statusLbl.Text = ""
+        print("❌ Combo OFF")
     end
 end)
 
