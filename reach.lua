@@ -1,144 +1,75 @@
 --[[
-    Invisible Reach Script (Mobile Friendly)
-    Uses hookmethod for better compatibility
+    kbl hoes
+    Reach Script - Mobile Friendly
+    Uses firetouchinterest method
 ]]
 
-local Reach = {
+getgenv()["kbl hoes"] = {
+    Reach = 14,
     Enabled = true,
-    Distance = 14
+    TeamCheck = false,
+    AutoClick = false
 }
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 
-local OriginalNamecall
-local Hooked = false
-local ToolCache = {}
-local OriginalSizes = {}
+-- Anti-detection
+local gc = gcinfo or collectgarbage
+hookfunction(gc, function(...)
+    return math.random(200, 400)
+end)
 
--- Get nearest player within reach
-local function GetNearestPlayer()
-    local nearest = nil
-    local minDist = Reach.Distance
-    
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-            local humanoid = player.Character:FindFirstChild("Humanoid")
-            
-            if hrp and humanoid and humanoid.Health > 0 then
-                local dist = (HumanoidRootPart.Position - hrp.Position).Magnitude
-                if dist < minDist then
-                    minDist = dist
-                    nearest = player
-                end
-            end
+local oldIndex
+oldIndex = hookmetamethod(game, "__index", function(self, key)
+    if not checkcaller() then
+        if tostring(self) == "Humanoid" and key == "Health" then
+            return 0
         end
     end
-    
-    return nearest
+    return oldIndex(self, key)
+end)
+
+-- Notification function
+local function Notify(Text)
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "kbl hoes",
+        Text = Text,
+        Duration = 2
+    })
 end
 
--- Method 1: Hook namecall for remotes
-local function HookNamecall()
-    if Hooked then return end
-    Hooked = true
-    
-    OriginalNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = getnamecallmethod()
-        local args = {...}
-        
-        if Reach.Enabled and (method == "FireServer" or method == "InvokeServer" or method == "fireServer" or method == "invokeServer") then
-            local remoteName = self.Name:lower()
-            
-            -- Common combat remote patterns
-            if remoteName:find("hit") or remoteName:find("attack") or remoteName:find("damage") or remoteName:find("swing") or remoteName:find("strike") then
-                -- Try to find and modify position/distance args
-                for i, arg in pairs(args) do
-                    if typeof(arg) == "Instance" and arg:IsA("Player") then
-                        -- Already has target, extend the check
-                    elseif typeof(arg) == "Vector3" then
-                        -- Position argument
-                    elseif typeof(arg) == "number" then
-                        -- Could be distance, try to extend
-                        args[i] = Reach.Distance
-                    end
-                end
-            end
-        end
-        
-        return OriginalNamecall(self, ...)
-    end)
+-- Check if player is on same team
+local function IsTeammate(player)
+    if not getgenv()["kbl hoes"].TeamCheck then return false end
+    return player.Team and LocalPlayer.Team and player.Team == LocalPlayer.Team
 end
 
--- Method 2: Modify tool hitbox directly
-local function ModifyToolHitbox(tool)
-    if not tool or not tool:IsA("Tool") then return end
-    if ToolCache[tool] then return end
-    ToolCache[tool] = true
-    
-    local handle = tool:FindFirstChild("Handle")
-    if not handle then return end
-    
-    -- Store original
-    if not OriginalSizes[tool] then
-        OriginalSizes[tool] = handle.Size
-    end
-    
-    local function Apply()
-        if not Reach.Enabled then
-            handle.Size = OriginalSizes[tool] or handle.Size
-            return
-        end
-        
-        local orig = OriginalSizes[tool]
-        local scale = Reach.Distance / 3
-        
-        handle.Size = Vector3.new(
-            math.max(orig.X, scale),
-            math.max(orig.Y, scale),
-            math.max(orig.Z, scale)
-        )
-        handle.Transparency = 1
-        handle.Material = Enum.Material.ForceField
-        
-        -- Kill any visual adornments
-        for _, v in pairs(handle:GetChildren()) do
-            if v:IsA("BoxHandleAdornment") or v:IsA("SphereHandleAdornment") then
-                v:Destroy()
-            end
-        end
-    end
-    
-    Apply()
-    
-    -- Keep checking
-    task.spawn(function()
-        while tool and tool.Parent and ToolCache[tool] do
-            Apply()
-            task.wait(0.1)
-        end
-    end)
-end
+-- Main FTI function
+local lastHit = tick()
 
--- Scan tools
-local function ScanTools()
-    if LocalPlayer.Character then
-        for _, item in pairs(LocalPlayer.Character:GetChildren()) do
-            if item:IsA("Tool") then
-                ModifyToolHitbox(item)
-            end
-        end
-    end
+local function HitPlayer(player, handle)
+    if not player.Character then return end
     
-    local backpack = LocalPlayer:FindFirstChild("Backpack")
-    if backpack then
-        for _, item in pairs(backpack:GetChildren()) do
-            if item:IsA("Tool") then
-                ModifyToolHitbox(item)
+    local humanoid = player.Character:FindFirstChild("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then return end
+    
+    local whitelistedParts = {
+        "Head", "Torso", "HumanoidRootPart",
+        "Left Arm", "Right Arm", "Left Leg", "Right Leg",
+        "UpperTorso", "LowerTorso", "LeftHand", "RightHand", "LeftFoot", "RightFoot"
+    }
+    
+    -- Rate limit to prevent lag
+    if tick() - lastHit < 0.03 then return end
+    lastHit = tick()
+    
+    for _, part in pairs(player.Character:GetChildren()) do
+        if part:IsA("BasePart") then
+            if table.find(whitelistedParts, part.Name) then
+                firetouchinterest(part, handle, 0)
+                firetouchinterest(part, handle, 1)
             end
         end
     end
@@ -148,125 +79,245 @@ end
 local function CreateGUI()
     local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
     
-    -- Remove old if exists
-    local old = PlayerGui:FindFirstChild("ReachGui")
+    -- Remove old
+    local old = PlayerGui:FindFirstChild("kbl hoes GUI")
     if old then old:Destroy() end
     
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "ReachGui"
+    ScreenGui.Name = "kbl hoes GUI"
     ScreenGui.Parent = PlayerGui
     ScreenGui.ResetOnSpawn = false
     
-    local Button = Instance.new("TextButton")
-    Button.Name = "Toggle"
-    Button.Size = UDim2.new(0, 110, 0, 45)
-    Button.Position = UDim2.new(0, 15, 0.6, 0)
-    Button.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Button.Text = "Reach: ON (14)"
-    Button.TextSize = 13
-    Button.Font = Enum.Font.GothamBold
-    Button.Parent = ScreenGui
+    -- Main Frame
+    local Frame = Instance.new("Frame")
+    Frame.Name = "Main"
+    Frame.Size = UDim2.new(0, 180, 0, 220)
+    Frame.Position = UDim2.new(0, 10, 0.4, 0)
+    Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    Frame.BorderSizePixel = 0
+    Frame.Parent = ScreenGui
     
     local Corner = Instance.new("UICorner")
     Corner.CornerRadius = UDim.new(0, 10)
-    Corner.Parent = Button
+    Corner.Parent = Frame
     
-    -- Draggable for mobile
-    local dragging, dragStart, startPos = false, nil, nil
+    -- Title
+    local Title = Instance.new("TextLabel")
+    Title.Name = "Title"
+    Title.Size = UDim2.new(1, 0, 0, 35)
+    Title.Position = UDim2.new(0, 0, 0, 0)
+    Title.BackgroundTransparency = 1
+    Title.Text = "kbl hoes"
+    Title.TextColor3 = Color3.fromRGB(255, 0, 255)
+    Title.TextSize = 18
+    Title.Font = Enum.Font.GothamBold
+    Title.Parent = Frame
     
-    Button.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch then
+    -- Reach Display
+    local ReachLabel = Instance.new("TextLabel")
+    ReachLabel.Name = "ReachLabel"
+    ReachLabel.Size = UDim2.new(1, 0, 0, 25)
+    ReachLabel.Position = UDim2.new(0, 0, 0, 40)
+    ReachLabel.BackgroundTransparency = 1
+    ReachLabel.Text = "Reach: 14"
+    ReachLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ReachLabel.TextSize = 14
+    ReachLabel.Font = Enum.Font.Gotham
+    ReachLabel.Parent = Frame
+    
+    -- Toggle Button
+    local ToggleBtn = Instance.new("TextButton")
+    ToggleBtn.Name = "Toggle"
+    ToggleBtn.Size = UDim2.new(0.9, 0, 0, 30)
+    ToggleBtn.Position = UDim2.new(0.05, 0, 0, 70)
+    ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+    ToggleBtn.Text = "Reach: ON"
+    ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ToggleBtn.TextSize = 13
+    ToggleBtn.Font = Enum.Font.GothamBold
+    ToggleBtn.Parent = Frame
+    
+    local BtnCorner = Instance.new("UICorner")
+    BtnCorner.CornerRadius = UDim.new(0, 6)
+    BtnCorner.Parent = ToggleBtn
+    
+    -- Team Check Button
+    local TeamBtn = Instance.new("TextButton")
+    TeamBtn.Name = "TeamCheck"
+    TeamBtn.Size = UDim2.new(0.9, 0, 0, 30)
+    TeamBtn.Position = UDim2.new(0.05, 0, 0, 105)
+    TeamBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+    TeamBtn.Text = "Team Check: OFF"
+    TeamBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TeamBtn.TextSize = 13
+    TeamBtn.Font = Enum.Font.GothamBold
+    TeamBtn.Parent = Frame
+    
+    local TeamBtnCorner = Instance.new("UICorner")
+    TeamBtnCorner.CornerRadius = UDim.new(0, 6)
+    TeamBtnCorner.Parent = TeamBtn
+    
+    -- Auto Click Button
+    local AutoBtn = Instance.new("TextButton")
+    AutoBtn.Name = "AutoClick"
+    AutoBtn.Size = UDim2.new(0.9, 0, 0, 30)
+    AutoBtn.Position = UDim2.new(0.05, 0, 0, 140)
+    AutoBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+    AutoBtn.Text = "Auto Click: OFF"
+    AutoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    AutoBtn.TextSize = 13
+    AutoBtn.Font = Enum.Font.GothamBold
+    AutoBtn.Parent = Frame
+    
+    local AutoBtnCorner = Instance.new("UICorner")
+    AutoBtnCorner.CornerRadius = UDim.new(0, 6)
+    AutoBtnCorner.Parent = AutoBtn
+    
+    -- Reach + Button
+    local PlusBtn = Instance.new("TextButton")
+    PlusBtn.Name = "Plus"
+    PlusBtn.Size = UDim2.new(0.43, 0, 0, 30)
+    PlusBtn.Position = UDim2.new(0.05, 0, 0, 175)
+    PlusBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    PlusBtn.Text = "+ Reach"
+    PlusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    PlusBtn.TextSize = 12
+    PlusBtn.Font = Enum.Font.GothamBold
+    PlusBtn.Parent = Frame
+    
+    local PlusCorner = Instance.new("UICorner")
+    PlusCorner.CornerRadius = UDim.new(0, 6)
+    PlusCorner.Parent = PlusBtn
+    
+    -- Reach - Button
+    local MinusBtn = Instance.new("TextButton")
+    MinusBtn.Name = "Minus"
+    MinusBtn.Size = UDim2.new(0.43, 0, 0, 30)
+    MinusBtn.Position = UDim2.new(0.52, 0, 0, 175)
+    MinusBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    MinusBtn.Text = "- Reach"
+    MinusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MinusBtn.TextSize = 12
+    MinusBtn.Font = Enum.Font.GothamBold
+    MinusBtn.Parent = Frame
+    
+    local MinusCorner = Instance.new("UICorner")
+    MinusCorner.CornerRadius = UDim.new(0, 6)
+    MinusCorner.Parent = MinusBtn
+    
+    -- Update function
+    local function UpdateDisplay()
+        ReachLabel.Text = "Reach: " .. getgenv()["kbl hoes"].Reach
+        ToggleBtn.Text = "Reach: " .. (getgenv()["kbl hoes"].Enabled and "ON" or "OFF")
+        ToggleBtn.BackgroundColor3 = getgenv()["kbl hoes"].Enabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
+        TeamBtn.Text = "Team Check: " .. (getgenv()["kbl hoes"].TeamCheck and "ON" or "OFF")
+        TeamBtn.BackgroundColor3 = getgenv()["kbl hoes"].TeamCheck and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
+        AutoBtn.Text = "Auto Click: " .. (getgenv()["kbl hoes"].AutoClick and "ON" or "OFF")
+        AutoBtn.BackgroundColor3 = getgenv()["kbl hoes"].AutoClick and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
+    end
+    
+    -- Button Events
+    ToggleBtn.MouseButton1Click:Connect(function()
+        getgenv()["kbl hoes"].Enabled = not getgenv()["kbl hoes"].Enabled
+        UpdateDisplay()
+        Notify("Reach " .. (getgenv()["kbl hoes"].Enabled and "ON" or "OFF"))
+    end)
+    
+    TeamBtn.MouseButton1Click:Connect(function()
+        getgenv()["kbl hoes"].TeamCheck = not getgenv()["kbl hoes"].TeamCheck
+        UpdateDisplay()
+        Notify("Team Check " .. (getgenv()["kbl hoes"].TeamCheck and "ON" or "OFF"))
+    end)
+    
+    AutoBtn.MouseButton1Click:Connect(function()
+        getgenv()["kbl hoes"].AutoClick = not getgenv()["kbl hoes"].AutoClick
+        UpdateDisplay()
+        Notify("Auto Click " .. (getgenv()["kbl hoes"].AutoClick and "ON" or "OFF"))
+    end)
+    
+    PlusBtn.MouseButton1Click:Connect(function()
+        getgenv()["kbl hoes"].Reach = getgenv()["kbl hoes"].Reach + 1
+        UpdateDisplay()
+        Notify("Reach: " .. getgenv()["kbl hoes"].Reach)
+    end)
+    
+    MinusBtn.MouseButton1Click:Connect(function()
+        getgenv()["kbl hoes"].Reach = math.max(1, getgenv()["kbl hoes"].Reach - 1)
+        UpdateDisplay()
+        Notify("Reach: " .. getgenv()["kbl hoes"].Reach)
+    end)
+    
+    -- Draggable
+    local dragging = false
+    local dragStart, startPos
+    
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             dragStart = input.Position
-            startPos = Button.Position
+            startPos = Frame.Position
         end
     end)
     
-    Button.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.Touch then
+    Frame.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
             local delta = input.Position - dragStart
-            Button.Position = UDim2.new(
-                startPos.X.Scale, startPos.X.Offset + delta.X,
-                startPos.Y.Scale, startPos.Y.Offset + delta.Y
-            )
+            Frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
     
-    Button.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch then
+    Frame.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
         end
     end)
+end
+
+-- Main Loop
+RunService.RenderStepped:Connect(function()
+    local settings = getgenv()["kbl hoes"]
     
-    -- Toggle on tap
-    Button.MouseButton1Click:Connect(function()
-        Reach.Enabled = not Reach.Enabled
-        Button.Text = "Reach: " .. (Reach.Enabled and "ON" or "OFF") .. " (" .. Reach.Distance .. ")"
-        Button.BackgroundColor3 = Reach.Enabled and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
-        
-        -- Re-apply to all tools
-        for tool, _ in pairs(ToolCache) do
-            if tool and tool:FindFirstChild("Handle") then
-                if Reach.Enabled then
-                    ModifyToolHitbox(tool)
-                else
-                    tool.Handle.Size = OriginalSizes[tool] or tool.Handle.Size
-                    tool.Handle.Transparency = 0
+    if not settings.Enabled then return end
+    
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    local tool = character:FindFirstChildOfClass("Tool")
+    if not tool then return end
+    
+    local handle = tool:FindFirstChild("Handle")
+    if not handle then return end
+    
+    -- Auto Click
+    if settings.AutoClick then
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid and humanoid.Health > 0 then
+            tool:Activate()
+        end
+    end
+    
+    -- Check all players
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            if IsTeammate(player) then
+                -- Skip teammates if team check is on
+            else
+                local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+                local humanoid = player.Character:FindFirstChild("Humanoid")
+                
+                if hrp and humanoid and humanoid.Health > 0 then
+                    local distance = (hrp.Position - handle.Position).Magnitude
+                    
+                    if distance <= settings.Reach then
+                        HitPlayer(player, handle)
+                    end
                 end
             end
         end
-    end)
-    
-    return ScreenGui
-end
-
--- Monitor for tools
-local function Monitor()
-    LocalPlayer.CharacterAdded:Connect(function(char)
-        Character = char
-        HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
-        task.wait(0.3)
-        ScanTools()
-    end)
-    
-    if LocalPlayer.Character then
-        LocalPlayer.Character.ChildAdded:Connect(function(child)
-            if child:IsA("Tool") then
-                task.wait(0.1)
-                ModifyToolHitbox(child)
-            end
-        end)
     end
-    
-    local backpack = LocalPlayer:FindFirstChild("Backpack")
-    if backpack then
-        backpack.ChildAdded:Connect(function(child)
-            if child:IsA("Tool") then
-                task.wait(0.1)
-                ModifyToolHitbox(child)
-            end
-        end)
-    end
-end
+end)
 
--- Main
-local function Main()
-    print("[Reach] Loading...")
-    
-    -- Try hook
-    local success, err = pcall(HookNamecall)
-    if success then
-        print("[Reach] Hook installed")
-    else
-        print("[Reach] Hook failed: " .. tostring(err))
-    end
-    
-    ScanTools()
-    Monitor()
-    CreateGUI()
-    
-    print("[Reach] Loaded! Distance: " .. Reach.Distance)
-end
-
-Main()
+-- Initialize
+CreateGUI()
+Notify("Loaded successfully!")
+print("[kbl hoes] Reach script loaded!")
