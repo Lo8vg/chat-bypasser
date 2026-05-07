@@ -28,7 +28,7 @@ local premadeMessages = {
 
 local backup1Messages = {
     "HAHHAHHAHAHHAHAHHAHAHAHAHA BAHAHBAHABAHAHAHAHAHAHAHAHAHAHAHAHAHAHA LOLOLOLOOOLOLOOLOOLOOOOLOLOLOLOLOL BAHAHHAHHAHHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAHAAHAHAHAHAHAHAHAH WHY AM I THIS GOOD AND PERFECT",
-    "HAHHAHHAHAHHAHAHHAHAHAHAHA BAHABAHABAHABAHAHAHAHAHAHHAHAHAHAHAHAHAHAHAHA LOLOLOLOOOLOLOOOOLOOOOOOOLOLOLOLOLOLOL BAHAHHAHHAHHAHAHAHAHAHAHAHAAHAHAHAHHAHAHAHAHAHAHHAHAHAHAHAHAAHAHHAAH PEDRO IS SUPERIOR",
+    "HAHHAHHAHAHHAHAHHAHAHAHAHA BAHABAHABAHABAHAHAHAHAHAHHAHAHAHAHAHAHAHAHAHA LOLOLOLOOOLOLOOOOLOOOOOOOLOLOLOLOLOLOL BAHAHHAHHAHHAHAHAHAHAHAHAHAAHAHAHAHHAHAHAHAHAHAHHAHAHAHAHAHAHAAHAHHAAH PEDRO IS SUPERIOR",
     "BAHABHABAAHAHAHAHAHAHAHHAHAHAHAHAHAHAHABAHBAHABA AGAGAHAHAHHAHAHAHAGAHAGHAGAHAAGHAHAHAHAHA LOLOLOLOLOOOOLOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOLOLOLOLO BAHAHAHAHAHAAAHAHAHAHAHAHA PEDRO IS THE BEST EVER"
 }
 
@@ -44,8 +44,8 @@ screenGui.Parent = playerGui
 -- Main Frame
 local frame = Instance.new("Frame")
 frame.Name = "ChatFrame"
-frame.Size = UDim2.new(0, 200, 0, 180)
-frame.Position = UDim2.new(0.5, -100, 0.5, -90)
+frame.Size = UDim2.new(0, 240, 0, 220)
+frame.Position = UDim2.new(0.5, -120, 0.5, -110)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.BorderSizePixel = 2
 frame.BorderColor3 = Color3.fromRGB(60, 60, 60)
@@ -71,7 +71,7 @@ titleFix.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 titleFix.BorderSizePixel = 0
 titleFix.Parent = titleBar
 
--- Character Counter (replaced title)
+-- Character Counter
 local charCounter = Instance.new("TextLabel")
 charCounter.Size = UDim2.new(1, -10, 1, 0)
 charCounter.Position = UDim2.new(0, 10, 0, 0)
@@ -97,26 +97,12 @@ local gearCorner = Instance.new("UICorner")
 gearCorner.CornerRadius = UDim.new(0, 6)
 gearCorner.Parent = gearBtn
 
--- Textbox Container (ScrollingFrame for PC fix)
-local textboxContainer = Instance.new("ScrollingFrame")
-textboxContainer.Name = "ChatInputContainer"
-textboxContainer.Size = UDim2.new(1, -20, 0, 70)
-textboxContainer.Position = UDim2.new(0, 10, 0, 35)
-textboxContainer.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-textboxContainer.ScrollBarThickness = 4
-textboxContainer.ScrollingEnabled = true
-textboxContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
-textboxContainer.Parent = frame
-local containerCorner = Instance.new("UICorner")
-containerCorner.CornerRadius = UDim.new(0, 6)
-containerCorner.Parent = textboxContainer
-
--- Textbox (inside container)
+-- Textbox (MultiLine = false so Enter sends)
 local textbox = Instance.new("TextBox")
 textbox.Name = "ChatInput"
-textbox.Size = UDim2.new(1, -4, 1, 0)
-textbox.Position = UDim2.new(0, 2, 0, 0)
-textbox.BackgroundTransparency = 1
+textbox.Size = UDim2.new(1, -20, 0, 110)
+textbox.Position = UDim2.new(0, 10, 0, 35)
+textbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textbox.Text = ""
 textbox.PlaceholderText = "Message..."
@@ -126,14 +112,17 @@ textbox.TextSize = 16
 textbox.TextXAlignment = Enum.TextXAlignment.Left
 textbox.TextYAlignment = Enum.TextYAlignment.Top
 textbox.ClearTextOnFocus = false
-textbox.MultiLine = true
+textbox.MultiLine = false
 textbox.TextWrapped = true
-textbox.Parent = textboxContainer
+textbox.Parent = frame
+local textboxCorner = Instance.new("UICorner")
+textboxCorner.CornerRadius = UDim.new(0, 6)
+textboxCorner.Parent = textbox
 
 -- Bottom Row
 local bottomRow = Instance.new("Frame")
 bottomRow.Size = UDim2.new(1, -20, 0, 32)
-bottomRow.Position = UDim2.new(0, 10, 0, 115)
+bottomRow.Position = UDim2.new(0, 10, 0, 152)
 bottomRow.BackgroundTransparency = 1
 bottomRow.Parent = frame
 
@@ -192,7 +181,7 @@ spamCorner.Parent = spamButton
 -- Messages Toggle
 local messagesToggle = Instance.new("TextButton")
 messagesToggle.Size = UDim2.new(1, -20, 0, 24)
-messagesToggle.Position = UDim2.new(0, 10, 0, 152)
+messagesToggle.Position = UDim2.new(0, 10, 0, 190)
 messagesToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 messagesToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 messagesToggle.Text = "▼ Messages"
@@ -206,7 +195,7 @@ messagesToggleCorner.Parent = messagesToggle
 -- Messages Panel
 local messagesPanel = Instance.new("Frame")
 messagesPanel.Size = UDim2.new(1, -20, 0, 120)
-messagesPanel.Position = UDim2.new(0, 10, 0, 180)
+messagesPanel.Position = UDim2.new(0, 10, 0, 218)
 messagesPanel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 messagesPanel.Visible = false
 messagesPanel.Parent = frame
@@ -241,7 +230,7 @@ local addMsgCorner = Instance.new("UICorner")
 addMsgCorner.CornerRadius = UDim.new(0, 6)
 addMsgCorner.Parent = addMsgButton
 
--- Gear Frame (smaller height)
+-- Gear Frame
 local gearFrame = Instance.new("Frame")
 gearFrame.Name = "GearFrame"
 gearFrame.Size = UDim2.new(0, 280, 0, 320)
@@ -337,25 +326,11 @@ backup1Content.BackgroundTransparency = 1
 backup1Content.Visible = true
 backup1Content.Parent = gearFrame
 
--- Backup 1 Textbox Container (ScrollingFrame for PC fix)
-local backup1Container = Instance.new("ScrollingFrame")
-backup1Container.Name = "Backup1Container"
-backup1Container.Size = UDim2.new(1, 0, 0, 60)
-backup1Container.Position = UDim2.new(0, 0, 0, 5)
-backup1Container.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-backup1Container.ScrollBarThickness = 4
-backup1Container.ScrollingEnabled = true
-backup1Container.CanvasSize = UDim2.new(0, 0, 0, 0)
-backup1Container.Parent = backup1Content
-local backup1ContainerCorner = Instance.new("UICorner")
-backup1ContainerCorner.CornerRadius = UDim.new(0, 6)
-backup1ContainerCorner.Parent = backup1Container
-
 local backup1Textbox = Instance.new("TextBox")
 backup1Textbox.Name = "Backup1Input"
-backup1Textbox.Size = UDim2.new(1, -4, 1, 0)
-backup1Textbox.Position = UDim2.new(0, 2, 0, 0)
-backup1Textbox.BackgroundTransparency = 1
+backup1Textbox.Size = UDim2.new(1, 0, 0, 60)
+backup1Textbox.Position = UDim2.new(0, 0, 0, 5)
+backup1Textbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 backup1Textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup1Textbox.Text = ""
 backup1Textbox.PlaceholderText = "Safe Spam Message..."
@@ -365,9 +340,12 @@ backup1Textbox.TextSize = 14
 backup1Textbox.TextXAlignment = Enum.TextXAlignment.Left
 backup1Textbox.TextYAlignment = Enum.TextYAlignment.Top
 backup1Textbox.ClearTextOnFocus = false
-backup1Textbox.MultiLine = true
+backup1Textbox.MultiLine = false
 backup1Textbox.TextWrapped = true
-backup1Textbox.Parent = backup1Container
+backup1Textbox.Parent = backup1Content
+local backup1TextboxCorner = Instance.new("UICorner")
+backup1TextboxCorner.CornerRadius = UDim.new(0, 6)
+backup1TextboxCorner.Parent = backup1Textbox
 
 local backup1CharCounter = Instance.new("TextLabel")
 backup1CharCounter.Size = UDim2.new(0, 40, 0, 20)
@@ -495,25 +473,11 @@ backup2Content.BackgroundTransparency = 1
 backup2Content.Visible = false
 backup2Content.Parent = gearFrame
 
--- Backup 2 Textbox Container (ScrollingFrame for PC fix)
-local backup2Container = Instance.new("ScrollingFrame")
-backup2Container.Name = "Backup2Container"
-backup2Container.Size = UDim2.new(1, 0, 0, 60)
-backup2Container.Position = UDim2.new(0, 0, 0, 5)
-backup2Container.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-backup2Container.ScrollBarThickness = 4
-backup2Container.ScrollingEnabled = true
-backup2Container.CanvasSize = UDim2.new(0, 0, 0, 0)
-backup2Container.Parent = backup2Content
-local backup2ContainerCorner = Instance.new("UICorner")
-backup2ContainerCorner.CornerRadius = UDim.new(0, 6)
-backup2ContainerCorner.Parent = backup2Container
-
 local backup2Textbox = Instance.new("TextBox")
 backup2Textbox.Name = "Backup2Input"
-backup2Textbox.Size = UDim2.new(1, -4, 1, 0)
-backup2Textbox.Position = UDim2.new(0, 2, 0, 0)
-backup2Textbox.BackgroundTransparency = 1
+backup2Textbox.Size = UDim2.new(1, 0, 0, 60)
+backup2Textbox.Position = UDim2.new(0, 0, 0, 5)
+backup2Textbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 backup2Textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup2Textbox.Text = ""
 backup2Textbox.PlaceholderText = "Victim Dying Message..."
@@ -523,9 +487,12 @@ backup2Textbox.TextSize = 14
 backup2Textbox.TextXAlignment = Enum.TextXAlignment.Left
 backup2Textbox.TextYAlignment = Enum.TextYAlignment.Top
 backup2Textbox.ClearTextOnFocus = false
-backup2Textbox.MultiLine = true
+backup2Textbox.MultiLine = false
 backup2Textbox.TextWrapped = true
-backup2Textbox.Parent = backup2Container
+backup2Textbox.Parent = backup2Content
+local backup2TextboxCorner = Instance.new("UICorner")
+backup2TextboxCorner.CornerRadius = UDim.new(0, 6)
+backup2TextboxCorner.Parent = backup2Textbox
 
 local backup2CharCounter = Instance.new("TextLabel")
 backup2CharCounter.Size = UDim2.new(0, 40, 0, 20)
@@ -585,7 +552,6 @@ backup2DelayLabel.Parent = backup2BottomRow
 local backup2SpamButton = Instance.new("TextButton")
 backup2SpamButton.Size = UDim2.new(0, 70, 1, 0)
 backup2SpamButton.Position = UDim2.new(1, -70, 0, 0)
-backup2SpamButton.Size = UDim2.new(0, 70, 1, 0)
 backup2SpamButton.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 backup2SpamButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 backup2SpamButton.Text = "SPAM: OFF"
@@ -646,7 +612,7 @@ local backup2AddMsgCorner = Instance.new("UICorner")
 backup2AddMsgCorner.CornerRadius = UDim.new(0, 6)
 backup2AddMsgCorner.Parent = backup2AddMsgButton
 
--- Kill Button (bottom of gear frame)
+-- Kill Button
 local killButton = Instance.new("TextButton")
 killButton.Size = UDim2.new(1, -20, 0, 24)
 killButton.Position = UDim2.new(0, 10, 1, -28)
@@ -659,40 +625,6 @@ killButton.Parent = gearFrame
 local killCorner = Instance.new("UICorner")
 killCorner.CornerRadius = UDim.new(0, 6)
 killCorner.Parent = killButton
-
--- Function to auto-scroll textbox to cursor position (PC FIX)
-local function setupTextboxScrolling(textBox, container)
-    textBox:GetPropertyChangedSignal("Text"):Connect(function()
-        local text = textBox.Text
-        if #text > MAX_CHARS then
-            textBox.Text = text:sub(1, MAX_CHARS)
-        end
-        
-        -- Calculate required height based on text
-        local lines = 1
-        local lineWidth = container.AbsoluteSize.X - 8
-        if lineWidth > 0 then
-            local textService = game:GetService("TextService")
-            local textSize = textService:GetTextSize(text, textBox.TextSize, textBox.Font, Vector2.new(lineWidth, 1000))
-            lines = math.ceil(textSize.Y / (textBox.TextSize + 2))
-        end
-        lines = math.max(1, lines)
-        
-        local requiredHeight = lines * (textBox.TextSize + 4)
-        local minHeight = container.AbsoluteSize.Y
-        
-        if requiredHeight > minHeight then
-            container.CanvasSize = UDim2.new(0, 0, 0, requiredHeight - minHeight)
-            container.CanvasPosition = Vector2.new(0, math.max(0, requiredHeight - minHeight))
-        else
-            container.CanvasSize = UDim2.new(0, 0, 0, 0)
-        end
-    end)
-end
-
-setupTextboxScrolling(textbox, textboxContainer)
-setupTextboxScrolling(backup1Textbox, backup1Container)
-setupTextboxScrolling(backup2Textbox, backup2Container)
 
 -- Dragging
 local dragging = false
@@ -753,28 +685,13 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Functions
-textbox:GetPropertyChangedSignal("Text"):Connect(function()
-    local text = textbox.Text
-    if #text > MAX_CHARS then
-        textbox.Text = text:sub(1, MAX_CHARS)
-    end
-    charCounter.Text = #textbox.Text.."/"..MAX_CHARS
-    if #textbox.Text >= MAX_CHARS then
-        charCounter.TextColor3 = Color3.fromRGB(255, 100, 100)
-    elseif #textbox.Text >= MAX_CHARS * 0.8 then
-        charCounter.TextColor3 = Color3.fromRGB(255, 200, 100)
-    else
-        charCounter.TextColor3 = Color3.fromRGB(255, 255, 255)
-    end
-end)
-
+-- SEND FUNCTIONS
 local function sendMessage(msg)
     local message = msg or textbox.Text
     message = message:gsub("^%s+", ""):gsub("%s+$", "")
-    message = message:gsub("\n", " ")
     if message == "" then return false end
     if #message > MAX_CHARS then message = message:sub(1, MAX_CHARS) end
+    
     local chatRemote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
     if chatRemote then
         local sayMessage = chatRemote:FindFirstChild("SayMessageRequest")
@@ -796,6 +713,128 @@ local function sendMessage(msg)
     return false
 end
 
+local function sendBackup1Message(msg)
+    local message = msg or backup1Textbox.Text
+    message = message:gsub("^%s+", ""):gsub("%s+$", "")
+    if message == "" then return false end
+    if #message > MAX_CHARS then message = message:sub(1, MAX_CHARS) end
+    
+    local chatRemote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
+    if chatRemote then
+        local sayMessage = chatRemote:FindFirstChild("SayMessageRequest")
+        if sayMessage then
+            sayMessage:FireServer(message, "All")
+            return true
+        end
+    end
+    if TextChatService then
+        local channel = TextChatService:FindFirstChild("TextChannels")
+        if channel then
+            local rbxGeneral = channel:FindFirstChild("RBXGeneral")
+            if rbxGeneral then
+                rbxGeneral:SendAsync(message)
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function sendBackup2Message(msg)
+    local message = msg or backup2Textbox.Text
+    message = message:gsub("^%s+", ""):gsub("%s+$", "")
+    if message == "" then return false end
+    if #message > MAX_CHARS then message = message:sub(1, MAX_CHARS) end
+    
+    local chatRemote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
+    if chatRemote then
+        local sayMessage = chatRemote:FindFirstChild("SayMessageRequest")
+        if sayMessage then
+            sayMessage:FireServer(message, "All")
+            return true
+        end
+    end
+    if TextChatService then
+        local channel = TextChatService:FindFirstChild("TextChannels")
+        if channel then
+            local rbxGeneral = channel:FindFirstChild("RBXGeneral")
+            if rbxGeneral then
+                rbxGeneral:SendAsync(message)
+                return true
+            end
+        end
+    end
+    return false
+end
+
+-- ENTER KEY TO SEND (works because MultiLine = false)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.Return then
+        -- Main textbox
+        if textbox:IsFocused() and textbox.Text ~= "" then
+            if sendMessage() then
+                textbox.Text = ""
+            end
+        end
+        -- Backup 1 textbox
+        if backup1Textbox:IsFocused() and backup1Textbox.Text ~= "" then
+            if sendBackup1Message() then
+                backup1Textbox.Text = ""
+            end
+        end
+        -- Backup 2 textbox
+        if backup2Textbox:IsFocused() and backup2Textbox.Text ~= "" then
+            if sendBackup2Message() then
+                backup2Textbox.Text = ""
+            end
+        end
+    end
+end)
+
+-- Character Counters
+textbox:GetPropertyChangedSignal("Text"):Connect(function()
+    local text = textbox.Text
+    if #text > MAX_CHARS then
+        textbox.Text = text:sub(1, MAX_CHARS)
+    end
+    charCounter.Text = #textbox.Text.."/"..MAX_CHARS
+    if #textbox.Text >= MAX_CHARS then
+        charCounter.TextColor3 = Color3.fromRGB(255, 100, 100)
+    elseif #textbox.Text >= MAX_CHARS * 0.8 then
+        charCounter.TextColor3 = Color3.fromRGB(255, 200, 100)
+    else
+        charCounter.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end
+end)
+
+backup1Textbox:GetPropertyChangedSignal("Text"):Connect(function()
+    local text = backup1Textbox.Text
+    if #text > MAX_CHARS then backup1Textbox.Text = text:sub(1, MAX_CHARS) end
+    backup1CharCounter.Text = #backup1Textbox.Text.."/"..MAX_CHARS
+    if #backup1Textbox.Text >= MAX_CHARS then
+        backup1CharCounter.TextColor3 = Color3.fromRGB(255, 100, 100)
+    elseif #backup1Textbox.Text >= MAX_CHARS * 0.8 then
+        backup1CharCounter.TextColor3 = Color3.fromRGB(255, 200, 100)
+    else
+        backup1CharCounter.TextColor3 = Color3.fromRGB(150, 150, 150)
+    end
+end)
+
+backup2Textbox:GetPropertyChangedSignal("Text"):Connect(function()
+    local text = backup2Textbox.Text
+    if #text > MAX_CHARS then backup2Textbox.Text = text:sub(1, MAX_CHARS) end
+    backup2CharCounter.Text = #backup2Textbox.Text.."/"..MAX_CHARS
+    if #backup2Textbox.Text >= MAX_CHARS then
+        backup2CharCounter.TextColor3 = Color3.fromRGB(255, 100, 100)
+    elseif #backup2Textbox.Text >= MAX_CHARS * 0.8 then
+        backup2CharCounter.TextColor3 = Color3.fromRGB(255, 200, 100)
+    else
+        backup2CharCounter.TextColor3 = Color3.fromRGB(150, 150, 150)
+    end
+end)
+
+-- Messages UI
 local function updateMessagesUI()
     for _, child in pairs(messagesScroll:GetChildren()) do
         if child:IsA("Frame") then child:Destroy() end
@@ -844,10 +883,10 @@ messagesToggle.MouseButton1Click:Connect(function()
     messagesPanel.Visible = messagesExpanded
     if messagesExpanded then
         messagesToggle.Text = "▲ Messages"
-        frame.Size = UDim2.new(0, 200, 0, 310)
+        frame.Size = UDim2.new(0, 240, 0, 350)
     else
         messagesToggle.Text = "▼ Messages"
-        frame.Size = UDim2.new(0, 200, 0, 180)
+        frame.Size = UDim2.new(0, 240, 0, 220)
     end
     updateMessagesUI()
 end)
@@ -862,11 +901,10 @@ addMsgButton.MouseButton1Click:Connect(function()
 end)
 
 sendButton.MouseButton1Click:Connect(function()
-    if textbox.Text ~= "" then sendMessage() end
-end)
-
-textbox.FocusLost:Connect(function(enterPressed)
-    if textbox.Text ~= "" and enterPressed then sendMessage() end
+    if textbox.Text ~= "" then
+        sendMessage()
+        textbox.Text = ""
+    end
 end)
 
 local function toggleSpam()
@@ -905,46 +943,6 @@ end
 spamButton.MouseButton1Click:Connect(toggleSpam)
 
 -- Backup 1 Functions
-backup1Textbox:GetPropertyChangedSignal("Text"):Connect(function()
-    local text = backup1Textbox.Text
-    if #text > MAX_CHARS then backup1Textbox.Text = text:sub(1, MAX_CHARS) end
-    backup1CharCounter.Text = #backup1Textbox.Text.."/"..MAX_CHARS
-    if #backup1Textbox.Text >= MAX_CHARS then
-        backup1CharCounter.TextColor3 = Color3.fromRGB(255, 100, 100)
-    elseif #backup1Textbox.Text >= MAX_CHARS * 0.8 then
-        backup1CharCounter.TextColor3 = Color3.fromRGB(255, 200, 100)
-    else
-        backup1CharCounter.TextColor3 = Color3.fromRGB(150, 150, 150)
-    end
-end)
-
-local function sendBackup1Message(msg)
-    local message = msg or backup1Textbox.Text
-    message = message:gsub("^%s+", ""):gsub("%s+$", "")
-    message = message:gsub("\n", " ")
-    if message == "" then return false end
-    if #message > MAX_CHARS then message = message:sub(1, MAX_CHARS) end
-    local chatRemote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
-    if chatRemote then
-        local sayMessage = chatRemote:FindFirstChild("SayMessageRequest")
-        if sayMessage then
-            sayMessage:FireServer(message, "All")
-            return true
-        end
-    end
-    if TextChatService then
-        local channel = TextChatService:FindFirstChild("TextChannels")
-        if channel then
-            local rbxGeneral = channel:FindFirstChild("RBXGeneral")
-            if rbxGeneral then
-                rbxGeneral:SendAsync(message)
-                return true
-            end
-        end
-    end
-    return false
-end
-
 local function updateBackup1MessagesUI()
     for _, child in pairs(backup1MessagesScroll:GetChildren()) do
         if child:IsA("Frame") then child:Destroy() end
@@ -1009,11 +1007,10 @@ backup1AddMsgButton.MouseButton1Click:Connect(function()
 end)
 
 backup1SendButton.MouseButton1Click:Connect(function()
-    if backup1Textbox.Text ~= "" then sendBackup1Message() end
-end)
-
-backup1Textbox.FocusLost:Connect(function(enterPressed)
-    if backup1Textbox.Text ~= "" and enterPressed then sendBackup1Message() end
+    if backup1Textbox.Text ~= "" then
+        sendBackup1Message()
+        backup1Textbox.Text = ""
+    end
 end)
 
 local function toggleBackup1Spam()
@@ -1052,46 +1049,6 @@ end
 backup1SpamButton.MouseButton1Click:Connect(toggleBackup1Spam)
 
 -- Backup 2 Functions
-backup2Textbox:GetPropertyChangedSignal("Text"):Connect(function()
-    local text = backup2Textbox.Text
-    if #text > MAX_CHARS then backup2Textbox.Text = text:sub(1, MAX_CHARS) end
-    backup2CharCounter.Text = #backup2Textbox.Text.."/"..MAX_CHARS
-    if #backup2Textbox.Text >= MAX_CHARS then
-        backup2CharCounter.TextColor3 = Color3.fromRGB(255, 100, 100)
-    elseif #backup2Textbox.Text >= MAX_CHARS * 0.8 then
-        backup2CharCounter.TextColor3 = Color3.fromRGB(255, 200, 100)
-    else
-        backup2CharCounter.TextColor3 = Color3.fromRGB(150, 150, 150)
-    end
-end)
-
-local function sendBackup2Message(msg)
-    local message = msg or backup2Textbox.Text
-    message = message:gsub("^%s+", ""):gsub("%s+$", "")
-    message = message:gsub("\n", " ")
-    if message == "" then return false end
-    if #message > MAX_CHARS then message = message:sub(1, MAX_CHARS) end
-    local chatRemote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
-    if chatRemote then
-        local sayMessage = chatRemote:FindFirstChild("SayMessageRequest")
-        if sayMessage then
-            sayMessage:FireServer(message, "All")
-            return true
-        end
-    end
-    if TextChatService then
-        local channel = TextChatService:FindFirstChild("TextChannels")
-        if channel then
-            local rbxGeneral = channel:FindFirstChild("RBXGeneral")
-            if rbxGeneral then
-                rbxGeneral:SendAsync(message)
-                return true
-            end
-        end
-    end
-    return false
-end
-
 local function updateBackup2MessagesUI()
     for _, child in pairs(backup2MessagesScroll:GetChildren()) do
         if child:IsA("Frame") then child:Destroy() end
@@ -1156,11 +1113,10 @@ backup2AddMsgButton.MouseButton1Click:Connect(function()
 end)
 
 backup2SendButton.MouseButton1Click:Connect(function()
-    if backup2Textbox.Text ~= "" then sendBackup2Message() end
-end)
-
-backup2Textbox.FocusLost:Connect(function(enterPressed)
-    if backup2Textbox.Text ~= "" and enterPressed then sendBackup2Message() end
+    if backup2Textbox.Text ~= "" then
+        sendBackup2Message()
+        backup2Textbox.Text = ""
+    end
 end)
 
 local function toggleBackup2Spam()
@@ -1243,4 +1199,4 @@ updateMessagesUI()
 updateBackup1MessagesUI()
 updateBackup2MessagesUI()
 
-print("✅ Custom Chat GUI Loaded (PC Fixed)")
+print("✅ Custom Chat GUI Loaded (PC Version)")
