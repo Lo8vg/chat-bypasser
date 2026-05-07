@@ -97,7 +97,7 @@ local gearCorner = Instance.new("UICorner")
 gearCorner.CornerRadius = UDim.new(0, 6)
 gearCorner.Parent = gearBtn
 
--- Textbox (MultiLine = false so Enter sends)
+-- Textbox (MultiLine = true so you can see everything, Enter handled separately)
 local textbox = Instance.new("TextBox")
 textbox.Name = "ChatInput"
 textbox.Size = UDim2.new(1, -20, 0, 110)
@@ -105,14 +105,14 @@ textbox.Position = UDim2.new(0, 10, 0, 35)
 textbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 textbox.TextColor3 = Color3.fromRGB(255, 255, 255)
 textbox.Text = ""
-textbox.PlaceholderText = "Message..."
+textbox.PlaceholderText = "Type message, Enter to send..."
 textbox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
 textbox.Font = Enum.Font.Gotham
-textbox.TextSize = 16
+textbox.TextSize = 14
 textbox.TextXAlignment = Enum.TextXAlignment.Left
 textbox.TextYAlignment = Enum.TextYAlignment.Top
 textbox.ClearTextOnFocus = false
-textbox.MultiLine = false
+textbox.MultiLine = true
 textbox.TextWrapped = true
 textbox.Parent = frame
 local textboxCorner = Instance.new("UICorner")
@@ -340,7 +340,7 @@ backup1Textbox.TextSize = 14
 backup1Textbox.TextXAlignment = Enum.TextXAlignment.Left
 backup1Textbox.TextYAlignment = Enum.TextYAlignment.Top
 backup1Textbox.ClearTextOnFocus = false
-backup1Textbox.MultiLine = false
+backup1Textbox.MultiLine = true
 backup1Textbox.TextWrapped = true
 backup1Textbox.Parent = backup1Content
 local backup1TextboxCorner = Instance.new("UICorner")
@@ -487,7 +487,7 @@ backup2Textbox.TextSize = 14
 backup2Textbox.TextXAlignment = Enum.TextXAlignment.Left
 backup2Textbox.TextYAlignment = Enum.TextYAlignment.Top
 backup2Textbox.ClearTextOnFocus = false
-backup2Textbox.MultiLine = false
+backup2Textbox.MultiLine = true
 backup2Textbox.TextWrapped = true
 backup2Textbox.Parent = backup2Content
 local backup2TextboxCorner = Instance.new("UICorner")
@@ -767,27 +767,23 @@ local function sendBackup2Message(msg)
     return false
 end
 
--- ENTER KEY TO SEND (works because MultiLine = false)
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
+-- ENTER KEY TO SEND - catches Enter BEFORE it makes a new line
+UserInputService.InputBegan:Connect(function(input)
     if input.KeyCode == Enum.KeyCode.Return then
         -- Main textbox
         if textbox:IsFocused() and textbox.Text ~= "" then
-            if sendMessage() then
-                textbox.Text = ""
-            end
+            sendMessage()
+            textbox.Text = ""
         end
         -- Backup 1 textbox
         if backup1Textbox:IsFocused() and backup1Textbox.Text ~= "" then
-            if sendBackup1Message() then
-                backup1Textbox.Text = ""
-            end
+            sendBackup1Message()
+            backup1Textbox.Text = ""
         end
         -- Backup 2 textbox
         if backup2Textbox:IsFocused() and backup2Textbox.Text ~= "" then
-            if sendBackup2Message() then
-                backup2Textbox.Text = ""
-            end
+            sendBackup2Message()
+            backup2Textbox.Text = ""
         end
     end
 end)
@@ -1199,4 +1195,4 @@ updateMessagesUI()
 updateBackup1MessagesUI()
 updateBackup2MessagesUI()
 
-print("✅ Custom Chat GUI Loaded (PC Version)")
+print("✅ Custom Chat GUI Loaded - Enter sends, text wraps properly")
