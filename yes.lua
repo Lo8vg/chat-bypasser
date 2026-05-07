@@ -4,15 +4,15 @@ local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Store original values
-local originalWalkSpeed = 16
-local originalGravity = 196.2
+-- Default values
+local DEFAULT_SPEED = 25
+local DEFAULT_GRAVITY = 196.2
 
--- Current states
+-- Current states (these persist)
 local speedEnabled = false
 local gravityEnabled = false
-local currentSpeed = 16
-local currentGravity = 196.2
+local currentSpeed = DEFAULT_SPEED
+local currentGravity = DEFAULT_GRAVITY
 
 -- Create GUI
 local screenGui = Instance.new("ScreenGui")
@@ -97,7 +97,7 @@ speedLabel.Size = UDim2.new(1, -20, 0, 20)
 speedLabel.Position = UDim2.new(0, 10, 0, 35)
 speedLabel.BackgroundTransparency = 1
 speedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-speedLabel.Text = "Speed"
+speedLabel.Text = "Speed (default: 25)"
 speedLabel.Font = Enum.Font.GothamBold
 speedLabel.TextSize = 12
 speedLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -108,8 +108,8 @@ speedInput.Size = UDim2.new(0, 60, 0, 24)
 speedInput.Position = UDim2.new(0, 10, 0, 58)
 speedInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 speedInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-speedInput.Text = "16"
-speedInput.PlaceholderText = "16"
+speedInput.Text = "25"
+speedInput.PlaceholderText = "25"
 speedInput.Font = Enum.Font.Gotham
 speedInput.TextSize = 12
 speedInput.Parent = panel
@@ -136,7 +136,7 @@ gravityLabel.Size = UDim2.new(1, -20, 0, 20)
 gravityLabel.Position = UDim2.new(0, 10, 0, 90)
 gravityLabel.BackgroundTransparency = 1
 gravityLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-gravityLabel.Text = "Gravity (default: 196)"
+gravityLabel.Text = "Gravity (196=normal, higher=faster)"
 gravityLabel.Font = Enum.Font.GothamBold
 gravityLabel.TextSize = 12
 gravityLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -183,7 +183,7 @@ local resetCorner = Instance.new("UICorner")
 resetCorner.CornerRadius = UDim.new(0, 6)
 resetCorner.Parent = resetBtn
 
--- Functionality
+-- FUNCTIONS
 local function setSpeed(speed)
     local character = player.Character
     if character then
@@ -198,16 +198,35 @@ local function setGravity(gravity)
     workspace.Gravity = gravity
 end
 
+local function applyAllSettings()
+    -- Reapply speed if enabled
+    if speedEnabled then
+        setSpeed(currentSpeed)
+    else
+        setSpeed(DEFAULT_SPEED)
+    end
+    
+    -- Reapply gravity if enabled
+    if gravityEnabled then
+        setGravity(currentGravity)
+    else
+        setGravity(DEFAULT_GRAVITY)
+    end
+end
+
 local function toggleSpeed()
     speedEnabled = not speedEnabled
     if speedEnabled then
-        local speed = tonumber(speedInput.Text) or 16
+        local speed = tonumber(speedInput.Text) or DEFAULT_SPEED
+        if speed < 1 then speed = 1 end
+        if speed > 500 then speed = 500 end
         currentSpeed = speed
+        speedInput.Text = tostring(speed)
         setSpeed(speed)
         speedToggle.Text = "ON"
         speedToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
     else
-        setSpeed(16)
+        setSpeed(DEFAULT_SPEED)
         speedToggle.Text = "OFF"
         speedToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
     end
@@ -216,13 +235,16 @@ end
 local function toggleGravity()
     gravityEnabled = not gravityEnabled
     if gravityEnabled then
-        local gravity = tonumber(gravityInput.Text) or 196.2
+        local gravity = tonumber(gravityInput.Text) or DEFAULT_GRAVITY
+        if gravity < 0 then gravity = 0 end
+        if gravity > 1000 then gravity = 1000 end
         currentGravity = gravity
+        gravityInput.Text = tostring(math.floor(gravity))
         setGravity(gravity)
         gravityToggle.Text = "ON"
         gravityToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
     else
-        setGravity(196.2)
+        setGravity(DEFAULT_GRAVITY)
         gravityToggle.Text = "OFF"
         gravityToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
     end
@@ -231,17 +253,39 @@ end
 local function resetAll()
     speedEnabled = false
     gravityEnabled = false
-    setSpeed(16)
-    setGravity(196.2)
+    currentSpeed = DEFAULT_SPEED
+    currentGravity = DEFAULT_GRAVITY
+    setSpeed(DEFAULT_SPEED)
+    setGravity(DEFAULT_GRAVITY)
     speedToggle.Text = "OFF"
     speedToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
     gravityToggle.Text = "OFF"
     gravityToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-    speedInput.Text = "16"
+    speedInput.Text = "25"
     gravityInput.Text = "196"
 end
 
+-- Character respawn handling - REAPPLY SETTINGS
+player.CharacterAdded:Connect(function(character)
+    character:WaitForChild("Humanoid", 5)
+    wait(0.1)
+    applyAllSettings()
+end)
+
+-- Also apply on spawn if character already exists
+if player.Character then
+    local humanoid = player.Character:WaitForChild("Humanoid", 5)
+    if humanoid then
+        applyAllSettings()
+    end
+end
+
 -- Event connections
+speedToggle.MouseButton1Click:Connect(toggleSpeed)
+gravityToggle.MouseButton1Click:Connect(toggleGravity)
+resetBtn.MouseButton1Click:Connect(resetAll)
+
+-- Toggle panel with button click
 mainButton.MouseButton1Click:Connect(function()
     mainButton.Visible = false
     panel.Visible = true
@@ -252,51 +296,71 @@ closeBtn.MouseButton1Click:Connect(function()
     mainButton.Visible = true
 end)
 
-speedToggle.MouseButton1Click:Connect(toggleSpeed)
-gravityToggle.MouseButton1Click:Connect(toggleGravity)
-resetBtn.MouseButton1Click:Connect(resetAll)
-
 -- Update speed when input changes (if enabled)
 speedInput.FocusLost:Connect(function()
     if speedEnabled then
-        local speed = tonumber(speedInput.Text) or 16
+        local speed = tonumber(speedInput.Text) or DEFAULT_SPEED
+        if speed < 1 then speed = 1 end
+        if speed > 500 then speed = 500 end
+        currentSpeed = speed
+        speedInput.Text = tostring(speed)
         setSpeed(speed)
     end
 end)
 
 gravityInput.FocusLost:Connect(function()
     if gravityEnabled then
-        local gravity = tonumber(gravityInput.Text) or 196.2
+        local gravity = tonumber(gravityInput.Text) or DEFAULT_GRAVITY
+        if gravity < 0 then gravity = 0 end
+        if gravity > 1000 then gravity = 1000 end
+        currentGravity = gravity
+        gravityInput.Text = tostring(math.floor(gravity))
         setGravity(gravity)
     end
 end)
 
--- Character respawn handling
-player.CharacterAdded:Connect(function(character)
-    if speedEnabled then
-        wait(0.5) -- Wait for character to load
-        setSpeed(currentSpeed)
-    end
-end)
-
--- Dragging
-local dragging = false
-local dragInput, dragStart, startPos
+-- DRAGGING FOR MAIN BUTTON
+local mainDragging = false
+local mainDragInput, mainDragStart, mainDragPos
 
 mainButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-        -- Only drag, not toggle
+        mainDragging = true
+        mainDragStart = input.Position
+        mainDragPos = mainButton.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                mainDragging = false
+            end
+        end)
     end
 end)
 
+mainButton.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then
+        mainDragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == mainDragInput and mainDragging then
+        local delta = input.Position - mainDragStart
+        mainButton.Position = UDim2.new(mainDragPos.X.Scale, mainDragPos.X.Offset + delta.X, mainDragPos.Y.Scale, mainDragPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- DRAGGING FOR PANEL
+local panelDragging = false
+local panelDragInput, panelDragStart, panelDragPos
+
 panel.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = panel.Position
+        panelDragging = true
+        panelDragStart = input.Position
+        panelDragPos = panel.Position
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
+                panelDragging = false
             end
         end)
     end
@@ -304,15 +368,15 @@ end)
 
 panel.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then
-        dragInput = input
+        panelDragInput = input
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if input == dragInput and dragging then
-        local delta = input.Position - dragStart
-        panel.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    if input == panelDragInput and panelDragging then
+        local delta = input.Position - panelDragStart
+        panel.Position = UDim2.new(panelDragPos.X.Scale, panelDragPos.X.Offset + delta.X, panelDragPos.Y.Scale, panelDragPos.Y.Offset + delta.Y)
     end
 end)
 
-print("✅ Utility Hub Loaded")
+print("✅ Utility Hub Loaded - Speed & Gravity persist after death")
