@@ -1,37 +1,29 @@
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local StarterGui = game:GetService("StarterGui")
 
 local LocalPlayer = Players.LocalPlayer
 
--- Settings
-local reachEnabled = false
-local reachSize = 14
-local autoClick = false
-local teamCheck = false
+-- Settings (persistent)
+local viewEnabled = false
+local targetUsername = ""
+local currentTarget = nil
 
-local function Notify(title, text)
-    StarterGui:SetCore("SendNotification", {
-        Title = title,
-        Text = text,
-        Duration = 2
-    })
-end
-
--- GUI
+-- Create GUI
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ReachHub"
+screenGui.Name = "ViewHub"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
+-- Main button
 local mainBtn = Instance.new("TextButton")
 mainBtn.Size = UDim2.new(0, 50, 0, 50)
 mainBtn.Position = UDim2.new(0.5, -25, 0.5, -25)
 mainBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-mainBtn.BorderColor3 = Color3.fromRGB(255, 100, 100)
+mainBtn.BorderColor3 = Color3.fromRGB(100, 200, 255)
 mainBtn.BorderSizePixel = 2
-mainBtn.Text = "⚔"
-mainBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+mainBtn.Text = "👁"
+mainBtn.TextColor3 = Color3.fromRGB(100, 200, 255)
 mainBtn.Font = Enum.Font.GothamBold
 mainBtn.TextSize = 24
 mainBtn.Parent = screenGui
@@ -39,9 +31,10 @@ local mainCorner = Instance.new("UICorner")
 mainCorner.CornerRadius = UDim.new(0, 8)
 mainCorner.Parent = mainBtn
 
+-- Expanded panel
 local panel = Instance.new("Frame")
-panel.Size = UDim2.new(0, 220, 0, 200)
-panel.Position = UDim2.new(0.5, -110, 0.5, -100)
+panel.Size = UDim2.new(0, 240, 0, 140)
+panel.Position = UDim2.new(0.5, -120, 0.5, -70)
 panel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 panel.BorderColor3 = Color3.fromRGB(60, 60, 60)
 panel.BorderSizePixel = 2
@@ -51,6 +44,7 @@ local panelCorner = Instance.new("UICorner")
 panelCorner.CornerRadius = UDim.new(0, 8)
 panelCorner.Parent = panel
 
+-- Title bar
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, 0, 0, 28)
 titleBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
@@ -70,8 +64,8 @@ local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -30, 1, 0)
 titleLabel.Position = UDim2.new(0, 10, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-titleLabel.Text = "⚔ Invisible Reach"
+titleLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
+titleLabel.Text = "👁 View Player"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 13
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -90,96 +84,60 @@ local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(0, 6)
 closeCorner.Parent = closeBtn
 
--- Size Input
-local sizeLabel = Instance.new("TextLabel")
-sizeLabel.Size = UDim2.new(1, -20, 0, 18)
-sizeLabel.Position = UDim2.new(0, 10, 0, 35)
-sizeLabel.BackgroundTransparency = 1
-sizeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-sizeLabel.Text = "Reach Size"
-sizeLabel.Font = Enum.Font.GothamBold
-sizeLabel.TextSize = 12
-sizeLabel.TextXAlignment = Enum.TextXAlignment.Left
-sizeLabel.Parent = panel
+-- Username input
+local userLabel = Instance.new("TextLabel")
+userLabel.Size = UDim2.new(1, -20, 0, 18)
+userLabel.Position = UDim2.new(0, 10, 0, 35)
+userLabel.BackgroundTransparency = 1
+userLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+userLabel.Text = "Username / Display Name"
+userLabel.Font = Enum.Font.GothamBold
+userLabel.TextSize = 12
+userLabel.TextXAlignment = Enum.TextXAlignment.Left
+userLabel.Parent = panel
 
-local sizeInput = Instance.new("TextBox")
-sizeInput.Size = UDim2.new(0, 60, 0, 24)
-sizeInput.Position = UDim2.new(0, 10, 0, 56)
-sizeInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-sizeInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-sizeInput.Text = "14"
-sizeInput.PlaceholderText = "14"
-sizeInput.Font = Enum.Font.Gotham
-sizeInput.TextSize = 12
-sizeInput.Parent = panel
-local sizeCorner = Instance.new("UICorner")
-sizeCorner.CornerRadius = UDim.new(0, 6)
-sizeCorner.Parent = sizeInput
+local userInput = Instance.new("TextBox")
+userInput.Size = UDim2.new(1, -20, 0, 28)
+userInput.Position = UDim2.new(0, 10, 0, 56)
+userInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+userInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+userInput.Text = ""
+userInput.PlaceholderText = "Enter username..."
+userInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+userInput.Font = Enum.Font.Gotham
+userInput.TextSize = 12
+userInput.Parent = panel
+local userCorner = Instance.new("UICorner")
+userCorner.CornerRadius = UDim.new(0, 6)
+userCorner.Parent = userInput
 
-local reachToggle = Instance.new("TextButton")
-reachToggle.Size = UDim2.new(0, 70, 0, 24)
-reachToggle.Position = UDim2.new(0, 80, 0, 56)
-reachToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-reachToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-reachToggle.Text = "OFF"
-reachToggle.Font = Enum.Font.GothamBold
-reachToggle.TextSize = 11
-reachToggle.Parent = panel
-local reachCorner = Instance.new("UICorner")
-reachCorner.CornerRadius = UDim.new(0, 6)
-reachCorner.Parent = reachToggle
+-- Status label
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, -20, 0, 16)
+statusLabel.Position = UDim2.new(0, 10, 0, 88)
+statusLabel.BackgroundTransparency = 1
+statusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+statusLabel.Text = "Not viewing anyone"
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextSize = 10
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.Parent = panel
 
--- Auto Clicker
-local acLabel = Instance.new("TextLabel")
-acLabel.Size = UDim2.new(1, -20, 0, 18)
-acLabel.Position = UDim2.new(0, 10, 0, 88)
-acLabel.BackgroundTransparency = 1
-acLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-acLabel.Text = "Auto Clicker"
-acLabel.Font = Enum.Font.GothamBold
-acLabel.TextSize = 12
-acLabel.TextXAlignment = Enum.TextXAlignment.Left
-acLabel.Parent = panel
+-- View toggle
+local viewToggle = Instance.new("TextButton")
+viewToggle.Size = UDim2.new(1, -20, 0, 28)
+viewToggle.Position = UDim2.new(0, 10, 1, -38)
+viewToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+viewToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+viewToggle.Text = "VIEW: OFF"
+viewToggle.Font = Enum.Font.GothamBold
+viewToggle.TextSize = 12
+viewToggle.Parent = panel
+local viewCorner = Instance.new("UICorner")
+viewCorner.CornerRadius = UDim.new(0, 6)
+viewCorner.Parent = viewToggle
 
-local acToggle = Instance.new("TextButton")
-acToggle.Size = UDim2.new(0, 70, 0, 24)
-acToggle.Position = UDim2.new(0, 10, 0, 108)
-acToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-acToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-acToggle.Text = "OFF"
-acToggle.Font = Enum.Font.GothamBold
-acToggle.TextSize = 11
-acToggle.Parent = panel
-local acCorner = Instance.new("UICorner")
-acCorner.CornerRadius = UDim.new(0, 6)
-acCorner.Parent = acToggle
-
--- Team Check
-local teamLabel = Instance.new("TextLabel")
-teamLabel.Size = UDim2.new(1, -20, 0, 18)
-teamLabel.Position = UDim2.new(0, 10, 0, 138)
-teamLabel.BackgroundTransparency = 1
-teamLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-teamLabel.Text = "Team Check"
-teamLabel.Font = Enum.Font.GothamBold
-teamLabel.TextSize = 12
-teamLabel.TextXAlignment = Enum.TextXAlignment.Left
-teamLabel.Parent = panel
-
-local teamToggle = Instance.new("TextButton")
-teamToggle.Size = UDim2.new(0, 70, 0, 24)
-teamToggle.Position = UDim2.new(0, 10, 0, 158)
-teamToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-teamToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-teamToggle.Text = "OFF"
-teamToggle.Font = Enum.Font.GothamBold
-teamToggle.TextSize = 11
-teamToggle.Parent = panel
-local teamCorner = Instance.new("UICorner")
-teamCorner.CornerRadius = UDim.new(0, 6)
-teamCorner.Parent = teamToggle
-
--- Dragging
+-- DRAGGING MAIN BUTTON
 local mainDragging = false
 local mainDragInput, mainDragStart, mainDragPos
 
@@ -202,13 +160,14 @@ mainBtn.InputChanged:Connect(function(input)
     end
 end)
 
-game:GetService("UserInputService").InputChanged:Connect(function(input)
+UserInputService.InputChanged:Connect(function(input)
     if input == mainDragInput and mainDragging then
         local delta = input.Position - mainDragStart
         mainBtn.Position = UDim2.new(mainDragPos.X.Scale, mainDragPos.X.Offset + delta.X, mainDragPos.Y.Scale, mainDragPos.Y.Offset + delta.Y)
     end
 end)
 
+-- DRAGGING PANEL
 local panelDragging = false
 local panelDragInput, panelDragStart, panelDragPos
 
@@ -231,14 +190,14 @@ panel.InputChanged:Connect(function(input)
     end
 end)
 
-game:GetService("UserInputService").InputChanged:Connect(function(input)
+UserInputService.InputChanged:Connect(function(input)
     if input == panelDragInput and panelDragging then
         local delta = input.Position - panelDragStart
         panel.Position = UDim2.new(panelDragPos.X.Scale, panelDragPos.X.Offset + delta.X, panelDragPos.Y.Scale, panelDragPos.Y.Offset + delta.Y)
     end
 end)
 
--- Toggle logic
+-- TOGGLE PANEL
 mainBtn.MouseButton1Click:Connect(function()
     mainBtn.Visible = false
     panel.Visible = true
@@ -249,175 +208,120 @@ closeBtn.MouseButton1Click:Connect(function()
     mainBtn.Visible = true
 end)
 
-reachToggle.MouseButton1Click:Connect(function()
-    reachEnabled = not reachEnabled
-    if reachEnabled then
-        reachToggle.Text = "ON"
-        reachToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
-        Notify("Reach", "Enabled")
-    else
-        reachToggle.Text = "OFF"
-        reachToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-        Notify("Reach", "Disabled")
-    end
-end)
-
-acToggle.MouseButton1Click:Connect(function()
-    autoClick = not autoClick
-    if autoClick then
-        acToggle.Text = "ON"
-        acToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
-    else
-        acToggle.Text = "OFF"
-        acToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-    end
-end)
-
-teamToggle.MouseButton1Click:Connect(function()
-    teamCheck = not teamCheck
-    if teamCheck then
-        teamToggle.Text = "ON"
-        teamToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
-    else
-        teamToggle.Text = "OFF"
-        teamToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-    end
-end)
-
-sizeInput.FocusLost:Connect(function()
-    local size = tonumber(sizeInput.Text) or 14
-    if size < 1 then size = 1 end
-    if size > 100 then size = 100 end
-    reachSize = size
-    sizeInput.Text = tostring(size)
-end)
-
--- Keybinds
-game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.KeyCode == Enum.KeyCode.R then
-        reachEnabled = not reachEnabled
-        if reachEnabled then
-            reachToggle.Text = "ON"
-            reachToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
-            Notify("Reach", "Enabled")
-        else
-            reachToggle.Text = "OFF"
-            reachToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-            Notify("Reach", "Disabled")
+-- FIND PLAYER BY USERNAME OR DISPLAY NAME
+local function findPlayer(name)
+    name = name:lower()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Name:lower():sub(1, #name) == name then
+            return player
+        end
+        if player.DisplayName:lower():sub(1, #name) == name then
+            return player
         end
     end
-end)
-
--- INVISIBLE HITBOX
-local hitbox = nil
-local connection = nil
-
-local function createHitbox(tool)
-    if hitbox then hitbox:Destroy() end
-    
-    local handle = tool:FindFirstChild("Handle")
-    if not handle then return end
-    
-    -- Create invisible hitbox
-    hitbox = Instance.new("Part")
-    hitbox.Name = "ReachHitbox"
-    hitbox.Size = Vector3.new(reachSize, reachSize, reachSize)
-    hitbox.Transparency = 1
-    hitbox.CanCollide = false
-    hitbox.Massless = true
-    hitbox.Anchored = false
-    hitbox.Parent = workspace.CurrentCamera
-    
-    -- Attach to tool handle
-    local weld = Instance.new("WeldConstraint")
-    weld.Name = "HitboxWeld"
-    weld.Part0 = hitbox
-    weld.Part1 = handle
-    weld.Parent = hitbox
-    
-    -- Track hits with cooldown
-    local hitCooldowns = {}
-    
-    hitbox.Touched:Connect(function(hit)
-        if not reachEnabled then return end
-        
-        local character = hit.Parent
-        if not character then return end
-        if character == LocalPlayer.Character then return end
-        
-        local humanoid = character:FindFirstChild("Humanoid")
-        if not humanoid or humanoid.Health <= 0 then return end
-        
-        -- Team check
-        local player = Players:GetPlayerFromCharacter(character)
-        if player and teamCheck and player.Team == LocalPlayer.Team then return end
-        
-        -- Cooldown per character
-        if hitCooldowns[character] and tick() - hitCooldowns[character] < 0.2 then return end
-        hitCooldowns[character] = tick()
-        
-        -- Fire touch to handle
-        firetouchinterest(hit, handle, 0)
-        firetouchinterest(hit, handle, 1)
-    end)
+    return nil
 end
 
-local function removeHitbox()
-    if hitbox then
-        hitbox:Destroy()
-        hitbox = nil
+-- VIEW FUNCTION
+local viewConnection = nil
+
+local function startViewing()
+    if targetUsername == "" then
+        statusLabel.Text = "Enter a username first"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        return
     end
-end
-
--- Watch for tool equip/unequip
-local function onCharacterAdded(character)
-    character.ChildAdded:Connect(function(child)
-        if child:IsA("Tool") then
-            child.Equipped:Connect(function()
-                if reachEnabled then
-                    wait(0.1)
-                    createHitbox(child)
+    
+    local target = findPlayer(targetUsername)
+    if not target then
+        statusLabel.Text = "Player not found"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        return
+    end
+    
+    currentTarget = target
+    statusLabel.Text = "Viewing: " .. target.Name
+    statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+    
+    -- Set camera to follow target
+    local camera = workspace.CurrentCamera
+    camera.CameraSubject = target.Character and target.Character:FindFirstChild("Humanoid")
+    
+    -- Keep updating camera subject
+    if viewConnection then viewConnection:Disconnect() end
+    
+    viewConnection = RunService.RenderStepped:Connect(function()
+        if viewEnabled and currentTarget then
+            if currentTarget.Character then
+                local humanoid = currentTarget.Character:FindFirstChild("Humanoid")
+                if humanoid then
+                    camera.CameraSubject = humanoid
                 end
-            end)
-            child.Unequipped:Connect(function()
-                removeHitbox()
-            end)
+            end
         end
     end)
+end
+
+local function stopViewing()
+    if viewConnection then
+        viewConnection:Disconnect()
+        viewConnection = nil
+    end
     
-    -- Check if already holding tool
-    for _, child in pairs(character:GetChildren()) do
-        if child:IsA("Tool") then
-            if reachEnabled then
-                createHitbox(child)
-            end
+    currentTarget = nil
+    
+    -- Reset camera to local player
+    local camera = workspace.CurrentCamera
+    local character = LocalPlayer.Character
+    if character then
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then
+            camera.CameraSubject = humanoid
         end
     end
-end
-
-if LocalPlayer.Character then
-    onCharacterAdded(LocalPlayer.Character)
-end
-
-LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
-
--- Update hitbox size when reach changes
-RunService.Heartbeat:Connect(function()
-    if hitbox and reachEnabled then
-        hitbox.Size = Vector3.new(reachSize, reachSize, reachSize)
-    end
     
-    -- Auto clicker
-    if reachEnabled and autoClick then
-        local character = LocalPlayer.Character
-        if character then
-            local tool = character:FindFirstChildOfClass("Tool")
-            if tool then
-                tool:Activate()
-            end
+    statusLabel.Text = "Not viewing anyone"
+    statusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+end
+
+-- Reapply viewing on respawn
+LocalPlayer.CharacterAdded:Connect(function(character)
+    if viewEnabled and currentTarget then
+        wait(0.5)
+        startViewing()
+    end
+end)
+
+-- TOGGLE VIEW
+viewToggle.MouseButton1Click:Connect(function()
+    viewEnabled = not viewEnabled
+    
+    if viewEnabled then
+        targetUsername = userInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
+        if targetUsername ~= "" then
+            viewToggle.Text = "VIEW: ON"
+            viewToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
+            startViewing()
+        else
+            viewEnabled = false
+            statusLabel.Text = "Enter a username first"
+            statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        end
+    else
+        viewToggle.Text = "VIEW: OFF"
+        viewToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+        stopViewing()
+    end
+end)
+
+-- Update target when typing new name
+userInput.FocusLost:Connect(function()
+    if viewEnabled then
+        targetUsername = userInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
+        if targetUsername ~= "" then
+            startViewing()
         end
     end
 end)
 
-Notify("Invisible Reach", "Loaded! Press R to toggle")
+print("✅ View Player script loaded")
