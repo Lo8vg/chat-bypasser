@@ -10,11 +10,10 @@ getgenv().ReachSettings = {
     Size = 14.8,
     Enabled = false,
     AutoClicker = false,
-    TeamCheck = false,
-    TransparencyCheck = false
+    TeamCheck = false
 }
 
-local WhitelistedLimbs = {"Left Arm", "Right Arm", "Left Leg", "Right Leg", "Head", "Torso", "HumanoidRootPart", "LeftHand", "RightHand", "LeftFoot", "RightFoot", "UpperTorso", "LowerTorso"}
+local WhitelistedLimbs = {"Left Arm", "Right Arm", "Left Leg", "Right Leg", "Head", "Torso", "HumanoidRootPart"}
 
 -- Notification function
 local function Notify(title, text)
@@ -318,26 +317,24 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- FIRE TOUCH INTEREST FUNCTION
-local lastTick = tick()
+-- HIT TRACKING - prevent hitting same target too fast
+local recentHits = {}
 
-local function FireTouch(hit, handle)
-    local humanoid = hit.Parent:FindFirstChild("Humanoid")
+local function FireTouch(targetChar, handle)
+    local humanoid = targetChar:FindFirstChild("Humanoid")
     if not humanoid or humanoid.Health <= 0 then return end
-    if hit.Parent.Name == LocalPlayer.Character.Name then return end
+    if targetChar.Name == LocalPlayer.Character.Name then return end
     
-    if getgenv().ReachSettings.TransparencyCheck then
-        if hit.Transparency > 0.8 then return end
+    -- Rate limit per target
+    if recentHits[targetChar] and tick() - recentHits[targetChar] < 0.1 then
+        return
     end
+    recentHits[targetChar] = tick()
     
-    -- Rate limit
-    if tick() - lastTick < 0.05 then return end
-    lastTick = tick()
-    
-    -- Fire touch
-    for _, part in pairs(hit.Parent:GetChildren()) do
+    -- Only hit actual body parts, not HumanoidRootPart directly
+    for _, part in pairs(targetChar:GetChildren()) do
         if part:IsA("BasePart") then
-            if table.find(WhitelistedLimbs, part.Name) then
+            if table.find(WhitelistedLimbs, part.Name) and part.Name ~= "HumanoidRootPart" then
                 firetouchinterest(part, handle, 0)
                 firetouchinterest(part, handle, 1)
             end
@@ -352,39 +349,46 @@ RunService.RenderStepped:Connect(function()
     local character = LocalPlayer.Character
     if not character then return end
     
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then return end
+    
     local tool = character:FindFirstChildOfClass("Tool")
     if not tool then return end
     
     local handle = tool:FindFirstChild("Handle")
     if not handle then return end
     
-    local size = getgenv().ReachSettings.Size
-    
     -- Auto clicker
     if getgenv().ReachSettings.AutoClicker then
-        local humanoid = character:FindFirstChild("Humanoid")
-        if humanoid and humanoid.Health > 0 then
-            tool:Activate()
-        end
+        tool:Activate()
     end
+    
+    local size = getgenv().ReachSettings.Size
     
     -- Check all players
     for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
+        if player ~= LocalPlayer and player.Character then
             -- Team check
             if getgenv().ReachSettings.TeamCheck then
                 if player.Team == LocalPlayer.Team then
-                    return
+                    -- Skip teammate
+                else
+                    local targetChar = player.Character
+                    local hrp = targetChar:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        local distance = (hrp.Position - handle.Position).Magnitude
+                        if distance <= size then
+                            FireTouch(targetChar, handle)
+                        end
+                    end
                 end
-            end
-            
-            local targetChar = player.Character
-            if targetChar then
+            else
+                local targetChar = player.Character
                 local hrp = targetChar:FindFirstChild("HumanoidRootPart")
                 if hrp then
                     local distance = (hrp.Position - handle.Position).Magnitude
                     if distance <= size then
-                        FireTouch(hrp, handle)
+                        FireTouch(targetChar, handle)
                     end
                 end
             end
