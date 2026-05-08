@@ -1,21 +1,15 @@
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 
 local LocalPlayer = Players.LocalPlayer
 
 -- Settings
-getgenv().ReachSettings = {
-    Size = 14.8,
-    Enabled = false,
-    AutoClicker = false,
-    TeamCheck = false
-}
+local reachEnabled = false
+local reachSize = 14
+local autoClick = false
+local teamCheck = false
 
-local WhitelistedLimbs = {"Left Arm", "Right Arm", "Left Leg", "Right Leg", "Head", "Torso", "HumanoidRootPart"}
-
--- Notification function
 local function Notify(title, text)
     StarterGui:SetCore("SendNotification", {
         Title = title,
@@ -24,13 +18,12 @@ local function Notify(title, text)
     })
 end
 
--- Create GUI
+-- GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ReachHub"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- Main button
 local mainBtn = Instance.new("TextButton")
 mainBtn.Size = UDim2.new(0, 50, 0, 50)
 mainBtn.Position = UDim2.new(0.5, -25, 0.5, -25)
@@ -46,7 +39,6 @@ local mainCorner = Instance.new("UICorner")
 mainCorner.CornerRadius = UDim.new(0, 8)
 mainCorner.Parent = mainBtn
 
--- Expanded panel
 local panel = Instance.new("Frame")
 panel.Size = UDim2.new(0, 220, 0, 200)
 panel.Position = UDim2.new(0.5, -110, 0.5, -100)
@@ -59,7 +51,6 @@ local panelCorner = Instance.new("UICorner")
 panelCorner.CornerRadius = UDim.new(0, 8)
 panelCorner.Parent = panel
 
--- Title bar
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, 0, 0, 28)
 titleBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
@@ -80,7 +71,7 @@ titleLabel.Size = UDim2.new(1, -30, 1, 0)
 titleLabel.Position = UDim2.new(0, 10, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-titleLabel.Text = "⚔ Reach Hub"
+titleLabel.Text = "⚔ Invisible Reach"
 titleLabel.Font = Enum.Font.GothamBold
 titleLabel.TextSize = 13
 titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -99,7 +90,7 @@ local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(0, 6)
 closeCorner.Parent = closeBtn
 
--- Reach Size Input
+-- Size Input
 local sizeLabel = Instance.new("TextLabel")
 sizeLabel.Size = UDim2.new(1, -20, 0, 18)
 sizeLabel.Position = UDim2.new(0, 10, 0, 35)
@@ -116,8 +107,8 @@ sizeInput.Size = UDim2.new(0, 60, 0, 24)
 sizeInput.Position = UDim2.new(0, 10, 0, 56)
 sizeInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 sizeInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-sizeInput.Text = "14.8"
-sizeInput.PlaceholderText = "14.8"
+sizeInput.Text = "14"
+sizeInput.PlaceholderText = "14"
 sizeInput.Font = Enum.Font.Gotham
 sizeInput.TextSize = 12
 sizeInput.Parent = panel
@@ -138,7 +129,7 @@ local reachCorner = Instance.new("UICorner")
 reachCorner.CornerRadius = UDim.new(0, 6)
 reachCorner.Parent = reachToggle
 
--- Auto Clicker Toggle
+-- Auto Clicker
 local acLabel = Instance.new("TextLabel")
 acLabel.Size = UDim2.new(1, -20, 0, 18)
 acLabel.Position = UDim2.new(0, 10, 0, 88)
@@ -163,7 +154,7 @@ local acCorner = Instance.new("UICorner")
 acCorner.CornerRadius = UDim.new(0, 6)
 acCorner.Parent = acToggle
 
--- Team Check Toggle
+-- Team Check
 local teamLabel = Instance.new("TextLabel")
 teamLabel.Size = UDim2.new(1, -20, 0, 18)
 teamLabel.Position = UDim2.new(0, 10, 0, 138)
@@ -188,7 +179,7 @@ local teamCorner = Instance.new("UICorner")
 teamCorner.CornerRadius = UDim.new(0, 6)
 teamCorner.Parent = teamToggle
 
--- DRAGGING FOR MAIN BUTTON
+-- Dragging
 local mainDragging = false
 local mainDragInput, mainDragStart, mainDragPos
 
@@ -211,14 +202,13 @@ mainBtn.InputChanged:Connect(function(input)
     end
 end)
 
-UserInputService.InputChanged:Connect(function(input)
+game:GetService("UserInputService").InputChanged:Connect(function(input)
     if input == mainDragInput and mainDragging then
         local delta = input.Position - mainDragStart
         mainBtn.Position = UDim2.new(mainDragPos.X.Scale, mainDragPos.X.Offset + delta.X, mainDragPos.Y.Scale, mainDragPos.Y.Offset + delta.Y)
     end
 end)
 
--- DRAGGING FOR PANEL
 local panelDragging = false
 local panelDragInput, panelDragStart, panelDragPos
 
@@ -241,14 +231,14 @@ panel.InputChanged:Connect(function(input)
     end
 end)
 
-UserInputService.InputChanged:Connect(function(input)
+game:GetService("UserInputService").InputChanged:Connect(function(input)
     if input == panelDragInput and panelDragging then
         local delta = input.Position - panelDragStart
         panel.Position = UDim2.new(panelDragPos.X.Scale, panelDragPos.X.Offset + delta.X, panelDragPos.Y.Scale, panelDragPos.Y.Offset + delta.Y)
     end
 end)
 
--- TOGGLE FUNCTIONS
+-- Toggle logic
 mainBtn.MouseButton1Click:Connect(function()
     mainBtn.Visible = false
     panel.Visible = true
@@ -259,9 +249,9 @@ closeBtn.MouseButton1Click:Connect(function()
     mainBtn.Visible = true
 end)
 
-local function toggleReach()
-    getgenv().ReachSettings.Enabled = not getgenv().ReachSettings.Enabled
-    if getgenv().ReachSettings.Enabled then
+reachToggle.MouseButton1Click:Connect(function()
+    reachEnabled = not reachEnabled
+    if reachEnabled then
         reachToggle.Text = "ON"
         reachToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
         Notify("Reach", "Enabled")
@@ -270,130 +260,164 @@ local function toggleReach()
         reachToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
         Notify("Reach", "Disabled")
     end
-end
+end)
 
-local function toggleAutoClicker()
-    getgenv().ReachSettings.AutoClicker = not getgenv().ReachSettings.AutoClicker
-    if getgenv().ReachSettings.AutoClicker then
+acToggle.MouseButton1Click:Connect(function()
+    autoClick = not autoClick
+    if autoClick then
         acToggle.Text = "ON"
         acToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
     else
         acToggle.Text = "OFF"
         acToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
     end
-end
+end)
 
-local function toggleTeamCheck()
-    getgenv().ReachSettings.TeamCheck = not getgenv().ReachSettings.TeamCheck
-    if getgenv().ReachSettings.TeamCheck then
+teamToggle.MouseButton1Click:Connect(function()
+    teamCheck = not teamCheck
+    if teamCheck then
         teamToggle.Text = "ON"
         teamToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
     else
         teamToggle.Text = "OFF"
         teamToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
     end
-end
-
-reachToggle.MouseButton1Click:Connect(toggleReach)
-acToggle.MouseButton1Click:Connect(toggleAutoClicker)
-teamToggle.MouseButton1Click:Connect(toggleTeamCheck)
+end)
 
 sizeInput.FocusLost:Connect(function()
-    local size = tonumber(sizeInput.Text) or 14.8
+    local size = tonumber(sizeInput.Text) or 14
     if size < 1 then size = 1 end
     if size > 100 then size = 100 end
-    getgenv().ReachSettings.Size = size
+    reachSize = size
     sizeInput.Text = tostring(size)
 end)
 
--- KEYBINDS (PC)
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
+-- Keybinds
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
-    
     if input.KeyCode == Enum.KeyCode.R then
-        toggleReach()
-    elseif input.KeyCode == Enum.KeyCode.E then
-        toggleAutoClicker()
+        reachEnabled = not reachEnabled
+        if reachEnabled then
+            reachToggle.Text = "ON"
+            reachToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
+            Notify("Reach", "Enabled")
+        else
+            reachToggle.Text = "OFF"
+            reachToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
+            Notify("Reach", "Disabled")
+        end
     end
 end)
 
--- HIT TRACKING - prevent hitting same target too fast
-local recentHits = {}
+-- INVISIBLE HITBOX
+local hitbox = nil
+local connection = nil
 
-local function FireTouch(targetChar, handle)
-    local humanoid = targetChar:FindFirstChild("Humanoid")
-    if not humanoid or humanoid.Health <= 0 then return end
-    if targetChar.Name == LocalPlayer.Character.Name then return end
-    
-    -- Rate limit per target
-    if recentHits[targetChar] and tick() - recentHits[targetChar] < 0.1 then
-        return
-    end
-    recentHits[targetChar] = tick()
-    
-    -- Only hit actual body parts, not HumanoidRootPart directly
-    for _, part in pairs(targetChar:GetChildren()) do
-        if part:IsA("BasePart") then
-            if table.find(WhitelistedLimbs, part.Name) and part.Name ~= "HumanoidRootPart" then
-                firetouchinterest(part, handle, 0)
-                firetouchinterest(part, handle, 1)
-            end
-        end
-    end
-end
-
--- MAIN LOOP
-RunService.RenderStepped:Connect(function()
-    if not getgenv().ReachSettings.Enabled then return end
-    
-    local character = LocalPlayer.Character
-    if not character then return end
-    
-    local humanoid = character:FindFirstChild("Humanoid")
-    if not humanoid or humanoid.Health <= 0 then return end
-    
-    local tool = character:FindFirstChildOfClass("Tool")
-    if not tool then return end
+local function createHitbox(tool)
+    if hitbox then hitbox:Destroy() end
     
     local handle = tool:FindFirstChild("Handle")
     if not handle then return end
     
-    -- Auto clicker
-    if getgenv().ReachSettings.AutoClicker then
-        tool:Activate()
+    -- Create invisible hitbox
+    hitbox = Instance.new("Part")
+    hitbox.Name = "ReachHitbox"
+    hitbox.Size = Vector3.new(reachSize, reachSize, reachSize)
+    hitbox.Transparency = 1
+    hitbox.CanCollide = false
+    hitbox.Massless = true
+    hitbox.Anchored = false
+    hitbox.Parent = workspace.CurrentCamera
+    
+    -- Attach to tool handle
+    local weld = Instance.new("WeldConstraint")
+    weld.Name = "HitboxWeld"
+    weld.Part0 = hitbox
+    weld.Part1 = handle
+    weld.Parent = hitbox
+    
+    -- Track hits with cooldown
+    local hitCooldowns = {}
+    
+    hitbox.Touched:Connect(function(hit)
+        if not reachEnabled then return end
+        
+        local character = hit.Parent
+        if not character then return end
+        if character == LocalPlayer.Character then return end
+        
+        local humanoid = character:FindFirstChild("Humanoid")
+        if not humanoid or humanoid.Health <= 0 then return end
+        
+        -- Team check
+        local player = Players:GetPlayerFromCharacter(character)
+        if player and teamCheck and player.Team == LocalPlayer.Team then return end
+        
+        -- Cooldown per character
+        if hitCooldowns[character] and tick() - hitCooldowns[character] < 0.2 then return end
+        hitCooldowns[character] = tick()
+        
+        -- Fire touch to handle
+        firetouchinterest(hit, handle, 0)
+        firetouchinterest(hit, handle, 1)
+    end)
+end
+
+local function removeHitbox()
+    if hitbox then
+        hitbox:Destroy()
+        hitbox = nil
+    end
+end
+
+-- Watch for tool equip/unequip
+local function onCharacterAdded(character)
+    character.ChildAdded:Connect(function(child)
+        if child:IsA("Tool") then
+            child.Equipped:Connect(function()
+                if reachEnabled then
+                    wait(0.1)
+                    createHitbox(child)
+                end
+            end)
+            child.Unequipped:Connect(function()
+                removeHitbox()
+            end)
+        end
+    end)
+    
+    -- Check if already holding tool
+    for _, child in pairs(character:GetChildren()) do
+        if child:IsA("Tool") then
+            if reachEnabled then
+                createHitbox(child)
+            end
+        end
+    end
+end
+
+if LocalPlayer.Character then
+    onCharacterAdded(LocalPlayer.Character)
+end
+
+LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+
+-- Update hitbox size when reach changes
+RunService.Heartbeat:Connect(function()
+    if hitbox and reachEnabled then
+        hitbox.Size = Vector3.new(reachSize, reachSize, reachSize)
     end
     
-    local size = getgenv().ReachSettings.Size
-    
-    -- Check all players
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            -- Team check
-            if getgenv().ReachSettings.TeamCheck then
-                if player.Team == LocalPlayer.Team then
-                    -- Skip teammate
-                else
-                    local targetChar = player.Character
-                    local hrp = targetChar:FindFirstChild("HumanoidRootPart")
-                    if hrp then
-                        local distance = (hrp.Position - handle.Position).Magnitude
-                        if distance <= size then
-                            FireTouch(targetChar, handle)
-                        end
-                    end
-                end
-            else
-                local targetChar = player.Character
-                local hrp = targetChar:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    local distance = (hrp.Position - handle.Position).Magnitude
-                    if distance <= size then
-                        FireTouch(targetChar, handle)
-                    end
-                end
+    -- Auto clicker
+    if reachEnabled and autoClick then
+        local character = LocalPlayer.Character
+        if character then
+            local tool = character:FindFirstChildOfClass("Tool")
+            if tool then
+                tool:Activate()
             end
         end
     end
 end)
 
-Notify("Reach Hub", "Loaded! Press R to toggle")
+Notify("Invisible Reach", "Loaded! Press R to toggle")
