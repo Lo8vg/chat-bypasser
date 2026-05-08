@@ -6,7 +6,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 -- Default values
 local DEFAULT_SPEED = 25
-local DEFAULT_GRAVITY = 196.2
+local DEFAULT_GRAVITY = 85
 
 -- Current states (these persist)
 local speedEnabled = false
