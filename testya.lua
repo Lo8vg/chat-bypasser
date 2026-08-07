@@ -902,6 +902,7 @@ local dropdownLayout = Instance.new("UIListLayout")
 dropdownLayout.Padding = UDim.new(0, 2)
 dropdownLayout.Parent = dropdownScroll
 
+-- Dragging
 local dragging = false
 local dragInput, dragStart, startPos
 
@@ -983,35 +984,28 @@ end)
 
 local function toggleAdvancedMode()
     advancedMode = not advancedMode
-    
     local currentPos = mainFrame.Position
     
     if advancedMode then
         mainFrame.Size = UDim2.new(0, 220, 0, 280)
         mainFrame.Position = UDim2.new(currentPos.X.Scale, currentPos.X.Offset, currentPos.Y.Scale, currentPos.Y.Offset - 67)
-        
         compactContent.Visible = false
-        
         tabBar.Visible = true
         kblContent.Visible = true
         chatSettingsContent.Visible = false
         mimicContent.Visible = false
         speedContent.Visible = false
-        
         titleLabel.Text = "⚙ Settings"
         settingsBtn.Text = "◀"
     else
         mainFrame.Size = UDim2.new(0, 220, 0, 145)
         mainFrame.Position = UDim2.new(currentPos.X.Scale, currentPos.X.Offset, currentPos.Y.Scale, currentPos.Y.Offset + 67)
-        
         compactContent.Visible = true
-        
         tabBar.Visible = false
         kblContent.Visible = false
         chatSettingsContent.Visible = false
         mimicContent.Visible = false
         speedContent.Visible = false
-        
         titleLabel.Text = "💬 Quick Chat"
         settingsBtn.Text = "⚙"
     end
@@ -1030,50 +1024,32 @@ local function switchTab(tab)
     
     kblTabBtn.BackgroundColor3 = tab == "kbl" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     kblTabBtn.TextColor3 = tab == "kbl" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
-    
     chatTabBtn.BackgroundColor3 = tab == "chat" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     chatTabBtn.TextColor3 = tab == "chat" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
-    
     mimicTabBtn.BackgroundColor3 = tab == "mimic" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     mimicTabBtn.TextColor3 = tab == "mimic" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
-    
     speedTabBtn.BackgroundColor3 = tab == "speed" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     speedTabBtn.TextColor3 = tab == "speed" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
 end
 
-kblTabBtn.MouseButton1Click:Connect(function()
-    switchTab("kbl")
-end)
+kblTabBtn.MouseButton1Click:Connect(function() switchTab("kbl") end)
+chatTabBtn.MouseButton1Click:Connect(function() switchTab("chat") end)
+mimicTabBtn.MouseButton1Click:Connect(function() switchTab("mimic") end)
+speedTabBtn.MouseButton1Click:Connect(function() switchTab("speed") end)
 
-chatTabBtn.MouseButton1Click:Connect(function()
-    switchTab("chat")
-end)
-
-mimicTabBtn.MouseButton1Click:Connect(function()
-    switchTab("mimic")
-end)
-
-speedTabBtn.MouseButton1Click:Connect(function()
-    switchTab("speed")
-end)
-
+-- KBL delay functions
 local function updateKblDelayListUI()
     for _, child in pairs(kblDelayScroll:GetChildren()) do
-        if child:IsA("Frame") then
-            child:Destroy()
-        end
+        if child:IsA("Frame") then child:Destroy() end
     end
-    
     for i, d in ipairs(kblDelayList) do
         local item = Instance.new("Frame")
         item.Size = UDim2.new(1, 0, 0, 18)
         item.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
         item.Parent = kblDelayScroll
-        
         local itemCorner = Instance.new("UICorner")
         itemCorner.CornerRadius = UDim.new(0, 4)
         itemCorner.Parent = item
-        
         local label = Instance.new("TextLabel")
         label.Size = UDim2.new(1, -22, 1, 0)
         label.Position = UDim2.new(0, 5, 0, 0)
@@ -1084,7 +1060,6 @@ local function updateKblDelayListUI()
         label.TextSize = 10
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.Parent = item
-        
         local delBtn = Instance.new("TextButton")
         delBtn.Size = UDim2.new(0, 16, 0, 16)
         delBtn.Position = UDim2.new(1, -18, 0.5, -8)
@@ -1094,18 +1069,15 @@ local function updateKblDelayListUI()
         delBtn.Font = Enum.Font.GothamBold
         delBtn.TextSize = 8
         delBtn.Parent = item
-        
         local delCorner = Instance.new("UICorner")
         delCorner.CornerRadius = UDim.new(0, 4)
         delCorner.Parent = delBtn
-        
         delBtn.MouseButton1Click:Connect(function()
             table.remove(kblDelayList, i)
             if kblDelayIndex > #kblDelayList then kblDelayIndex = 1 end
             updateKblDelayListUI()
         end)
     end
-    
     kblDelayScroll.CanvasSize = UDim2.new(0, 0, 0, kblDelayListLayout.AbsoluteContentSize.Y)
 end
 
@@ -1128,25 +1100,17 @@ end
 
 local function sendMessage(msg)
     local message = msg
-    
     if caseMode == "upper" then
         message = string.upper(message)
     elseif caseMode == "lower" then
         message = string.lower(message)
     end
-    
     message = message:gsub("^%s+", ""):gsub("%s+$", "")
-    
-    if message == "" then
-        return false
-    end
-    
+    if message == "" then return false end
     if #message > MAX_CHARS then
         message = message:sub(1, MAX_CHARS)
     end
-    
     local chatRemote = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
-    
     if chatRemote then
         local sayMessage = chatRemote:FindFirstChild("SayMessageRequest")
         if sayMessage then
@@ -1154,7 +1118,6 @@ local function sendMessage(msg)
             return true
         end
     end
-    
     if TextChatService then
         local channel = TextChatService:FindFirstChild("TextChannels")
         if channel then
@@ -1165,7 +1128,6 @@ local function sendMessage(msg)
             end
         end
     end
-    
     return false
 end
 
@@ -1177,11 +1139,8 @@ local function runKbl()
             local msg = kblMessages[kblIndex]
             previewText.Text = msg
             kblStatus.Text = "Sending: "..kblIndex.."/"..#kblMessages
-            
             sendMessage(msg)
-            
             kblIndex = kblIndex + 1
-            
             if kblIndex > #kblMessages then
                 kblRunning = false
                 kblPaused = false
@@ -1195,7 +1154,6 @@ local function runKbl()
                 kblPauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
                 return
             end
-            
             local delay = getKblDelay()
             wait(delay)
         end
@@ -1246,13 +1204,10 @@ end)
 local function updateKblModeButtons()
     kblRandomBtn.BackgroundColor3 = kblDelayMode == "random" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     kblRandomBtn.TextColor3 = kblDelayMode == "random" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
-    
     kblSeqBtn.BackgroundColor3 = kblDelayMode == "sequential" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     kblSeqBtn.TextColor3 = kblDelayMode == "sequential" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
-    
     kblConstBtn.BackgroundColor3 = kblDelayMode == "constant" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     kblConstBtn.TextColor3 = kblDelayMode == "constant" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
-    
     kblDelayRow.Visible = kblDelayMode ~= "constant"
     kblConstInput.Visible = kblDelayMode == "constant"
     kblDelayListTitle.Visible = kblDelayMode ~= "constant"
@@ -1260,20 +1215,9 @@ local function updateKblModeButtons()
     kblClearDelayBtn.Visible = kblDelayMode ~= "constant"
 end
 
-kblRandomBtn.MouseButton1Click:Connect(function()
-    kblDelayMode = "random"
-    updateKblModeButtons()
-end)
-
-kblSeqBtn.MouseButton1Click:Connect(function()
-    kblDelayMode = "sequential"
-    updateKblModeButtons()
-end)
-
-kblConstBtn.MouseButton1Click:Connect(function()
-    kblDelayMode = "constant"
-    updateKblModeButtons()
-end)
+kblRandomBtn.MouseButton1Click:Connect(function() kblDelayMode = "random" updateKblModeButtons() end)
+kblSeqBtn.MouseButton1Click:Connect(function() kblDelayMode = "sequential" updateKblModeButtons() end)
+kblConstBtn.MouseButton1Click:Connect(function() kblDelayMode = "constant" updateKblModeButtons() end)
 
 kblAddDelayBtn.MouseButton1Click:Connect(function()
     local text = kblDelayInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
@@ -1291,34 +1235,26 @@ kblClearDelayBtn.MouseButton1Click:Connect(function()
     updateKblDelayListUI()
 end)
 
+-- Textbox
 textbox:GetPropertyChangedSignal("Text"):Connect(function()
     local text = textbox.Text
     local lines = {}
     for line in text:gmatch("[^\n]*") do
         table.insert(lines, line)
     end
-    
     local lineCount = #lines
     local maxLineLen = 0
     local overLimit = false
-    
     for _, line in ipairs(lines) do
-        if #line > maxLineLen then
-            maxLineLen = #line
-        end
-        if #line > MAX_CHARS then
-            overLimit = true
-        end
+        if #line > maxLineLen then maxLineLen = #line end
+        if #line > MAX_CHARS then overLimit = true end
     end
-    
     charCounter.Text = "Lines: "..lineCount.." | Max: "..maxLineLen.."/"..MAX_CHARS
-    
     if overLimit then
         charCounter.TextColor3 = Color3.fromRGB(255, 100, 100)
     else
         charCounter.TextColor3 = Color3.fromRGB(100, 100, 100)
     end
-    
     tapIndex = 1
 end)
 
@@ -1341,21 +1277,16 @@ end
 
 local function updateDelayListUI()
     for _, child in pairs(delayScroll:GetChildren()) do
-        if child:IsA("Frame") then
-            child:Destroy()
-        end
+        if child:IsA("Frame") then child:Destroy() end
     end
-    
     for i, d in ipairs(delayList) do
         local item = Instance.new("Frame")
         item.Size = UDim2.new(1, 0, 0, 18)
         item.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
         item.Parent = delayScroll
-        
         local itemCorner = Instance.new("UICorner")
         itemCorner.CornerRadius = UDim.new(0, 4)
         itemCorner.Parent = item
-        
         local label = Instance.new("TextLabel")
         label.Size = UDim2.new(1, -22, 1, 0)
         label.Position = UDim2.new(0, 5, 0, 0)
@@ -1366,7 +1297,6 @@ local function updateDelayListUI()
         label.TextSize = 10
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.Parent = item
-        
         local delBtn = Instance.new("TextButton")
         delBtn.Size = UDim2.new(0, 16, 0, 16)
         delBtn.Position = UDim2.new(1, -18, 0.5, -8)
@@ -1376,31 +1306,25 @@ local function updateDelayListUI()
         delBtn.Font = Enum.Font.GothamBold
         delBtn.TextSize = 8
         delBtn.Parent = item
-        
         local delCorner = Instance.new("UICorner")
         delCorner.CornerRadius = UDim.new(0, 4)
         delCorner.Parent = delBtn
-        
         delBtn.MouseButton1Click:Connect(function()
             table.remove(delayList, i)
             if delayIndex > #delayList then delayIndex = 1 end
             updateDelayListUI()
         end)
     end
-    
     delayScroll.CanvasSize = UDim2.new(0, 0, 0, delayListLayout.AbsoluteContentSize.Y)
 end
 
 local function updateModeButtons()
     randomBtn.BackgroundColor3 = delayMode == "random" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     randomBtn.TextColor3 = delayMode == "random" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
-    
     seqBtn.BackgroundColor3 = delayMode == "sequential" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     seqBtn.TextColor3 = delayMode == "sequential" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
-    
     constBtn.BackgroundColor3 = delayMode == "constant" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     constBtn.TextColor3 = delayMode == "constant" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
-    
     delayListFrame.Visible = delayMode ~= "constant"
     delayListTitle.Visible = delayMode ~= "constant"
     constDelayLabel.Visible = delayMode == "constant"
@@ -1408,20 +1332,9 @@ local function updateModeButtons()
     addDelayRow.Visible = delayMode ~= "constant"
 end
 
-randomBtn.MouseButton1Click:Connect(function()
-    delayMode = "random"
-    updateModeButtons()
-end)
-
-seqBtn.MouseButton1Click:Connect(function()
-    delayMode = "sequential"
-    updateModeButtons()
-end)
-
-constBtn.MouseButton1Click:Connect(function()
-    delayMode = "constant"
-    updateModeButtons()
-end)
+randomBtn.MouseButton1Click:Connect(function() delayMode = "random" updateModeButtons() end)
+seqBtn.MouseButton1Click:Connect(function() delayMode = "sequential" updateModeButtons() end)
+constBtn.MouseButton1Click:Connect(function() delayMode = "constant" updateModeButtons() end)
 
 addDelayBtn.MouseButton1Click:Connect(function()
     local text = addDelayInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
@@ -1457,52 +1370,28 @@ end)
 local function updateCaseButtons()
     upperBtn.BackgroundColor3 = caseMode == "upper" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     upperBtn.TextColor3 = caseMode == "upper" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
-    
     lowerBtn.BackgroundColor3 = caseMode == "lower" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     lowerBtn.TextColor3 = caseMode == "lower" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
-    
     normalBtn.BackgroundColor3 = caseMode == "normal" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     normalBtn.TextColor3 = caseMode == "normal" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
-    
     statusLabel.Text = "Mode: "..caseMode:gsub("^%l", string.upper).." | Send: "..sendMode:gsub("^%l", string.upper)
 end
 
-upperBtn.MouseButton1Click:Connect(function()
-    caseMode = "upper"
-    updateCaseButtons()
-end)
-
-lowerBtn.MouseButton1Click:Connect(function()
-    caseMode = "lower"
-    updateCaseButtons()
-end)
-
-normalBtn.MouseButton1Click:Connect(function()
-    caseMode = "normal"
-    updateCaseButtons()
-end)
+upperBtn.MouseButton1Click:Connect(function() caseMode = "upper" updateCaseButtons() end)
+lowerBtn.MouseButton1Click:Connect(function() caseMode = "lower" updateCaseButtons() end)
+normalBtn.MouseButton1Click:Connect(function() caseMode = "normal" updateCaseButtons() end)
 
 local function updateSendModeButtons()
     tapModeBtn.BackgroundColor3 = sendMode == "tap" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     tapModeBtn.TextColor3 = sendMode == "tap" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
-    
     autoModeBtn.BackgroundColor3 = sendMode == "auto" and Color3.fromRGB(0, 120, 215) or Color3.fromRGB(50, 50, 50)
     autoModeBtn.TextColor3 = sendMode == "auto" and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
-    
     sendAllBtn.Text = sendMode == "tap" and "TAP" or "S"
-    
     statusLabel.Text = "Mode: "..caseMode:gsub("^%l", string.upper).." | Send: "..sendMode:gsub("^%l", string.upper)
 end
 
-tapModeBtn.MouseButton1Click:Connect(function()
-    sendMode = "tap"
-    updateSendModeButtons()
-end)
-
-autoModeBtn.MouseButton1Click:Connect(function()
-    sendMode = "auto"
-    updateSendModeButtons()
-end)
+tapModeBtn.MouseButton1Click:Connect(function() sendMode = "tap" updateSendModeButtons() end)
+autoModeBtn.MouseButton1Click:Connect(function() sendMode = "auto" updateSendModeButtons() end)
 
 local function runChatSend()
     while chatSending and chatIndex <= #chatLines do
@@ -1511,9 +1400,7 @@ local function runChatSend()
         else
             local line = chatLines[chatIndex]
             sendMessage(line)
-            
             chatIndex = chatIndex + 1
-            
             if chatIndex > #chatLines then
                 chatSending = false
                 chatPaused = false
@@ -1521,7 +1408,6 @@ local function runChatSend()
                 chatLines = {}
                 return
             end
-            
             local delay = getNextDelay()
             wait(delay)
         end
@@ -1532,43 +1418,35 @@ sendAllBtn.MouseButton1Click:Connect(function()
     if sendMode == "tap" then
         local text = textbox.Text
         if text == "" then return end
-        
         local lines = {}
         for line in text:gmatch("[^\n]+") do
             if line:match("%S") then
                 table.insert(lines, line)
             end
         end
-        
         if #lines == 0 then return end
-        
         if tapIndex > #lines then
             tapIndex = 1
         end
-        
         sendMessage(lines[tapIndex])
         tapIndex = tapIndex + 1
     else
         local text = textbox.Text
         if text == "" then return end
-        
         local lines = {}
         for line in text:gmatch("[^\n]+") do
             if line:match("%S") then
                 table.insert(lines, line)
             end
         end
-        
         if #lines == 0 then return end
-        
         chatLines = lines
         chatIndex = 1
         chatSending = true
         chatPaused = false
-        
         spawn(runChatSend)
     end
-)
+end)
 
 pauseBtn.MouseButton1Click:Connect(function()
     if chatSending then
@@ -1585,21 +1463,16 @@ end)
 
 local function updateSuffixList()
     for _, child in pairs(suffixScroll:GetChildren()) do
-        if child:IsA("Frame") then
-            child:Destroy()
-        end
+        if child:IsA("Frame") then child:Destroy() end
     end
-    
     for i, suffix in ipairs(suffixes) do
         local item = Instance.new("Frame")
         item.Size = UDim2.new(1, 0, 0, 20)
         item.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
         item.Parent = suffixScroll
-        
         local itemCorner = Instance.new("UICorner")
         itemCorner.CornerRadius = UDim.new(0, 4)
         itemCorner.Parent = item
-        
         local label = Instance.new("TextLabel")
         label.Size = UDim2.new(1, -26, 1, 0)
         label.Position = UDim2.new(0, 5, 0, 0)
@@ -1611,7 +1484,6 @@ local function updateSuffixList()
         label.TextXAlignment = Enum.TextXAlignment.Left
         label.TextTruncate = Enum.TextTruncate.AtEnd
         label.Parent = item
-        
         local deleteBtn = Instance.new("TextButton")
         deleteBtn.Size = UDim2.new(0, 20, 0, 20)
         deleteBtn.Position = UDim2.new(1, -22, 0, 0)
@@ -1621,18 +1493,15 @@ local function updateSuffixList()
         deleteBtn.Font = Enum.Font.GothamBold
         deleteBtn.TextSize = 9
         deleteBtn.Parent = item
-        
         local deleteCorner = Instance.new("UICorner")
         deleteCorner.CornerRadius = UDim.new(0, 4)
         deleteCorner.Parent = deleteBtn
-        
         deleteBtn.MouseButton1Click:Connect(function()
             table.remove(suffixes, i)
             if suffixIndex > #suffixes then suffixIndex = 1 end
             updateSuffixList()
         end)
     end
-    
     suffixScroll.CanvasSize = UDim2.new(0, 0, 0, suffixLayout.AbsoluteContentSize.Y)
 end
 
@@ -1641,11 +1510,9 @@ local function onPlayerChatted(plr, msg)
     if targetPlayer == nil then return end
     if plr ~= targetPlayer then return end
     if #suffixes == 0 then return end
-    
     local suffix = suffixes[suffixIndex]
     local mimicMsg = '"' .. msg .. '" ' .. suffix
     sendMessage(mimicMsg)
-    
     suffixIndex = suffixIndex + 1
     if suffixIndex > #suffixes then
         suffixIndex = 1
@@ -1682,11 +1549,8 @@ end)
 
 local function updateDropdown()
     for _, child in pairs(dropdownScroll:GetChildren()) do
-        if child:IsA("TextButton") then
-            child:Destroy()
-        end
+        if child:IsA("TextButton") then child:Destroy() end
     end
-    
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= player then
             local btn = Instance.new("TextButton")
@@ -1698,11 +1562,9 @@ local function updateDropdown()
             btn.TextSize = 11
             btn.ZIndex = 10
             btn.Parent = dropdownScroll
-            
             local btnCorner = Instance.new("UICorner")
             btnCorner.CornerRadius = UDim.new(0, 4)
             btnCorner.Parent = btn
-            
             btn.MouseButton1Click:Connect(function()
                 targetPlayer = plr
                 targetLabel.Text = "Target: " .. plr.Name
@@ -1710,7 +1572,6 @@ local function updateDropdown()
             end)
         end
     end
-    
     dropdownScroll.CanvasSize = UDim2.new(0, 0, 0, dropdownLayout.AbsoluteContentSize.Y)
 end
 
@@ -1724,12 +1585,8 @@ selectTargetBtn.MouseButton1Click:Connect(function()
 end)
 
 mimicToggle.MouseButton1Click:Connect(function()
-    if targetPlayer == nil then
-        return
-    end
-    
+    if targetPlayer == nil then return end
     mimicEnabled = not mimicEnabled
-    
     if mimicEnabled then
         mimicToggle.Text = "MIMIC: ON"
         mimicToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
@@ -1770,255 +1627,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-updateKblModeButtons()
-updateKblDelayListUI()
-updateDelayListUI()
-updateModeButtons()
-updateSuffixList()
-updateCaseButtons()
-updateSendModeButtons()
-sendAllBtn.MouseButton1Click:Connect(function()
-    if sendMode == "tap" then
-        local text = textbox.Text
-        if text == "" then return end
-        
-        local lines = {}
-        for line in text:gmatch("[^\n]+") do
-            if line:match("%S") then
-                table.insert(lines, line)
-            end
-        end
-        
-        if #lines == 0 then return end
-        
-        if tapIndex > #lines then
-            tapIndex = 1
-        end
-        
-        sendMessage(lines[tapIndex])
-        tapIndex = tapIndex + 1
-    else
-        local text = textbox.Text
-        if text == "" then return end
-        
-        local lines = {}
-        for line in text:gmatch("[^\n]+") do
-            if line:match("%S") then
-                table.insert(lines, line)
-            end
-        end
-        
-        if #lines == 0 then return end
-        
-        chatLines = lines
-        chatIndex = 1
-        chatSending = true
-        chatPaused = false
-        
-        spawn(runChatSend)
-    end
-end)
-
-pauseBtn.MouseButton1Click:Connect(function()
-    if chatSending then
-        chatPaused = not chatPaused
-        if chatPaused then
-            pauseBtn.Text = "R"
-            pauseBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 80)
-        else
-            pauseBtn.Text = "P"
-            pauseBtn.BackgroundColor3 = Color3.fromRGB(180, 120, 0)
-        end
-    end
-end)
-
-local function updateSuffixList()
-    for _, child in pairs(suffixScroll:GetChildren()) do
-        if child:IsA("Frame") then
-            child:Destroy()
-        end
-    end
-    
-    for i, suffix in ipairs(suffixes) do
-        local item = Instance.new("Frame")
-        item.Size = UDim2.new(1, 0, 0, 20)
-        item.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        item.Parent = suffixScroll
-        
-        local itemCorner = Instance.new("UICorner")
-        itemCorner.CornerRadius = UDim.new(0, 4)
-        itemCorner.Parent = item
-        
-        local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(1, -26, 1, 0)
-        label.Position = UDim2.new(0, 5, 0, 0)
-        label.BackgroundTransparency = 1
-        label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        label.Text = i..". "..suffix
-        label.Font = Enum.Font.Gotham
-        label.TextSize = 10
-        label.TextXAlignment = Enum.TextXAlignment.Left
-        label.TextTruncate = Enum.TextTruncate.AtEnd
-        label.Parent = item
-        
-        local deleteBtn = Instance.new("TextButton")
-        deleteBtn.Size = UDim2.new(0, 20, 0, 20)
-        deleteBtn.Position = UDim2.new(1, -22, 0, 0)
-        deleteBtn.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-        deleteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        deleteBtn.Text = "X"
-        deleteBtn.Font = Enum.Font.GothamBold
-        deleteBtn.TextSize = 9
-        deleteBtn.Parent = item
-        
-        local deleteCorner = Instance.new("UICorner")
-        deleteCorner.CornerRadius = UDim.new(0, 4)
-        deleteCorner.Parent = deleteBtn
-        
-        deleteBtn.MouseButton1Click:Connect(function()
-            table.remove(suffixes, i)
-            if suffixIndex > #suffixes then suffixIndex = 1 end
-            updateSuffixList()
-        end)
-    end
-    
-    suffixScroll.CanvasSize = UDim2.new(0, 0, 0, suffixLayout.AbsoluteContentSize.Y)
-end
-
-local function onPlayerChatted(plr, msg)
-    if not mimicEnabled then return end
-    if targetPlayer == nil then return end
-    if plr ~= targetPlayer then return end
-    if #suffixes == 0 then return end
-    
-    local suffix = suffixes[suffixIndex]
-    local mimicMsg = '"' .. msg .. '" ' .. suffix
-    sendMessage(mimicMsg)
-    
-    suffixIndex = suffixIndex + 1
-    if suffixIndex > #suffixes then
-        suffixIndex = 1
-    end
-end
-
-local function setupPlayerListener(plr)
-    plr.Chatted:Connect(function(msg)
-        onPlayerChatted(plr, msg)
-    end)
-end
-
-for _, plr in pairs(Players:GetPlayers()) do
-    if plr ~= player then
-        setupPlayerListener(plr)
-    end
-end
-
-Players.PlayerAdded:Connect(function(plr)
-    if plr ~= player then
-        setupPlayerListener(plr)
-    end
-end)
-
-Players.PlayerRemoving:Connect(function(plr)
-    if plr == targetPlayer then
-        targetPlayer = nil
-        targetLabel.Text = "Target: None"
-        mimicEnabled = false
-        mimicToggle.Text = "MIMIC: OFF"
-        mimicToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-    end
-end)
-
-local function updateDropdown()
-    for _, child in pairs(dropdownScroll:GetChildren()) do
-        if child:IsA("TextButton") then
-            child:Destroy()
-        end
-    end
-    
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= player then
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, 0, 0, 22)
-            btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            btn.Text = plr.Name
-            btn.Font = Enum.Font.Gotham
-            btn.TextSize = 11
-            btn.ZIndex = 10
-            btn.Parent = dropdownScroll
-            
-            local btnCorner = Instance.new("UICorner")
-            btnCorner.CornerRadius = UDim.new(0, 4)
-            btnCorner.Parent = btn
-            
-            btn.MouseButton1Click:Connect(function()
-                targetPlayer = plr
-                targetLabel.Text = "Target: " .. plr.Name
-                dropdownFrame.Visible = false
-            end)
-        end
-    end
-    
-    dropdownScroll.CanvasSize = UDim2.new(0, 0, 0, dropdownLayout.AbsoluteContentSize.Y)
-end
-
-selectTargetBtn.MouseButton1Click:Connect(function()
-    if dropdownFrame.Visible then
-        dropdownFrame.Visible = false
-    else
-        updateDropdown()
-        dropdownFrame.Visible = true
-    end
-end)
-
-mimicToggle.MouseButton1Click:Connect(function()
-    if targetPlayer == nil then
-        return
-    end
-    
-    mimicEnabled = not mimicEnabled
-    
-    if mimicEnabled then
-        mimicToggle.Text = "MIMIC: ON"
-        mimicToggle.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
-    else
-        mimicToggle.Text = "MIMIC: OFF"
-        mimicToggle.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
-    end
-end)
-
-addSuffixBtn.MouseButton1Click:Connect(function()
-    local text = suffixInput.Text:gsub("^%s+", ""):gsub("%s+$", "")
-    if text ~= "" then
-        table.insert(suffixes, text)
-        suffixInput.Text = ""
-        updateSuffixList()
-    end
-end)
-
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        if dropdownFrame.Visible then
-            dropdownFrame.Visible = false
-        end
-    end
-end)
-
-local guiVisible = true
-
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if input.KeyCode == Enum.KeyCode.RightControl then
-        if mainFrame.Visible then
-            mainFrame.Visible = false
-            hubButton.Visible = guiVisible
-        else
-            guiVisible = not guiVisible
-            hubButton.Visible = guiVisible
-        end
-    end
-end)
-
+-- Initialize
 updateKblModeButtons()
 updateKblDelayListUI()
 updateDelayListUI()
