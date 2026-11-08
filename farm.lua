@@ -1,4 +1,4 @@
--- Auto Farm Script with Input Hub
+-- Auto Farm Script with Input Hub and On/Off Toggle
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -45,8 +45,8 @@ hubIcon.Parent = hubButton
 -- Main Frame (Expanded)
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 200, 0, 100)
-mainFrame.Position = UDim2.new(0, 20, 0.5, -50)
+mainFrame.Size = UDim2.new(0, 200, 0, 130)
+mainFrame.Position = UDim2.new(0, 20, 0.5, -65)
 mainFrame.BackgroundColor3 = Color3.fromRGB(255, 105, 180)
 mainFrame.BorderSizePixel = 2
 mainFrame.BorderColor3 = Color3.fromRGB(255, 20, 147)
@@ -110,9 +110,20 @@ content.BackgroundTransparency = 1
 content.Parent = mainFrame
 
 -- Range Input
+local rangeLabel = Instance.new("TextLabel")
+rangeLabel.Size = UDim2.new(1, -20, 0, 16)
+rangeLabel.Position = UDim2.new(0, 10, 0, 10)
+rangeLabel.BackgroundTransparency = 1
+rangeLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+rangeLabel.Text = "Detection Range (studs):"
+rangeLabel.Font = Enum.Font.Gotham
+rangeLabel.TextSize = 11
+rangeLabel.TextXAlignment = Enum.TextXAlignment.Left
+rangeLabel.Parent = content
+
 local rangeInput = Instance.new("TextBox")
 rangeInput.Size = UDim2.new(1, -20, 0, 24)
-rangeInput.Position = UDim2.new(0, 10, 0, 20)
+rangeInput.Position = UDim2.new(0, 10, 0, 28)
 rangeInput.BackgroundColor3 = Color3.fromRGB(255, 130, 200)
 rangeInput.TextColor3 = Color3.fromRGB(255, 255, 255)
 rangeInput.Text = tostring(detectionRange)
@@ -125,6 +136,33 @@ rangeInput.Parent = content
 local rangeCorner = Instance.new("UICorner")
 rangeCorner.CornerRadius = UDim.new(0, 6)
 rangeCorner.Parent = rangeInput
+
+-- Toggle Button
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(1, -20, 0, 26)
+toggleBtn.Position = UDim2.new(0, 10, 0, 60)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 200, 60)
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.Text = "TURN ON"
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 12
+toggleBtn.Parent = content
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0, 6)
+toggleCorner.Parent = toggleBtn
+
+-- Status Label
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, -20, 0, 16)
+statusLabel.Position = UDim2.new(0, 10, 0, 90)
+statusLabel.BackgroundTransparency = 1
+statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+statusLabel.Text = "Status: OFF"
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextSize = 11
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.Parent = content
 
 -- Functions
 local function findNearestPlayer()
@@ -147,6 +185,11 @@ end
 local function followTarget()
     if not targetPlayer or not targetPlayer.Character or not targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
         targetPlayer = findNearestPlayer()
+        if targetPlayer then
+            statusLabel.Text = "Status: Following " .. targetPlayer.Name
+        else
+            statusLabel.Text = "Status: No target found"
+        end
     end
     
     if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -163,6 +206,9 @@ local function startFollowing()
     if connection then connection:Disconnect() end
     isFollowing = true
     connection = RunService.Heartbeat:Connect(followTarget)
+    toggleBtn.Text = "TURN OFF"
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+    statusLabel.Text = "Status: Following"
 end
 
 local function stopFollowing()
@@ -172,6 +218,9 @@ local function stopFollowing()
     end
     isFollowing = false
     targetPlayer = nil
+    toggleBtn.Text = "TURN ON"
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 200, 60)
+    statusLabel.Text = "Status: OFF"
 end
 
 -- Event Handlers
@@ -196,8 +245,13 @@ rangeInput.FocusLost:Connect(function(enterPressed)
     end
 end)
 
--- Start following by default
-startFollowing()
+toggleBtn.MouseButton1Click:Connect(function()
+    if isFollowing then
+        stopFollowing()
+    else
+        startFollowing()
+    end
+end)
 
 -- Respawn handler
 player.CharacterAdded:Connect(function()
@@ -206,3 +260,4 @@ player.CharacterAdded:Connect(function()
         startFollowing()
     end
 end)
+   
