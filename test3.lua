@@ -1,4 +1,4 @@
--- FAGGOT KILLER  //  AEGIS  v1.8
+-- FAGGOT KILLER  //  AEGIS  v2.0
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -18,13 +18,15 @@ local MASS_ARMOR = 100
 local REPAIR_EVERY = 0.3
 
 local STICK_RANGE = 6
-local PULSE_ON = 0.10
-local PULSE_OFF = 0.035
+local PULSE_ON = 0.12
+local PULSE_OFF = 0.05
 local BURST_POWER = 1400
-local BURST_COOLDOWN = 0.18
+local BURST_COOLDOWN = 0.2
 local HEALTH_TARGET = 1000
-local PHANTOM_EVERY = 0.25
-local DECOY_EVERY = 0.5
+local PHANTOM_EVERY = 0.7
+local DECOY_EVERY = 1.0
+local BUMP_EVERY = 2.0
+local DIAG_EVERY = 0.35
 
 local ESCAPE_DIST = 45
 local ESCAPE_COOLDOWN = 0.8
@@ -37,13 +39,12 @@ local SHOCK_POWER = 900
 local SHOCK_COOLDOWN = 0.5
 
 local REACH_DIST = 26
-local REACH_TICK = 0.04
-local CLICK_COOLDOWN = 0.1
-local MAX_TARGETS = 8
+local HIT_PARTS = { "HumanoidRootPart", "Head", "Torso", "UpperTorso" }
 
 local enabled = false
 local lockOn = false
 local opt = {
+    lite = false,
     decoy = true,
     phantom = true,
     bump = true,
@@ -61,6 +62,7 @@ local opt = {
     reach = true,
     reachAny = true,
     clicker = true,
+    diag = true,
     escape = false,
     kite = false,
     hover = false,
@@ -78,6 +80,8 @@ local WHITELIST = {
 }
 
 local spikeCount = 0
+local ftiCount = 0
+local ftiRate = 0
 local autoAnchorUntil = 0
 local nextSpikeAt = 0
 local nextRepairAt = 0
@@ -88,8 +92,9 @@ local nextBurstAt = 0
 local nextSwingAt = 0
 local nextPhantomAt = 0
 local nextDecoyAt = 0
+local nextBumpAt = 0
 local nextReachAt = 0
-local nextClickAt = 0
+local nextDiagAt = 0
 local weAnchored = false
 local pulseActive = false
 local pulseAnchored = false
@@ -474,6 +479,8 @@ section("COUNTER-REACH")
 makeRow("auto reach (FTI)", "reach")
 makeRow("any distance", "reachAny")
 makeRow("auto clicker", "clicker")
+makeRow("low cost mode", "lite")
+makeRow("diagnostics", "diag")
 numRow("reach limit", function() return REACH_DIST end, function(v) REACH_DIST = v end, 10, 8, 500)
 
 section("FLING DEFENSE")
@@ -645,21 +652,21 @@ local function applyPhantom()
     if not myChar then return end
     local tool = getTool()
     for _, d in ipairs(myChar:GetDescendants()) do
-        if d:IsA("BasePart") then
+        if d:IsA("BasePart") and d.CanTouch then
             local inTool = false
             if tool then inTool = d:IsDescendantOf(tool) end
             if not inTool then
-                if phantom[d] == nil then phantom[d] = d.CanTouch end
-                if d.CanTouch then d.CanTouch = false end
+                phantom[d] = true
+                d.CanTouch = false
             end
         end
     end
 end
 
 local function clearPhantom()
-    for part, orig in pairs(phantom) do
+    for part in pairs(phantom) do
         if part and part.Parent then
-            part.CanTouch = orig
+            part.CanTouch = true
         end
     end
     phantom = {}
@@ -676,10 +683,10 @@ local function bindCharacter(ch)
     pulseActive = false
     pulseAnchored = false
     if healConn then healConn:Disconnect() healConn = nil end
-    if myHum and opt.heal then
+    if myHum then
         healConn = myHum.HealthChanged:Connect(function(h)
-            if not opt.heal or not myHum then return end
-            if h < myHum.MaxHealth then
+            if not enabled or not opt.heal then return end
+            if h > 0 and h < myHum.MaxHealth then
                 myHum.Health = myHum.MaxHealth
             end
         end)
@@ -695,15 +702,17 @@ local function pushSpike(who)
     spikeCount = spikeCount + 1
     spikeLbl.Text = spikeCount .. " blocked"
     spikeLbl.TextColor3 = C.accent
-    statusLbl.Text = "BLOCKED · " .. (who or "unknown")
-    statusLbl.TextColor3 = C.accent
+    if not opt.diag then
+        statusLbl.Text = "BLOCKED · " .. (who or "unknown")
+        statusLbl.TextColor3 = C.accent
+        task.delay(0.9, function()
+            if enabled and not opt.diag then
+                statusLbl.Text = "ACTIVE"
+                statusLbl.TextColor3 = C.accent
+            end
+        end)
+    end
     flash()
-    task.delay(0.9, function()
-        if enabled then
-            statusLbl.Text = "ACTIVE"
-            statusLbl.TextColor3 = C.accent
-        end
-    end)
 end
 
 local function unanchor()
@@ -850,40 +859,40 @@ local function shockwave()
     end)
 end
 
--- FTI reach: unlimited by default, nearest-first, capped
+-- swing + touches in the same tick so every touch lands inside a live swing
 local function reachTick()
     local tool = getTool() or equipTool()
     if not tool then return end
     local handle = tool:FindFirstChild("Handle")
     if not handle then return end
 
-    local candidates = {}
+    if opt.clicker then
+        pcall(function()
+            tool:Activate()
+            tool:Activate()
+        end)
+    end
+
+    local limit = opt.lite and 2 or 4
+    local count = 0
+
     for _, p in ipairs(Players:GetPlayers()) do
+        if count >= limit then break end
         if p ~= player and p.Character then
             local hrp = p.Character:FindFirstChild("HumanoidRootPart")
             local hum = p.Character:FindFirstChildOfClass("Humanoid")
             if hrp and hum and hum.Health > 0 then
-                local d = (hrp.Position - handle.Position).Magnitude
-                if opt.reachAny or d <= REACH_DIST then
-                    table.insert(candidates, { char = p.Character, dist = d })
+                if opt.reachAny or (hrp.Position - handle.Position).Magnitude <= REACH_DIST then
+                    count = count + 1
+                    for _, nm in ipairs(HIT_PARTS) do
+                        local part = p.Character:FindFirstChild(nm)
+                        if part and part:IsA("BasePart") then
+                            firetouchinterest(part, handle, 0)
+                            firetouchinterest(part, handle, 1)
+                            ftiCount = ftiCount + 2
+                        end
+                    end
                 end
-            end
-        end
-    end
-
-    if #candidates == 0 then return end
-    if #candidates > MAX_TARGETS then
-        table.sort(candidates, function(a, b) return a.dist < b.dist end)
-    end
-
-    local limit = math.min(#candidates, MAX_TARGETS)
-    for i = 1, limit do
-        for _, part in ipairs(candidates[i].char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                pcall(function()
-                    firetouchinterest(part, handle, 0)
-                    firetouchinterest(part, handle, 1)
-                end)
             end
         end
     end
@@ -913,27 +922,28 @@ local function onHeartbeat()
         applyPhantom()
     end
 
-    if opt.bump and myHum.MaxHealth < HEALTH_TARGET then
-        myHum.MaxHealth = HEALTH_TARGET
-        myHum.Health = HEALTH_TARGET
-    end
-    if opt.heal and myHum.Health < myHum.MaxHealth then
-        myHum.Health = myHum.MaxHealth
+    if opt.bump and now >= nextBumpAt then
+        nextBumpAt = now + BUMP_EVERY
+        if myHum.MaxHealth < HEALTH_TARGET then
+            myHum.MaxHealth = HEALTH_TARGET
+            myHum.Health = HEALTH_TARGET
+        end
     end
 
     if hasFTI and opt.reach and now >= nextReachAt then
-        nextReachAt = now + REACH_TICK
+        nextReachAt = now + (opt.lite and 0.12 or 0.055)
         reachTick()
-        if opt.clicker and now >= nextClickAt then
-            nextClickAt = now + CLICK_COOLDOWN
-            local tool = getTool()
-            if tool then
-                pcall(function()
-                    tool:Activate()
-                    tool:Activate()
-                end)
-            end
+    end
+
+    if opt.diag and now >= nextDiagAt then
+        nextDiagAt = now + DIAG_EVERY
+        local who = pickAttacker(400)
+        local hp = "-"
+        if who and who.Character then
+            local h = who.Character:FindFirstChildOfClass("Humanoid")
+            if h then hp = tostring(math.floor(h.Health)) end
         end
+        statusLbl.Text = "enemy hp " .. hp .. " | fti " .. ftiRate
     end
 
     if hoverBV and hoverTargetY and not weAnchored then
@@ -972,7 +982,7 @@ local function onHeartbeat()
                         ejectBurst(nr)
                     end
                     if opt.retaliate and now >= nextSwingAt then
-                        nextSwingAt = now + CLICK_COOLDOWN
+                        nextSwingAt = now + 0.16
                         local tool = getTool() or equipTool()
                         if tool then pcall(function() tool:Activate() end) end
                     end
@@ -1022,7 +1032,6 @@ local function onHeartbeat()
     if opt.massArmor and not myRoot.CustomPhysicalProperties then
         myRoot.CustomPhysicalProperties = PhysicalProperties.new(MASS_ARMOR, 0.5, 0.5)
     end
-    if myRoot.Massless then myRoot.Massless = false end
 
     local pos = myRoot.Position
     local vel = myRoot.AssemblyLinearVelocity
@@ -1099,8 +1108,12 @@ end
 
 task.spawn(function()
     while screenGui.Parent do
-        task.wait(0.4)
-        if enabled and not loop then start() end
+        task.wait(1)
+        if enabled then
+            ftiRate = math.floor(ftiCount / 1 + 0.5)
+            ftiCount = 0
+            if not loop then start() end
+        end
     end
 end)
 
@@ -1151,8 +1164,9 @@ lockBtn.MouseButton1Click:Connect(function()
         nextSwingAt = 0
         nextPhantomAt = 0
         nextDecoyAt = 0
+        nextBumpAt = 0
         nextReachAt = 0
-        nextClickAt = 0
+        nextDiagAt = 0
         pulseNext = 0
         if opt.hover and myRoot then
             hoverTargetY = myRoot.Position.Y + HOVER_HEIGHT
