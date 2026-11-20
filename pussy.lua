@@ -16,6 +16,13 @@ local flingLoop = nil
 local bodyVel = nil
 local bodyAngVel = nil
 
+-- MULTI settings
+local multiEnabled = false
+local multiTargets = {}
+local multiIndex = 1
+local MULTI_INTERVAL = 0.08 -- seconds spent per target before switching (lower = faster)
+local flingAccum = 0
+
 local COLORS = {
     background = Color3.fromRGB(25, 25, 25),
     header = Color3.fromRGB(15, 15, 15),
@@ -63,8 +70,8 @@ hubGradient.Parent = hubButton
 -- Main Frame
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 320, 0, 300)
-mainFrame.Position = UDim2.new(0.5, -160, 0.5, -150)
+mainFrame.Size = UDim2.new(0, 320, 0, 340)
+mainFrame.Position = UDim2.new(0.5, -160, 0.5, -170)
 mainFrame.BackgroundColor3 = COLORS.background
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -152,10 +159,24 @@ local togCorner = Instance.new("UICorner")
 togCorner.CornerRadius = UDim.new(0, 6)
 togCorner.Parent = toggleBtn
 
+-- MULTI Toggle Button
+local multiBtn = Instance.new("TextButton")
+multiBtn.Size = UDim2.new(1, 0, 0, 26)
+multiBtn.Position = UDim2.new(0, 0, 0, 38)
+multiBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+multiBtn.TextColor3 = COLORS.textLight
+multiBtn.Text = "MULTI: OFF"
+multiBtn.Font = Enum.Font.GothamBold
+multiBtn.TextSize = 11
+multiBtn.Parent = contentFrame
+local multiCorner = Instance.new("UICorner")
+multiCorner.CornerRadius = UDim.new(0, 6)
+multiCorner.Parent = multiBtn
+
 -- Target Label
 local targetLbl = Instance.new("TextLabel")
-targetLbl.Size = UDim2.new(1, 0, 0, 16)
-targetLbl.Position = UDim2.new(0, 0, 0, 44)
+targetLbl.Size = UDim2.new(1, -56, 0, 14)
+targetLbl.Position = UDim2.new(0, 0, 0, 68)
 targetLbl.BackgroundTransparency = 1
 targetLbl.TextColor3 = COLORS.textDark
 targetLbl.Text = "Target:"
@@ -164,10 +185,24 @@ targetLbl.TextSize = 10
 targetLbl.TextXAlignment = Enum.TextXAlignment.Left
 targetLbl.Parent = contentFrame
 
+-- Clear Targets Button
+local clearBtn = Instance.new("TextButton")
+clearBtn.Size = UDim2.new(0, 52, 0, 14)
+clearBtn.Position = UDim2.new(1, -52, 0, 68)
+clearBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+clearBtn.TextColor3 = COLORS.textLight
+clearBtn.Text = "CLEAR"
+clearBtn.Font = Enum.Font.GothamBold
+clearBtn.TextSize = 9
+clearBtn.Parent = contentFrame
+local clearCorner = Instance.new("UICorner")
+clearCorner.CornerRadius = UDim.new(0, 4)
+clearCorner.Parent = clearBtn
+
 -- Player List
 local playerList = Instance.new("ScrollingFrame")
 playerList.Size = UDim2.new(1, 0, 0, 150)
-playerList.Position = UDim2.new(0, 0, 0, 64)
+playerList.Position = UDim2.new(0, 0, 0, 86)
 playerList.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 playerList.ScrollBarThickness = 4
 playerList.Parent = contentFrame
@@ -190,7 +225,8 @@ killGuiBtn.TextSize = 11
 killGuiBtn.Parent = contentFrame
 local killCorner = Instance.new("UICorner")
 killCorner.CornerRadius = UDim.new(0, 5)
-killCorner.Parent = contentFrame
+killCorner.Parent = killGuiBtn
+
 -- Dragging (hub button)
 local dragging = false
 local dragInput, dragStart, startPos
@@ -279,44 +315,90 @@ end)
 -- Player List
 local playerButtons = {}
 
+local function inMulti(plr)
+    return table.find(multiTargets, plr) ~= nil
+end
+
+local function updateTargetLabel()
+    if multiEnabled then
+        targetLbl.Text = "Targets (multi): " .. tostring(#multiTargets)
+        targetLbl.TextColor3 = COLORS.buttonSuccess
+    else
+        targetLbl.Text = "Target: " .. (targetPlayer and targetPlayer.Name or "none")
+        targetLbl.TextColor3 = COLORS.textDark
+    end
+end
+
 local function updatePlayerList()
     for _, btn in pairs(playerButtons) do
         btn:Destroy()
     end
     playerButtons = {}
-    
+
     for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= player then
+            local selected
+            if multiEnabled then
+                selected = inMulti(plr)
+            else
+                selected = (targetPlayer == plr)
+            end
+
             local btn = Instance.new("TextButton")
             btn.Size = UDim2.new(1, 0, 0, 20)
-            btn.BackgroundColor3 = targetPlayer == plr and COLORS.buttonPrimary or Color3.fromRGB(50, 50, 50)
-            btn.TextColor3 = targetPlayer == plr and COLORS.textLight or COLORS.textDark
-            btn.Text = plr.Name
+            btn.BackgroundColor3 = selected and (multiEnabled and COLORS.buttonSuccess or COLORS.buttonPrimary) or Color3.fromRGB(50, 50, 50)
+            btn.TextColor3 = selected and COLORS.textLight or COLORS.textDark
+            btn.Text = (multiEnabled and selected and "✓ " or "") .. plr.Name
             btn.Font = Enum.Font.Gotham
             btn.TextSize = 9
             btn.Parent = playerList
             local btnCorner = Instance.new("UICorner")
             btnCorner.CornerRadius = UDim.new(0, 4)
             btnCorner.Parent = btn
-            
+
             btn.MouseButton1Click:Connect(function()
-                targetPlayer = plr
+                if multiEnabled then
+                    local idx = table.find(multiTargets, plr)
+                    if idx then
+                        table.remove(multiTargets, idx)
+                    else
+                        table.insert(multiTargets, plr)
+                    end
+                    if multiIndex > #multiTargets then multiIndex = 1 end
+                else
+                    targetPlayer = plr
+                end
                 updatePlayerList()
+                updateTargetLabel()
             end)
-            
+
             table.insert(playerButtons, btn)
         end
     end
-    
+
     playerList.CanvasSize = UDim2.new(0, 0, 0, #playerButtons * 22)
+    updateTargetLabel()
 end
 
 Players.PlayerAdded:Connect(updatePlayerList)
-Players.PlayerRemoving:Connect(function()
+Players.PlayerRemoving:Connect(function(plr)
+    local idx = table.find(multiTargets, plr)
+    if idx then
+        table.remove(multiTargets, idx)
+        if multiIndex > #multiTargets then multiIndex = 1 end
+    end
+    if targetPlayer == plr then targetPlayer = nil end
     wait(0.5)
     updatePlayerList()
 end)
 updatePlayerList()
+
+clearBtn.MouseButton1Click:Connect(function()
+    table.clear(multiTargets)
+    multiIndex = 1
+    targetPlayer = nil
+    updatePlayerList()
+end)
 
 -- Helpers
 local function getRoot(char)
@@ -369,7 +451,7 @@ end
 local function devastateFling(targetRoot, myRoot, myHumanoid)
     boostMass(player.Character)
     myRoot.CFrame = targetRoot.CFrame * CFrame.new(math.random(-1, 1), math.random(-1, 1), math.random(-1, 1))
-    
+
     if bodyVel then bodyVel:Destroy() end
     bodyVel = Instance.new("BodyVelocity")
     bodyVel.Name = "CollisionBurst"
@@ -377,7 +459,7 @@ local function devastateFling(targetRoot, myRoot, myHumanoid)
     bodyVel.Velocity = Vector3.new(math.random(-1, 1) * velocityPower, velocityPower, math.random(-1, 1) * velocityPower)
     bodyVel.P = math.huge
     bodyVel.Parent = myRoot
-    
+
     if bodyAngVel then bodyAngVel:Destroy() end
     bodyAngVel = Instance.new("BodyAngularVelocity")
     bodyAngVel.Name = "CollisionSpin"
@@ -385,7 +467,7 @@ local function devastateFling(targetRoot, myRoot, myHumanoid)
     bodyAngVel.AngularVelocity = Vector3.new(angularPower, angularPower, angularPower)
     bodyAngVel.P = math.huge
     bodyAngVel.Parent = myRoot
-    
+
     if myHumanoid then myHumanoid.PlatformStand = true end
 end
 
@@ -412,6 +494,8 @@ local function stopAll()
     end
     if bodyVel then bodyVel:Destroy() bodyVel = nil end
     if bodyAngVel then bodyAngVel:Destroy() bodyAngVel = nil end
+    flingAccum = 0
+    multiIndex = 1
     local myChar = player.Character
     if myChar then
         local myRoot = getRoot(myChar)
@@ -427,35 +511,92 @@ end
 
 local function startDestroy()
     if flingLoop then flingLoop:Disconnect() end
-    flingLoop = RunService.Heartbeat:Connect(function()
+    flingAccum = 0
+    flingLoop = RunService.Heartbeat:Connect(function(dt)
         if not destroyEnabled then return end
         local myChar = player.Character
         if not myChar then return end
         local myRoot = getRoot(myChar)
         local myHumanoid = myChar:FindFirstChild("Humanoid")
         if not myRoot then return end
+
+        -- MULTI MODE: alternate through the queue, one target at a time
+        if multiEnabled then
+            if #multiTargets == 0 then return end
+
+            -- prune dead / invalid entries
+            while #multiTargets > 0 do
+                local cur = multiTargets[multiIndex]
+                if cur and cur.Character and getRoot(cur.Character) then break end
+                table.remove(multiTargets, multiIndex)
+                if multiIndex > #multiTargets then multiIndex = 1 end
+            end
+            if #multiTargets == 0 then return end
+
+            local plr = multiTargets[multiIndex]
+            local targetRoot = getRoot(plr.Character)
+
+            devastateFling(targetRoot, myRoot, myHumanoid)
+            swordAttack(targetRoot, myRoot)
+
+            flingAccum = flingAccum + dt
+            if flingAccum >= MULTI_INTERVAL then
+                flingAccum = 0
+                multiIndex = multiIndex + 1
+                if multiIndex > #multiTargets then
+                    multiIndex = 1 -- loop back to the first
+                end
+            end
+            return
+        end
+
+        -- SINGLE MODE
         if not targetPlayer or not targetPlayer.Character then return end
         local targetRoot = getRoot(targetPlayer.Character)
         if not targetRoot then return end
-        
+
         devastateFling(targetRoot, myRoot, myHumanoid)
         swordAttack(targetRoot, myRoot)
     end)
 end
 
+-- MULTI Toggle
+multiBtn.MouseButton1Click:Connect(function()
+    multiEnabled = not multiEnabled
+    multiIndex = 1
+    flingAccum = 0
+    if multiEnabled then
+        multiBtn.Text = "MULTI: ON (alternating)"
+        multiBtn.BackgroundColor3 = COLORS.buttonSuccess
+        if targetPlayer then
+            if not inMulti(targetPlayer) then
+                table.insert(multiTargets, targetPlayer)
+            end
+            targetPlayer = nil
+        end
+    else
+        multiBtn.Text = "MULTI: OFF"
+        multiBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        table.clear(multiTargets)
+    end
+    updatePlayerList()
+end)
+
 -- Main Toggle
 toggleBtn.MouseButton1Click:Connect(function()
-    destroyEnabled = not destroyEnabled
-    if destroyEnabled then
-        if not targetPlayer then
-            destroyEnabled = false
+    if not destroyEnabled then
+        if multiEnabled then
+            if #multiTargets == 0 then return end
+        elseif not targetPlayer then
             return
         end
+        destroyEnabled = true
         toggleBtn.Text = "FAGGOT DESTROYER ON"
         toggleBtn.BackgroundColor3 = COLORS.buttonSuccess
         equipSword()
         startDestroy()
     else
+        destroyEnabled = false
         toggleBtn.Text = "FAGGOT DESTROYER OFF"
         toggleBtn.BackgroundColor3 = COLORS.buttonDanger
         stopAll()
