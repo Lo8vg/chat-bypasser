@@ -1,4 +1,4 @@
--- FAGGOT KILLER  //  AEGIS  v1
+-- FAGGOT KILLER  //  AEGIS  v1.1
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -9,12 +9,14 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 -- tuning
-local MAX_SPEED = 120        -- studs/sec before it counts as a fling
-local MAX_STEP = 30          -- studs in a single frame before it counts as a teleport
-local ANCHOR_TIME = 0.14     -- how long the auto-lock holds
-local COUNTER_POWER = 4200   -- return-to-sender burst
+local MAX_SPEED = 120
+local MAX_STEP = 30
+local ANCHOR_TIME = 0.14
+local SPIKE_COOLDOWN = 0.16
+local COUNTER_POWER = 4200
 local COUNTER_RANGE = 10
 local MASS_ARMOR = 100
+local REPAIR_EVERY = 0.3
 
 -- states
 local enabled = false
@@ -25,16 +27,22 @@ local opt = {
     autoAnchor = true,
     voidRescue = true,
     massArmor = true,
-    counter = false
+    counter = false,
+    holdLock = false
 }
 
 local spikeCount = 0
 local autoAnchorUntil = 0
+local nextSpikeAt = 0
+local nextRepairAt = 0
 local weAnchored = false
 local lastGoodPos = nil
 local counterTarget = nil
 local loop = nil
 local motorCache = {}
+local myChar = nil
+local myRoot = nil
+local myHum = nil
 
 local C = {
     bg = Color3.fromRGB(13, 15, 14),
@@ -44,7 +52,6 @@ local C = {
     stroke = Color3.fromRGB(36, 42, 39),
     accent = Color3.fromRGB(64, 255, 160),
     accent2 = Color3.fromRGB(0, 190, 255),
-    good = Color3.fromRGB(64, 255, 160),
     bad = Color3.fromRGB(255, 59, 92),
     text = Color3.fromRGB(232, 240, 235),
     muted = Color3.fromRGB(122, 138, 130),
@@ -100,15 +107,15 @@ local hubStroke = stroke(hubButton, C.accent, 1.5, 0.35)
 
 -- ===== PANEL =====
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 344, 0, 412)
-mainFrame.Position = UDim2.new(0.5, -172, 0.5, -206)
+mainFrame.Size = UDim2.new(0, 344, 0, 436)
+mainFrame.Position = UDim2.new(0.5, -172, 0.5, -218)
 mainFrame.BackgroundColor3 = C.bg
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
 mainFrame.ClipsDescendants = true
 mainFrame.Parent = screenGui
 corner(mainFrame, 14)
-stroke(mainFrame, C.stroke, 1)
+local frameStroke = stroke(mainFrame, C.stroke, 1)
 gradient(mainFrame, Color3.fromRGB(18, 22, 20), C.bg, 90)
 
 local accentBar = Instance.new("Frame")
@@ -124,7 +131,7 @@ titleBar.BackgroundTransparency = 1
 titleBar.Parent = mainFrame
 
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -140, 0, 18)
+title.Size = UDim2.new(1, -180, 0, 18)
 title.Position = UDim2.new(0, 16, 0, 9)
 title.BackgroundTransparency = 1
 title.TextColor3 = C.text
@@ -135,15 +142,28 @@ title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = titleBar
 
 local subtitle = Instance.new("TextLabel")
-subtitle.Size = UDim2.new(1, -140, 0, 12)
+subtitle.Size = UDim2.new(1, -180, 0, 12)
 subtitle.Position = UDim2.new(0, 16, 0, 26)
 subtitle.BackgroundTransparency = 1
 subtitle.TextColor3 = C.dim
-subtitle.Text = "anti-fling shield · v1"
+subtitle.Text = "anti-fling shield · v1.1"
 subtitle.Font = Enum.Font.Code
 subtitle.TextSize = 9
 subtitle.TextXAlignment = Enum.TextXAlignment.Left
 subtitle.Parent = titleBar
+
+local testBtn = Instance.new("TextButton")
+testBtn.Size = UDim2.new(0, 44, 0, 24)
+testBtn.Position = UDim2.new(1, -78, 0, 10)
+testBtn.BackgroundColor3 = C.card
+testBtn.TextColor3 = C.muted
+testBtn.Text = "TEST"
+testBtn.Font = Enum.Font.Code
+testBtn.TextSize = 9
+testBtn.AutoButtonColor = false
+testBtn.Parent = titleBar
+corner(testBtn, 6)
+stroke(testBtn, C.stroke, 1)
 
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 24, 0, 24)
@@ -173,7 +193,7 @@ statusDot.Parent = content
 corner(statusDot, 3)
 
 local statusLbl = Instance.new("TextLabel")
-statusLbl.Size = UDim2.new(0, 140, 0, 20)
+statusLbl.Size = UDim2.new(0, 190, 0, 20)
 statusLbl.Position = UDim2.new(0, 13, 0, 0)
 statusLbl.BackgroundTransparency = 1
 statusLbl.TextColor3 = C.dim
@@ -181,11 +201,12 @@ statusLbl.Text = "OFFLINE"
 statusLbl.Font = Enum.Font.Code
 statusLbl.TextSize = 10
 statusLbl.TextXAlignment = Enum.TextXAlignment.Left
+statusLbl.TextTruncate = Enum.TextTruncate.AtEnd
 statusLbl.Parent = content
 
 local spikeLbl = Instance.new("TextLabel")
-spikeLbl.Size = UDim2.new(0, 110, 0, 20)
-spikeLbl.Position = UDim2.new(1, -110, 0, 0)
+spikeLbl.Size = UDim2.new(0, 90, 0, 20)
+spikeLbl.Position = UDim2.new(1, -90, 0, 0)
 spikeLbl.BackgroundTransparency = 1
 spikeLbl.TextColor3 = C.dim
 spikeLbl.Text = "0 blocked"
@@ -194,7 +215,6 @@ spikeLbl.TextSize = 10
 spikeLbl.TextXAlignment = Enum.TextXAlignment.Right
 spikeLbl.Parent = content
 
--- LOCK
 local lockBtn = Instance.new("TextButton")
 lockBtn.Size = UDim2.new(1, 0, 0, 42)
 lockBtn.Position = UDim2.new(0, 0, 0, 26)
@@ -209,7 +229,6 @@ corner(lockBtn, 9)
 local lockStroke = stroke(lockBtn, C.bad, 1, 0.55)
 local lockGrad = gradient(lockBtn, Color3.fromRGB(30, 34, 32), Color3.fromRGB(24, 27, 25), 90)
 
--- rows
 local function makeRow(y, label, key, onChange)
     local row = Instance.new("Frame")
     row.Size = UDim2.new(1, 0, 0, 28)
@@ -220,7 +239,7 @@ local function makeRow(y, label, key, onChange)
     local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(1, -56, 1, 0)
     lbl.BackgroundTransparency = 1
-    lbl.TextColor3 = C.muted
+    lbl.TextColor3 = opt[key] and C.text or C.muted
     lbl.Text = label
     lbl.Font = Enum.Font.Code
     lbl.TextSize = 10
@@ -245,8 +264,9 @@ local function makeRow(y, label, key, onChange)
     knob.Parent = sw
     corner(knob, 8)
 
-    local function paint()
-        TweenService:Create(knob, TweenInfo.new(0.16, Enum.EasingStyle.Quad), {
+    sw.MouseButton1Click:Connect(function()
+        opt[key] = not opt[key]
+        TweenService:Create(knob, TweenInfo.new(0.16), {
             Position = opt[key] and UDim2.new(0, 21, 0, 2) or UDim2.new(0, 3, 0, 2),
             BackgroundColor3 = opt[key] and C.accent or C.dim
         }):Play()
@@ -256,15 +276,8 @@ local function makeRow(y, label, key, onChange)
         swStroke.Color = opt[key] and C.accent or C.stroke
         swStroke.Transparency = opt[key] and 0.45 or 0
         lbl.TextColor3 = opt[key] and C.text or C.muted
-    end
-
-    sw.MouseButton1Click:Connect(function()
-        opt[key] = not opt[key]
-        paint()
         if onChange then onChange(opt[key]) end
     end)
-
-    return row
 end
 
 local secLbl = Instance.new("TextLabel")
@@ -283,17 +296,27 @@ makeRow(120, "position restore", "restore")
 makeRow(148, "auto-lock on hit", "autoAnchor")
 makeRow(176, "void rescue", "voidRescue")
 makeRow(204, "mass armor", "massArmor", function(on)
-    local ch = player.Character
-    if not ch then return end
-    local r = ch:FindFirstChild("HumanoidRootPart")
-    if not r then return end
+    if not myRoot then return end
     if on and enabled then
-        r.CustomPhysicalProperties = PhysicalProperties.new(MASS_ARMOR, 0.5, 0.5)
+        myRoot.CustomPhysicalProperties = PhysicalProperties.new(MASS_ARMOR, 0.5, 0.5)
     else
-        r.CustomPhysicalProperties = nil
+        myRoot.CustomPhysicalProperties = nil
     end
 end)
 makeRow(232, "counter-fling", "counter")
+makeRow(260, "hold lock (anchor)", "holdLock", function(on)
+    if not enabled or not myRoot then return end
+    lockOn = on
+    if on then
+        myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+        myRoot.Anchored = true
+        weAnchored = true
+    else
+        myRoot.Anchored = false
+        weAnchored = false
+    end
+end)
 
 local killGuiBtn = Instance.new("TextButton")
 killGuiBtn.Size = UDim2.new(1, 0, 0, 30)
@@ -364,50 +387,57 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ===== HELPERS =====
-local function getRoot(ch)
-    if not ch then return nil end
-    return ch:FindFirstChild("HumanoidRootPart")
+local function bindCharacter(ch)
+    myChar = ch
+    myRoot = ch and ch:FindFirstChild("HumanoidRootPart")
+    myHum = ch and ch:FindFirstChildOfClass("Humanoid")
+    lastGoodPos = myRoot and myRoot.Position or nil
 end
 
-local function getHum(ch)
-    if not ch then return nil end
-    return ch:FindFirstChildOfClass("Humanoid")
+local function flash()
+    frameStroke.Color = C.accent
+    frameStroke.Transparency = 0
+    TweenService:Create(frameStroke, TweenInfo.new(0.45), { Transparency = 0, Color = C.stroke }):Play()
 end
 
-local function setStatus(txt, col, pulse)
-    statusLbl.Text = txt
-    statusLbl.TextColor3 = col
-    statusDot.BackgroundColor3 = col
-    statusDot.BackgroundTransparency = pulse and 0 or 0.55
-end
-
-local function pushSpike()
+local function pushSpike(who)
     spikeCount = spikeCount + 1
     spikeLbl.Text = spikeCount .. " blocked"
     spikeLbl.TextColor3 = C.accent
+    statusLbl.Text = "BLOCKED · " .. (who or "unknown")
+    statusLbl.TextColor3 = C.accent
+    flash()
+    task.delay(0.9, function()
+        if enabled then
+            statusLbl.Text = "ACTIVE"
+            statusLbl.TextColor3 = C.accent
+        end
+    end)
 end
 
-local function unanchor(root)
-    if root and weAnchored then
-        root.Anchored = false
+local function unanchor()
+    if myRoot and weAnchored then
+        myRoot.Anchored = false
         weAnchored = false
     end
 end
 
-local function anchor(root, duration)
-    if not root then return end
-    root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-    root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-    root.Anchored = true
-    weAnchored = true
-    autoAnchorUntil = tick() + duration
+local function anchor(duration)
+    if not myRoot then return end
+    myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+    myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+    if not weAnchored then
+        myRoot.Anchored = true
+        weAnchored = true
+    end
+    autoAnchorUntil = os.clock() + duration
 end
 
--- ===== JOINT REPAIR =====
+-- ===== JOINTS =====
 local function cacheMotors(ch)
     motorCache = {}
     for _, d in ipairs(ch:GetDescendants()) do
-        if d:IsA("Motor6D") then
+        if d:IsA("Motor6D") and d.Part0 and d.Part1 then
             table.insert(motorCache, {
                 name = d.Name, p0 = d.Part0, p1 = d.Part1,
                 c0 = d.C0, c1 = d.C1, parent = d.Parent
@@ -416,11 +446,12 @@ local function cacheMotors(ch)
     end
 end
 
-local function repairMotors(ch)
+local function repairMotors()
+    if not myChar or #motorCache == 0 then return end
     for _, m in ipairs(motorCache) do
-        if m.p0 and m.p1 and m.p0.Parent and m.p1.Parent then
-            local existing = m.parent and m.parent:FindFirstChild(m.name)
-            if not (existing and existing:IsA("Motor6D")) then
+        if m.parent and m.parent.Parent and m.p0 and m.p1 and m.p0.Parent and m.p1.Parent then
+            local ex = m.parent:FindFirstChild(m.name)
+            if not (ex and ex:IsA("Motor6D")) then
                 local nm = Instance.new("Motor6D")
                 nm.Name = m.name
                 nm.Part0 = m.p0
@@ -434,12 +465,13 @@ local function repairMotors(ch)
 end
 
 -- ===== COUNTER =====
-local function pickAttacker(myRoot)
+local function pickAttacker()
+    if not myRoot then return nil end
     local best, bestDist = nil, COUNTER_RANGE
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= player and p.Character then
-            local r = getRoot(p.Character)
-            local h = getHum(p.Character)
+            local r = p.Character:FindFirstChild("HumanoidRootPart")
+            local h = p.Character:FindFirstChildOfClass("Humanoid")
             if r and h and h.Health > 0 then
                 local d = (r.Position - myRoot.Position).Magnitude
                 if d < bestDist then
@@ -452,19 +484,18 @@ local function pickAttacker(myRoot)
 end
 
 local function fireCounter()
-    if not opt.counter or not counterTarget then return end
-    local ch = player.Character
-    local myRoot = getRoot(ch)
-    if not myRoot or not counterTarget.Character then return end
-    local tRoot = getRoot(counterTarget.Character)
-    local tHum = getHum(counterTarget.Character)
-    if not tRoot or not tHum or tHum.Health <= 0 then return end
+    if not opt.counter or not counterTarget or not myRoot then return end
+    local tc = counterTarget.Character
+    if not tc then counterTarget = nil return end
+    local tRoot = tc:FindFirstChild("HumanoidRootPart")
+    local tHum = tc:FindFirstChildOfClass("Humanoid")
+    if not tRoot or not tHum or tHum.Health <= 0 then counterTarget = nil return end
 
-    myRoot.CFrame = tRoot.CFrame * CFrame.new(math.random(-1, 1), 0, math.random(-2, -1))
+    myRoot.CFrame = tRoot.CFrame * CFrame.new(math.random(-1, 1), 0, -2)
 
     local bv = Instance.new("BodyVelocity")
     bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-    bv.Velocity = (tRoot.Position - myRoot.Position).Unit * COUNTER_POWER + Vector3.new(0, COUNTER_POWER, 0)
+    bv.Velocity = Vector3.new(0, COUNTER_POWER, 0)
     bv.P = math.huge
     bv.Parent = myRoot
 
@@ -482,104 +513,99 @@ local function fireCounter()
     counterTarget = nil
 end
 
--- ===== CORE LOOP =====
-local function tick(dt)
+-- ===== CORE =====
+local function onHeartbeat()
     if not enabled then return end
-    local ch = player.Character
-    if not ch then return end
-    local root = getRoot(ch)
-    local hum = getHum(ch)
-    if not root or not hum or hum.Health <= 0 then
-        unanchor(root)
-        lastGoodPos = nil
+    if not myChar or not myRoot or not myRoot.Parent then
+        bindCharacter(player.Character)
+        if not myRoot then return end
+    end
+    if not myHum or not myHum.Parent or myHum.Health <= 0 then
+        unanchor()
         return
     end
 
-    -- ownership + armor upkeep
-    if opt.massArmor and not root.CustomPhysicalProperties then
-        root.CustomPhysicalProperties = PhysicalProperties.new(MASS_ARMOR, 0.5, 0.5)
-    end
-    root.Massless = false
+    local now = os.clock()
 
-    local pos = root.Position
-    local vel = root.AssemblyLinearVelocity
+    if opt.massArmor and not myRoot.CustomPhysicalProperties then
+        myRoot.CustomPhysicalProperties = PhysicalProperties.new(MASS_ARMOR, 0.5, 0.5)
+    end
+    if myRoot.Massless then myRoot.Massless = false end
+
+    local pos = myRoot.Position
+    local vel = myRoot.AssemblyLinearVelocity
     local speed = vel.Magnitude
 
-    -- keep last known good position
-    if not lastGoodPos then
-        lastGoodPos = pos
-    end
+    if not lastGoodPos then lastGoodPos = pos end
 
-    local step = (pos - lastGoodPos).Magnitude
-    local spiked = false
+    if now >= nextSpikeAt and not lockOn then
+        local step = (pos - lastGoodPos).Magnitude
+        local isFling = speed > MAX_SPEED
+        local isTeleport = step > MAX_STEP and speed <= MAX_SPEED * 0.5
 
-    if speed > MAX_SPEED or step > MAX_STEP then
-        -- high velocity = real fling. low velocity + far jump = legit teleport
-        local isFling = speed > MAX_SPEED or (step > MAX_STEP and speed > MAX_SPEED * 0.5)
-        local isLegitTeleport = step > MAX_STEP and speed <= MAX_SPEED * 0.5
-
-        if isFling then
-            spiked = true
-            pushSpike()
-            counterTarget = pickAttacker(root)
+        if isFling or (step > MAX_STEP and not isTeleport) then
+            nextSpikeAt = now + SPIKE_COOLDOWN
+            counterTarget = pickAttacker()
+            pushSpike(counterTarget and counterTarget.Name)
 
             if opt.restore and lastGoodPos then
-                root.CFrame = CFrame.new(lastGoodPos) * (root.CFrame - root.CFrame.Position)
+                myRoot.CFrame = CFrame.new(lastGoodPos)
             end
 
             if opt.autoAnchor then
-                anchor(root, ANCHOR_TIME)
-            elseif opt.clamp then
+                anchor(ANCHOR_TIME)
+            else
                 local dir = speed > 0 and vel.Unit or Vector3.new(0, 1, 0)
-                root.AssemblyLinearVelocity = dir * math.min(speed, MAX_SPEED)
-                root.AssemblyAngularVelocity = root.AssemblyAngularVelocity.Unit * 0
+                myRoot.AssemblyLinearVelocity = dir * math.min(speed, MAX_SPEED)
+                myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
             end
-        elseif isLegitTeleport then
+        elseif isTeleport then
             lastGoodPos = pos
         end
     end
 
-    -- void rescue
     if opt.voidRescue and lastGoodPos then
         if pos.Y < lastGoodPos.Y - 220 or pos.Y < -120 then
-            root.CFrame = CFrame.new(lastGoodPos)
-            root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-            if not weAnchored then anchor(root, ANCHOR_TIME) end
+            myRoot.CFrame = CFrame.new(lastGoodPos)
+            myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            if not weAnchored then anchor(ANCHOR_TIME) end
         end
     end
 
-    -- release our own anchor
-    if weAnchored and tick() >= autoAnchorUntil and not lockOn then
-        unanchor(root)
-        if opt.counter and counterTarget then fireCounter() end
+    if weAnchored and not lockOn and now >= autoAnchorUntil then
+        unanchor()
+        fireCounter()
     end
 
-    -- joint repair (cheap check)
-    if math.random() < 0.25 then repairMotors(ch) end
-    if hum:GetState() == Enum.HumanoidStateType.Physics and not weAnchored then
-        hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+    if opt.clamp and not weAnchored then
+        local v = myRoot.AssemblyLinearVelocity
+        if v.Magnitude > MAX_SPEED then
+            myRoot.AssemblyLinearVelocity = v.Unit * MAX_SPEED
+            myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+        end
+    end
+
+    if now >= nextRepairAt then
+        nextRepairAt = now + REPAIR_EVERY
+        repairMotors()
+        if myHum:GetState() == Enum.HumanoidStateType.Physics and not weAnchored then
+            myHum:ChangeState(Enum.HumanoidStateType.GettingUp)
+        end
     end
 
     if not weAnchored then
-        lastGoodPos = root.Position
-    end
-
-    -- passive clamp
-    if opt.clamp and not weAnchored and root.AssemblyLinearVelocity.Magnitude > MAX_SPEED then
-        local v = root.AssemblyLinearVelocity
-        root.AssemblyLinearVelocity = v.Unit * MAX_SPEED
-        root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+        lastGoodPos = myRoot.Position
     end
 end
 
 local function start()
     if loop then return end
-    loop = RunService.Heartbeat:Connect(function(dt)
-        pcall(tick, dt)
+    loop = RunService.Heartbeat:Connect(function()
+        local ok, err = pcall(onHeartbeat)
+        if not ok then warn("[AEGIS] " .. tostring(err)) end
     end)
 end
 
--- watchdog
 task.spawn(function()
     while screenGui.Parent do
         task.wait(0.4)
@@ -589,7 +615,7 @@ end)
 
 -- ===== VISUALS =====
 RunService.RenderStepped:Connect(function()
-    local t = tick()
+    local t = os.clock()
     accentGrad.Offset = Vector2.new(math.sin(t * 0.7) * 0.6, 0)
     if enabled then
         statusDot.BackgroundTransparency = 0.1 + math.abs(math.sin(t * 5)) * 0.6
@@ -602,8 +628,7 @@ end)
 -- ===== TOGGLES =====
 lockBtn.MouseButton1Click:Connect(function()
     enabled = not enabled
-    local ch = player.Character
-    local root = getRoot(ch)
+    bindCharacter(player.Character)
 
     if enabled then
         lockBtn.Text = "SHIELD ACTIVE"
@@ -613,16 +638,17 @@ lockBtn.MouseButton1Click:Connect(function()
             Color = ColorSequence.new(Color3.fromRGB(18, 62, 46), Color3.fromRGB(14, 44, 33))
         }):Play()
         lockStroke.Color = C.accent
-        setStatus("ACTIVE", C.accent, true)
-        if ch then
-            cacheMotors(ch)
-            if root then
-                lastGoodPos = root.Position
-                if opt.massArmor then
-                    root.CustomPhysicalProperties = PhysicalProperties.new(MASS_ARMOR, 0.5, 0.5)
-                end
+        statusLbl.Text = "ACTIVE"
+        statusLbl.TextColor3 = C.accent
+        statusDot.BackgroundColor3 = C.accent
+        if myChar then
+            cacheMotors(myChar)
+            if myRoot and opt.massArmor then
+                myRoot.CustomPhysicalProperties = PhysicalProperties.new(MASS_ARMOR, 0.5, 0.5)
             end
         end
+        nextSpikeAt = 0
+        nextRepairAt = 0
         start()
     else
         lockBtn.Text = "ENABLE SHIELD"
@@ -632,41 +658,57 @@ lockBtn.MouseButton1Click:Connect(function()
             Color = ColorSequence.new(Color3.fromRGB(30, 34, 32), Color3.fromRGB(24, 27, 25))
         }):Play()
         lockStroke.Color = C.bad
-        setStatus("OFFLINE", C.dim, false)
+        statusLbl.Text = "OFFLINE"
+        statusLbl.TextColor3 = C.dim
+        statusDot.BackgroundColor3 = C.dim
         lockOn = false
-        unanchor(root)
+        unanchor()
         if loop then loop:Disconnect() loop = nil end
-        if root then
-            root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-            root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-            root.CustomPhysicalProperties = nil
+        if myRoot then
+            myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+            myRoot.CustomPhysicalProperties = nil
         end
         lastGoodPos = nil
     end
 end)
 
+testBtn.MouseButton1Click:Connect(function()
+    if not enabled then
+        statusLbl.Text = "ENABLE FIRST"
+        statusLbl.TextColor3 = C.bad
+        return
+    end
+    bindCharacter(player.Character)
+    if not myRoot then return end
+    local bv = Instance.new("BodyVelocity")
+    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bv.Velocity = Vector3.new(math.random(-3000, 3000), 9000, math.random(-3000, 3000))
+    bv.P = math.huge
+    bv.Parent = myRoot
+    task.delay(0.25, function()
+        if bv then bv:Destroy() end
+    end)
+end)
+
 killGuiBtn.MouseButton1Click:Connect(function()
     enabled = false
     if loop then loop:Disconnect() loop = nil end
-    local root = getRoot(player.Character)
-    unanchor(root)
-    if root then root.CustomPhysicalProperties = nil end
+    unanchor()
+    if myRoot then myRoot.CustomPhysicalProperties = nil end
     screenGui:Destroy()
 end)
 
 -- ===== LIFE CYCLE =====
 player.CharacterAdded:Connect(function(ch)
     weAnchored = false
-    lastGoodPos = nil
+    bindCharacter(ch)
     task.wait(0.3)
     if enabled then
-        cacheMotors(ch)
-        local r = getRoot(ch)
-        if r then
-            lastGoodPos = r.Position
-            if opt.massArmor then
-                r.CustomPhysicalProperties = PhysicalProperties.new(MASS_ARMOR, 0.5, 0.5)
-            end
+        bindCharacter(player.Character)
+        if myChar then cacheMotors(myChar) end
+        if myRoot and opt.massArmor then
+            myRoot.CustomPhysicalProperties = PhysicalProperties.new(MASS_ARMOR, 0.5, 0.5)
         end
         if not loop then start() end
     end
