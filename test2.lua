@@ -1,4 +1,4 @@
--- FAGGOT KILLER  //  AEGIS  v1.5
+-- FAGGOT KILLER  //  AEGIS  v1.8
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -8,7 +8,6 @@ local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- fling tuning
 local MAX_SPEED = 120
 local MAX_STEP = 30
 local ANCHOR_TIME = 0.14
@@ -18,17 +17,15 @@ local COUNTER_RANGE = 10
 local MASS_ARMOR = 100
 local REPAIR_EVERY = 0.3
 
--- sticky counter tuning
 local STICK_RANGE = 6
 local PULSE_ON = 0.10
 local PULSE_OFF = 0.035
 local BURST_POWER = 1400
 local BURST_COOLDOWN = 0.18
-local SWING_COOLDOWN = 0.12
-local HEAL_COOLDOWN = 0.1
 local HEALTH_TARGET = 1000
+local PHANTOM_EVERY = 0.25
+local DECOY_EVERY = 0.5
 
--- evasion tuning
 local ESCAPE_DIST = 45
 local ESCAPE_COOLDOWN = 0.8
 local DAMAGE_TRIGGER = 3
@@ -39,9 +36,18 @@ local SHOCK_RANGE = 9
 local SHOCK_POWER = 900
 local SHOCK_COOLDOWN = 0.5
 
+local REACH_DIST = 26
+local REACH_TICK = 0.04
+local CLICK_COOLDOWN = 0.1
+local MAX_TARGETS = 8
+
 local enabled = false
 local lockOn = false
 local opt = {
+    decoy = true,
+    phantom = true,
+    bump = true,
+    heal = true,
     clamp = true,
     restore = true,
     autoAnchor = true,
@@ -52,12 +58,23 @@ local opt = {
     pulse = true,
     retaliate = true,
     burst = true,
-    heal = true,
-    bump = true,
+    reach = true,
+    reachAny = true,
+    clicker = true,
     escape = false,
     kite = false,
     hover = false,
     shock = true
+}
+
+local WHITELIST = {
+    ["Left Arm"] = true, ["Right Arm"] = true, ["Left Leg"] = true, ["Right Leg"] = true,
+    ["Head"] = true, ["Torso"] = true, ["UpperTorso"] = true, ["LowerTorso"] = true,
+    ["LeftUpperArm"] = true, ["LeftLowerArm"] = true, ["LeftHand"] = true,
+    ["RightUpperArm"] = true, ["RightLowerArm"] = true, ["RightHand"] = true,
+    ["LeftUpperLeg"] = true, ["LeftLowerLeg"] = true, ["LeftFoot"] = true,
+    ["RightUpperLeg"] = true, ["RightLowerLeg"] = true, ["RightFoot"] = true,
+    ["HumanoidRootPart"] = true
 }
 
 local spikeCount = 0
@@ -69,7 +86,10 @@ local nextKiteAt = 0
 local nextShockAt = 0
 local nextBurstAt = 0
 local nextSwingAt = 0
-local nextHealAt = 0
+local nextPhantomAt = 0
+local nextDecoyAt = 0
+local nextReachAt = 0
+local nextClickAt = 0
 local weAnchored = false
 local pulseActive = false
 local pulseAnchored = false
@@ -79,11 +99,16 @@ local lastHealth = 100
 local hoverTargetY = nil
 local hoverBV = nil
 local counterTarget = nil
+local healConn = nil
 local loop = nil
 local motorCache = {}
+local phantom = {}
+local renamed = {}
 local myChar = nil
 local myRoot = nil
 local myHum = nil
+
+local hasFTI = (type(firetouchinterest) == "function")
 
 local C = {
     bg = Color3.fromRGB(13, 15, 14),
@@ -131,7 +156,6 @@ screenGui.IgnoreGuiInset = true
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = playerGui
 
--- ===== HUB =====
 local hubButton = Instance.new("TextButton")
 hubButton.Size = UDim2.new(0, 48, 0, 48)
 hubButton.Position = UDim2.new(0, 14, 0.5, 70)
@@ -146,7 +170,6 @@ hubButton.Parent = screenGui
 corner(hubButton, 24)
 local hubStroke = stroke(hubButton, C.accent, 1.5, 0.35)
 
--- ===== PANEL =====
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 292, 0, 368)
 mainFrame.Position = UDim2.new(0.5, -146, 0.5, -184)
@@ -187,7 +210,7 @@ subtitle.Size = UDim2.new(1, -170, 0, 11)
 subtitle.Position = UDim2.new(0, 14, 0, 23)
 subtitle.BackgroundTransparency = 1
 subtitle.TextColor3 = C.dim
-subtitle.Text = "anti-fling + sticky counter"
+subtitle.Text = "anti-reach + anti-glue"
 subtitle.Font = Enum.Font.Code
 subtitle.TextSize = 8
 subtitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -377,6 +400,82 @@ local function makeRow(label, key, onChange)
     end)
 end
 
+local function numRow(label, get, set, step, min, max)
+    local row = Instance.new("Frame")
+    row.Size = UDim2.new(1, 0, 0, 22)
+    row.BackgroundTransparency = 1
+    row.LayoutOrder = nextOrder()
+    row.Parent = list
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -104, 1, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.TextColor3 = C.muted
+    lbl.Text = label
+    lbl.Font = Enum.Font.Code
+    lbl.TextSize = 9
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = row
+
+    local val = Instance.new("TextLabel")
+    val.Size = UDim2.new(0, 30, 1, 0)
+    val.Position = UDim2.new(1, -96, 0, 0)
+    val.BackgroundTransparency = 1
+    val.TextColor3 = C.accent
+    val.Text = tostring(get())
+    val.Font = Enum.Font.Code
+    val.TextSize = 9
+    val.Parent = row
+
+    local function mkBtn(txt, x, delta)
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(0, 26, 0, 16)
+        b.Position = UDim2.new(1, x, 0, 3)
+        b.BackgroundColor3 = C.card
+        b.TextColor3 = C.text
+        b.Text = txt
+        b.Font = Enum.Font.Code
+        b.TextSize = 10
+        b.AutoButtonColor = false
+        b.Parent = row
+        corner(b, 4)
+        stroke(b, C.stroke, 1)
+        b.MouseButton1Click:Connect(function()
+            local n = math.clamp(get() + delta, min, max)
+            set(n)
+            val.Text = tostring(n)
+        end)
+    end
+
+    mkBtn("-", -66, -step)
+    mkBtn("+", -36, step)
+end
+
+section("HITBOX")
+makeRow("decoy part names", "decoy", function(on)
+    if not myChar then return end
+    if on then
+        applyDecoy()
+    else
+        restoreNames()
+    end
+end)
+makeRow("untouchable (CanTouch)", "phantom")
+makeRow("health bump", "bump", function(on)
+    if not myHum then return end
+    if on then
+        myHum.MaxHealth = HEALTH_TARGET
+        myHum.Health = HEALTH_TARGET
+    end
+end)
+makeRow("heal retry", "heal")
+
+section("COUNTER-REACH")
+makeRow("auto reach (FTI)", "reach")
+makeRow("any distance", "reachAny")
+makeRow("auto clicker", "clicker")
+numRow("reach limit", function() return REACH_DIST end, function(v) REACH_DIST = v end, 10, 8, 500)
+
 section("FLING DEFENSE")
 makeRow("velocity clamp", "clamp")
 makeRow("position restore", "restore")
@@ -409,14 +508,6 @@ section("STICKY COUNTER")
 makeRow("pulse anchor", "pulse")
 makeRow("auto-retaliate", "retaliate")
 makeRow("eject burst", "burst")
-makeRow("health bump", "bump", function(on)
-    if not myHum then return end
-    if on then
-        myHum.MaxHealth = HEALTH_TARGET
-        myHum.Health = HEALTH_TARGET
-    end
-end)
-makeRow("heal retry", "heal")
 
 section("EVASION")
 makeRow("escape on damage", "escape")
@@ -512,6 +603,68 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ===== HELPERS =====
+local function getTool()
+    if not myChar then return nil end
+    return myChar:FindFirstChildOfClass("Tool")
+end
+
+local function equipTool()
+    local bp = player:FindFirstChild("Backpack")
+    if not myChar or not bp or not myHum then return nil end
+    local cur = getTool()
+    if cur then return cur end
+    for _, item in ipairs(bp:GetChildren()) do
+        if item:IsA("Tool") then
+            pcall(function() myHum:EquipTool(item) end)
+            return item
+        end
+    end
+    return nil
+end
+
+local function applyDecoy()
+    if not myChar then return end
+    for _, d in ipairs(myChar:GetDescendants()) do
+        if d:IsA("BasePart") and WHITELIST[d.Name] then
+            renamed[d] = d.Name
+            d.Name = d.Name .. "_"
+        end
+    end
+end
+
+local function restoreNames()
+    for part, orig in pairs(renamed) do
+        if part and part.Parent then
+            part.Name = orig
+        end
+    end
+    renamed = {}
+end
+
+local function applyPhantom()
+    if not myChar then return end
+    local tool = getTool()
+    for _, d in ipairs(myChar:GetDescendants()) do
+        if d:IsA("BasePart") then
+            local inTool = false
+            if tool then inTool = d:IsDescendantOf(tool) end
+            if not inTool then
+                if phantom[d] == nil then phantom[d] = d.CanTouch end
+                if d.CanTouch then d.CanTouch = false end
+            end
+        end
+    end
+end
+
+local function clearPhantom()
+    for part, orig in pairs(phantom) do
+        if part and part.Parent then
+            part.CanTouch = orig
+        end
+    end
+    phantom = {}
+end
+
 local function bindCharacter(ch)
     myChar = ch
     myRoot = ch and ch:FindFirstChild("HumanoidRootPart")
@@ -522,6 +675,15 @@ local function bindCharacter(ch)
     hoverTargetY = nil
     pulseActive = false
     pulseAnchored = false
+    if healConn then healConn:Disconnect() healConn = nil end
+    if myHum and opt.heal then
+        healConn = myHum.HealthChanged:Connect(function(h)
+            if not opt.heal or not myHum then return end
+            if h < myHum.MaxHealth then
+                myHum.Health = myHum.MaxHealth
+            end
+        end)
+    end
 end
 
 local function flash(col)
@@ -590,25 +752,6 @@ local function repairMotors()
             end
         end
     end
-end
-
-local function getTool()
-    if not myChar then return nil end
-    return myChar:FindFirstChildOfClass("Tool")
-end
-
-local function equipTool()
-    local bp = player:FindFirstChild("Backpack")
-    if not myChar or not bp or not myHum then return nil end
-    local cur = getTool()
-    if cur then return cur end
-    for _, item in ipairs(bp:GetChildren()) do
-        if item:IsA("Tool") then
-            pcall(function() myHum:EquipTool(item) end)
-            return item
-        end
-    end
-    return nil
 end
 
 local function pickAttacker(range)
@@ -707,6 +850,45 @@ local function shockwave()
     end)
 end
 
+-- FTI reach: unlimited by default, nearest-first, capped
+local function reachTick()
+    local tool = getTool() or equipTool()
+    if not tool then return end
+    local handle = tool:FindFirstChild("Handle")
+    if not handle then return end
+
+    local candidates = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= player and p.Character then
+            local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+            local hum = p.Character:FindFirstChildOfClass("Humanoid")
+            if hrp and hum and hum.Health > 0 then
+                local d = (hrp.Position - handle.Position).Magnitude
+                if opt.reachAny or d <= REACH_DIST then
+                    table.insert(candidates, { char = p.Character, dist = d })
+                end
+            end
+        end
+    end
+
+    if #candidates == 0 then return end
+    if #candidates > MAX_TARGETS then
+        table.sort(candidates, function(a, b) return a.dist < b.dist end)
+    end
+
+    local limit = math.min(#candidates, MAX_TARGETS)
+    for i = 1, limit do
+        for _, part in ipairs(candidates[i].char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                pcall(function()
+                    firetouchinterest(part, handle, 0)
+                    firetouchinterest(part, handle, 1)
+                end)
+            end
+        end
+    end
+end
+
 -- ===== CORE =====
 local function onHeartbeat()
     if not enabled then return end
@@ -721,23 +903,44 @@ local function onHeartbeat()
 
     local now = os.clock()
 
-    -- health
+    if opt.decoy and now >= nextDecoyAt then
+        nextDecoyAt = now + DECOY_EVERY
+        applyDecoy()
+    end
+
+    if opt.phantom and now >= nextPhantomAt then
+        nextPhantomAt = now + PHANTOM_EVERY
+        applyPhantom()
+    end
+
     if opt.bump and myHum.MaxHealth < HEALTH_TARGET then
         myHum.MaxHealth = HEALTH_TARGET
         myHum.Health = HEALTH_TARGET
     end
-    if opt.heal and myHum.Health < myHum.MaxHealth and now >= nextHealAt then
-        nextHealAt = now + HEAL_COOLDOWN
+    if opt.heal and myHum.Health < myHum.MaxHealth then
         myHum.Health = myHum.MaxHealth
     end
 
-    -- hover
+    if hasFTI and opt.reach and now >= nextReachAt then
+        nextReachAt = now + REACH_TICK
+        reachTick()
+        if opt.clicker and now >= nextClickAt then
+            nextClickAt = now + CLICK_COOLDOWN
+            local tool = getTool()
+            if tool then
+                pcall(function()
+                    tool:Activate()
+                    tool:Activate()
+                end)
+            end
+        end
+    end
+
     if hoverBV and hoverTargetY and not weAnchored then
         local dy = hoverTargetY - myRoot.Position.Y
         hoverBV.Velocity = Vector3.new(0, math.clamp(dy * 6, -70, 70), 0)
     end
 
-    -- escape on damage
     if myHum.Health < lastHealth - DAMAGE_TRIGGER then
         if opt.escape and now >= nextEscapeAt and not weAnchored then
             nextEscapeAt = now + ESCAPE_COOLDOWN
@@ -752,14 +955,12 @@ local function onHeartbeat()
     end
     lastHealth = myHum.Health
 
-    -- ===== PULSE ANCHOR (core anti-glue) =====
     if opt.pulse and not lockOn then
-        local near, nearDist = pickAttacker(STICK_RANGE)
+        local near = pickAttacker(STICK_RANGE)
         if near and near.Character then
             pulseActive = true
             if now >= pulseNext then
                 if pulseAnchored then
-                    -- release phase: let physics eject, throw a burst
                     myRoot.Anchored = false
                     pulseAnchored = false
                     weAnchored = false
@@ -771,7 +972,7 @@ local function onHeartbeat()
                         ejectBurst(nr)
                     end
                     if opt.retaliate and now >= nextSwingAt then
-                        nextSwingAt = now + SWING_COOLDOWN
+                        nextSwingAt = now + CLICK_COOLDOWN
                         local tool = getTool() or equipTool()
                         if tool then pcall(function() tool:Activate() end) end
                     end
@@ -799,7 +1000,6 @@ local function onHeartbeat()
         pulseActive = false
     end
 
-    -- kite / shock only matter when not glued
     if opt.kite and not pulseActive and now >= nextKiteAt and not weAnchored then
         local who, dist = pickAttacker(KITE_DIST)
         if who and dist and who.Character then
@@ -904,7 +1104,6 @@ task.spawn(function()
     end
 end)
 
--- ===== VISUALS =====
 RunService.RenderStepped:Connect(function()
     local t = os.clock()
     accentGrad.Offset = Vector2.new(math.sin(t * 0.7) * 0.6, 0)
@@ -916,7 +1115,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ===== TOGGLES =====
 lockBtn.MouseButton1Click:Connect(function()
     enabled = not enabled
     bindCharacter(player.Character)
@@ -929,11 +1127,13 @@ lockBtn.MouseButton1Click:Connect(function()
             Color = ColorSequence.new(Color3.fromRGB(18, 62, 46), Color3.fromRGB(14, 44, 33))
         }):Play()
         lockStroke.Color = C.accent
-        statusLbl.Text = "ACTIVE"
+        statusLbl.Text = hasFTI and "ACTIVE" or "ACTIVE · NO FTI"
         statusLbl.TextColor3 = C.accent
         statusDot.BackgroundColor3 = C.accent
         if myChar then
             cacheMotors(myChar)
+            if opt.decoy then applyDecoy() end
+            if opt.phantom then applyPhantom() end
             if myRoot and opt.massArmor then
                 myRoot.CustomPhysicalProperties = PhysicalProperties.new(MASS_ARMOR, 0.5, 0.5)
             end
@@ -949,6 +1149,10 @@ lockBtn.MouseButton1Click:Connect(function()
         nextShockAt = 0
         nextBurstAt = 0
         nextSwingAt = 0
+        nextPhantomAt = 0
+        nextDecoyAt = 0
+        nextReachAt = 0
+        nextClickAt = 0
         pulseNext = 0
         if opt.hover and myRoot then
             hoverTargetY = myRoot.Position.Y + HOVER_HEIGHT
@@ -974,6 +1178,9 @@ lockBtn.MouseButton1Click:Connect(function()
         pulseActive = false
         pulseAnchored = false
         unanchor()
+        restoreNames()
+        clearPhantom()
+        if healConn then healConn:Disconnect() healConn = nil end
         if hoverBV then hoverBV:Destroy() hoverBV = nil end
         hoverTargetY = nil
         if loop then loop:Disconnect() loop = nil end
@@ -1021,21 +1228,29 @@ killGuiBtn.MouseButton1Click:Connect(function()
     if loop then loop:Disconnect() loop = nil end
     pulseAnchored = false
     unanchor()
+    restoreNames()
+    clearPhantom()
+    if healConn then healConn:Disconnect() end
     if hoverBV then hoverBV:Destroy() end
     if myRoot then myRoot.CustomPhysicalProperties = nil end
     screenGui:Destroy()
 end)
 
--- ===== LIFE CYCLE =====
 player.CharacterAdded:Connect(function(ch)
     weAnchored = false
     pulseAnchored = false
     pulseActive = false
+    phantom = {}
+    renamed = {}
     bindCharacter(ch)
     task.wait(0.3)
     if enabled then
         bindCharacter(player.Character)
-        if myChar then cacheMotors(myChar) end
+        if myChar then
+            cacheMotors(myChar)
+            if opt.decoy then applyDecoy() end
+            if opt.phantom then applyPhantom() end
+        end
         if myRoot and opt.massArmor then
             myRoot.CustomPhysicalProperties = PhysicalProperties.new(MASS_ARMOR, 0.5, 0.5)
         end
@@ -1050,6 +1265,8 @@ end)
 player.CharacterRemoving:Connect(function()
     weAnchored = false
     pulseAnchored = false
+    phantom = {}
+    renamed = {}
     lastGoodPos = nil
 end)
 
