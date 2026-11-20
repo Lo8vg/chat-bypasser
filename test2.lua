@@ -1,4 +1,4 @@
--- FAGGOT KILLER  //  AEGIS  v1.4
+-- FAGGOT KILLER  //  AEGIS  v1.5
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -17,6 +17,16 @@ local COUNTER_POWER = 4200
 local COUNTER_RANGE = 10
 local MASS_ARMOR = 100
 local REPAIR_EVERY = 0.3
+
+-- sticky counter tuning
+local STICK_RANGE = 6
+local PULSE_ON = 0.10
+local PULSE_OFF = 0.035
+local BURST_POWER = 1400
+local BURST_COOLDOWN = 0.18
+local SWING_COOLDOWN = 0.12
+local HEAL_COOLDOWN = 0.1
+local HEALTH_TARGET = 1000
 
 -- evasion tuning
 local ESCAPE_DIST = 45
@@ -39,8 +49,13 @@ local opt = {
     massArmor = true,
     counter = false,
     holdLock = false,
-    escape = true,
-    kite = true,
+    pulse = true,
+    retaliate = true,
+    burst = true,
+    heal = true,
+    bump = true,
+    escape = false,
+    kite = false,
     hover = false,
     shock = true
 }
@@ -52,7 +67,13 @@ local nextRepairAt = 0
 local nextEscapeAt = 0
 local nextKiteAt = 0
 local nextShockAt = 0
+local nextBurstAt = 0
+local nextSwingAt = 0
+local nextHealAt = 0
 local weAnchored = false
+local pulseActive = false
+local pulseAnchored = false
+local pulseNext = 0
 local lastGoodPos = nil
 local lastHealth = 100
 local hoverTargetY = nil
@@ -166,7 +187,7 @@ subtitle.Size = UDim2.new(1, -170, 0, 11)
 subtitle.Position = UDim2.new(0, 14, 0, 23)
 subtitle.BackgroundTransparency = 1
 subtitle.TextColor3 = C.dim
-subtitle.Text = "anti-fling + evasion"
+subtitle.Text = "anti-fling + sticky counter"
 subtitle.Font = Enum.Font.Code
 subtitle.TextSize = 8
 subtitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -262,7 +283,6 @@ corner(lockBtn, 8)
 local lockStroke = stroke(lockBtn, C.bad, 1, 0.55)
 local lockGrad = gradient(lockBtn, Color3.fromRGB(30, 34, 32), Color3.fromRGB(24, 27, 25), 90)
 
--- scrollable toggle list
 local list = Instance.new("ScrollingFrame")
 list.Size = UDim2.new(1, 0, 1, -104)
 list.Position = UDim2.new(0, 0, 0, 60)
@@ -385,7 +405,20 @@ makeRow("hold lock (anchor)", "holdLock", function(on)
     end
 end)
 
-section("SWORD EVASION")
+section("STICKY COUNTER")
+makeRow("pulse anchor", "pulse")
+makeRow("auto-retaliate", "retaliate")
+makeRow("eject burst", "burst")
+makeRow("health bump", "bump", function(on)
+    if not myHum then return end
+    if on then
+        myHum.MaxHealth = HEALTH_TARGET
+        myHum.Health = HEALTH_TARGET
+    end
+end)
+makeRow("heal retry", "heal")
+
+section("EVASION")
 makeRow("escape on damage", "escape")
 makeRow("auto-kite", "kite")
 makeRow("hover above reach", "hover", function(on)
@@ -487,6 +520,8 @@ local function bindCharacter(ch)
     lastHealth = myHum and myHum.Health or 100
     if hoverBV then hoverBV:Destroy() hoverBV = nil end
     hoverTargetY = nil
+    pulseActive = false
+    pulseAnchored = false
 end
 
 local function flash(col)
@@ -557,6 +592,25 @@ local function repairMotors()
     end
 end
 
+local function getTool()
+    if not myChar then return nil end
+    return myChar:FindFirstChildOfClass("Tool")
+end
+
+local function equipTool()
+    local bp = player:FindFirstChild("Backpack")
+    if not myChar or not bp or not myHum then return nil end
+    local cur = getTool()
+    if cur then return cur end
+    for _, item in ipairs(bp:GetChildren()) do
+        if item:IsA("Tool") then
+            pcall(function() myHum:EquipTool(item) end)
+            return item
+        end
+    end
+    return nil
+end
+
 local function pickAttacker(range)
     if not myRoot then return nil end
     local best, bestDist = nil, range
@@ -592,6 +646,19 @@ local function flee(dist, fromPos)
         hoverTargetY = myRoot.Position.Y + 4
     end
     lastGoodPos = myRoot.Position
+end
+
+local function ejectBurst(theirRoot)
+    if not myRoot or not theirRoot then return end
+    myRoot.CFrame = theirRoot.CFrame * CFrame.new(math.random(-1, 1), 0, math.random(-2, -1))
+    local bv = Instance.new("BodyVelocity")
+    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bv.Velocity = Vector3.new(math.random(-200, 200), BURST_POWER, math.random(-200, 200))
+    bv.P = math.huge
+    bv.Parent = myRoot
+    task.delay(0.09, function()
+        if bv then bv:Destroy() end
+    end)
 end
 
 local function fireCounter()
@@ -654,11 +721,23 @@ local function onHeartbeat()
 
     local now = os.clock()
 
+    -- health
+    if opt.bump and myHum.MaxHealth < HEALTH_TARGET then
+        myHum.MaxHealth = HEALTH_TARGET
+        myHum.Health = HEALTH_TARGET
+    end
+    if opt.heal and myHum.Health < myHum.MaxHealth and now >= nextHealAt then
+        nextHealAt = now + HEAL_COOLDOWN
+        myHum.Health = myHum.MaxHealth
+    end
+
+    -- hover
     if hoverBV and hoverTargetY and not weAnchored then
         local dy = hoverTargetY - myRoot.Position.Y
         hoverBV.Velocity = Vector3.new(0, math.clamp(dy * 6, -70, 70), 0)
     end
 
+    -- escape on damage
     if myHum.Health < lastHealth - DAMAGE_TRIGGER then
         if opt.escape and now >= nextEscapeAt and not weAnchored then
             nextEscapeAt = now + ESCAPE_COOLDOWN
@@ -669,20 +748,59 @@ local function onHeartbeat()
                 if wr then fromPos = wr.Position end
             end
             flee(ESCAPE_DIST, fromPos)
-            statusLbl.Text = "ESCAPED · " .. (who and who.Name or "hit")
-            statusLbl.TextColor3 = C.accent2
-            flash(C.accent2)
-            task.delay(0.9, function()
-                if enabled then
-                    statusLbl.Text = "ACTIVE"
-                    statusLbl.TextColor3 = C.accent
-                end
-            end)
         end
     end
     lastHealth = myHum.Health
 
-    if opt.kite and now >= nextKiteAt and not weAnchored then
+    -- ===== PULSE ANCHOR (core anti-glue) =====
+    if opt.pulse and not lockOn then
+        local near, nearDist = pickAttacker(STICK_RANGE)
+        if near and near.Character then
+            pulseActive = true
+            if now >= pulseNext then
+                if pulseAnchored then
+                    -- release phase: let physics eject, throw a burst
+                    myRoot.Anchored = false
+                    pulseAnchored = false
+                    weAnchored = false
+                    myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                    pulseNext = now + PULSE_OFF
+                    local nr = near.Character:FindFirstChild("HumanoidRootPart")
+                    if opt.burst and nr and now >= nextBurstAt then
+                        nextBurstAt = now + BURST_COOLDOWN
+                        ejectBurst(nr)
+                    end
+                    if opt.retaliate and now >= nextSwingAt then
+                        nextSwingAt = now + SWING_COOLDOWN
+                        local tool = getTool() or equipTool()
+                        if tool then pcall(function() tool:Activate() end) end
+                    end
+                else
+                    myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                    myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                    myRoot.Anchored = true
+                    pulseAnchored = true
+                    weAnchored = true
+                    pulseNext = now + PULSE_ON
+                end
+            end
+        elseif pulseAnchored then
+            myRoot.Anchored = false
+            pulseAnchored = false
+            weAnchored = false
+            pulseActive = false
+        else
+            pulseActive = false
+        end
+    elseif pulseAnchored then
+        myRoot.Anchored = false
+        pulseAnchored = false
+        weAnchored = false
+        pulseActive = false
+    end
+
+    -- kite / shock only matter when not glued
+    if opt.kite and not pulseActive and now >= nextKiteAt and not weAnchored then
         local who, dist = pickAttacker(KITE_DIST)
         if who and dist and who.Character then
             local wr = who.Character:FindFirstChild("HumanoidRootPart")
@@ -693,7 +811,7 @@ local function onHeartbeat()
         end
     end
 
-    if opt.shock and now >= nextShockAt and not weAnchored then
+    if opt.shock and not pulseActive and now >= nextShockAt and not weAnchored then
         local who, dist = pickAttacker(SHOCK_RANGE)
         if who and dist then
             nextShockAt = now + SHOCK_COOLDOWN
@@ -712,7 +830,7 @@ local function onHeartbeat()
 
     if not lastGoodPos then lastGoodPos = pos end
 
-    if now >= nextSpikeAt and not lockOn then
+    if now >= nextSpikeAt and not lockOn and not pulseActive then
         local step = (pos - lastGoodPos).Magnitude
         local isFling = speed > MAX_SPEED
         local isTeleport = step > MAX_STEP and speed <= MAX_SPEED * 0.5
@@ -722,13 +840,13 @@ local function onHeartbeat()
             counterTarget = pickAttacker(COUNTER_RANGE)
             pushSpike(counterTarget and counterTarget.Name)
 
-            if opt.restore and lastGoodPos then
+            if opt.restore and lastGoodPos and not weAnchored then
                 myRoot.CFrame = CFrame.new(lastGoodPos)
             end
 
-            if opt.autoAnchor then
+            if opt.autoAnchor and not pulseActive then
                 anchor(ANCHOR_TIME)
-            else
+            elseif not weAnchored then
                 local dir = speed > 0 and vel.Unit or Vector3.new(0, 1, 0)
                 myRoot.AssemblyLinearVelocity = dir * math.min(speed, MAX_SPEED)
                 myRoot.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
@@ -742,11 +860,10 @@ local function onHeartbeat()
         if pos.Y < lastGoodPos.Y - 220 or pos.Y < -120 then
             myRoot.CFrame = CFrame.new(lastGoodPos)
             myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-            if not weAnchored then anchor(ANCHOR_TIME) end
         end
     end
 
-    if weAnchored and not lockOn and now >= autoAnchorUntil then
+    if weAnchored and not lockOn and not pulseActive and now >= autoAnchorUntil then
         unanchor()
         fireCounter()
     end
@@ -767,7 +884,7 @@ local function onHeartbeat()
         end
     end
 
-    if not weAnchored then
+    if not weAnchored and not pulseActive then
         lastGoodPos = myRoot.Position
     end
 end
@@ -821,11 +938,18 @@ lockBtn.MouseButton1Click:Connect(function()
                 myRoot.CustomPhysicalProperties = PhysicalProperties.new(MASS_ARMOR, 0.5, 0.5)
             end
         end
+        if myHum and opt.bump then
+            myHum.MaxHealth = HEALTH_TARGET
+            myHum.Health = HEALTH_TARGET
+        end
         nextSpikeAt = 0
         nextRepairAt = 0
         nextEscapeAt = 0
         nextKiteAt = 0
         nextShockAt = 0
+        nextBurstAt = 0
+        nextSwingAt = 0
+        pulseNext = 0
         if opt.hover and myRoot then
             hoverTargetY = myRoot.Position.Y + HOVER_HEIGHT
             hoverBV = Instance.new("BodyVelocity")
@@ -847,6 +971,8 @@ lockBtn.MouseButton1Click:Connect(function()
         statusLbl.TextColor3 = C.dim
         statusDot.BackgroundColor3 = C.dim
         lockOn = false
+        pulseActive = false
+        pulseAnchored = false
         unanchor()
         if hoverBV then hoverBV:Destroy() hoverBV = nil end
         hoverTargetY = nil
@@ -893,6 +1019,7 @@ end)
 killGuiBtn.MouseButton1Click:Connect(function()
     enabled = false
     if loop then loop:Disconnect() loop = nil end
+    pulseAnchored = false
     unanchor()
     if hoverBV then hoverBV:Destroy() end
     if myRoot then myRoot.CustomPhysicalProperties = nil end
@@ -902,6 +1029,8 @@ end)
 -- ===== LIFE CYCLE =====
 player.CharacterAdded:Connect(function(ch)
     weAnchored = false
+    pulseAnchored = false
+    pulseActive = false
     bindCharacter(ch)
     task.wait(0.3)
     if enabled then
@@ -910,12 +1039,17 @@ player.CharacterAdded:Connect(function(ch)
         if myRoot and opt.massArmor then
             myRoot.CustomPhysicalProperties = PhysicalProperties.new(MASS_ARMOR, 0.5, 0.5)
         end
+        if myHum and opt.bump then
+            myHum.MaxHealth = HEALTH_TARGET
+            myHum.Health = HEALTH_TARGET
+        end
         if not loop then start() end
     end
 end)
 
 player.CharacterRemoving:Connect(function()
     weAnchored = false
+    pulseAnchored = false
     lastGoodPos = nil
 end)
 
